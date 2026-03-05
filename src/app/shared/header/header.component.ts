@@ -1,5 +1,4 @@
 import { Component, ElementRef, HostListener, computed, effect, inject, output, signal } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { CartUiService } from '../../features/cart/data-access/cart-ui.service';
@@ -12,7 +11,7 @@ interface Suggestion {
 
 @Component({
   selector: 'app-header',
-  imports: [RouterLink, RouterLinkActive, CurrencyPipe],
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css'
 })
