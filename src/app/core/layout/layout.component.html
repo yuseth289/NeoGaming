@@ -1,0 +1,33 @@
+<div class="layout-shell">
+  <app-header (authRequested)="openAuthModal($event)" />
+
+  <main class="layout-content">
+    <router-outlet />
+  </main>
+
+  @if (authModalView()) {
+    <div class="auth-modal-overlay" role="dialog" aria-modal="true" (click)="closeAuthModal()">
+      <section class="auth-modal-panel" (click)="$event.stopPropagation()">
+        <button type="button" class="close-btn" aria-label="Cerrar ventana" (click)="closeAuthModal()">×</button>
+
+        <div class="auth-modal-body">
+          @if (authModalView() === 'login') {
+            <app-login-page
+              [modalMode]="true"
+              (switchToRegister)="openRegisterModal()"
+              (closeModal)="closeAuthModal()"
+            />
+          } @else {
+            <app-register-page
+              [modalMode]="true"
+              (switchToLogin)="openLoginModal()"
+              (closeModal)="closeAuthModal()"
+            />
+          }
+        </div>
+      </section>
+    </div>
+  }
+
+  <app-footer />
+</div>

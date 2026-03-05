@@ -1,0 +1,84 @@
+<section class="auth-page" [class.modal-mode]="modalMode()">
+  <div class="auth-card">
+    @if (modalMode()) {
+      <div class="auth-icon">🎮</div>
+      <h1>Inicia sesion en tu cuenta NeoGaming</h1>
+      <p>Bienvenido de nuevo, gamer.</p>
+    } @else {
+      <h1>Iniciar sesion</h1>
+      <p>Accede a tu cuenta para comprar mas rapido.</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        <span>Correo electronico</span>
+        <div class="input-shell" [class.invalid]="showFieldError('email')">
+          <span class="field-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+              <path d="m4 7 8 6 8-6"></path>
+            </svg>
+          </span>
+          <input type="email" formControlName="email" [placeholder]="modalMode() ? 'Ingresa tu correo' : 'correo@ejemplo.com'" />
+        </div>
+      </label>
+      @if (showFieldError('email')) {
+        <small class="error-text">Ingresa un correo valido.</small>
+      }
+
+      <label>
+        <span>Contrasena</span>
+        <div class="input-shell" [class.invalid]="showFieldError('password')">
+          <span class="field-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="11" width="16" height="9" rx="2"></rect>
+              <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
+            </svg>
+          </span>
+          <input [type]="showPassword() ? 'text' : 'password'" formControlName="password" [placeholder]="modalMode() ? 'Ingresa tu contrasena' : '******'" />
+          <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
+            {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+      </label>
+      @if (showFieldError('password')) {
+        <small class="error-text">Minimo 6 caracteres.</small>
+      }
+
+      @if (modalMode()) {
+        <button type="button" class="forgot-link">Olvidaste tu contrasena?</button>
+      } @else {
+        <label class="checkbox">
+          <input type="checkbox" formControlName="remember" />
+          <span>Recordarme en este dispositivo</span>
+        </label>
+      }
+
+      @if (error()) {
+        <p class="status error">{{ error() }}</p>
+      }
+      @if (success()) {
+        <p class="status success">{{ success() }}</p>
+      }
+
+      <button type="submit" [disabled]="loading()">
+        @if (loading()) {
+          <span class="btn-spinner" aria-hidden="true"></span>
+          Entrando...
+        } @else {
+          Iniciar sesion
+        }
+      </button>
+    </form>
+
+    @if (modalMode()) {
+      <p class="helper">No tienes una cuenta?</p>
+      <button type="button" class="switch-cta" (click)="switchToRegister.emit()">Registrarse</button>
+    } @else {
+      <p class="helper">
+        No tienes cuenta?
+        <a routerLink="/register">Crea una aqui</a>
+      </p>
+    }
+  </div>
+</section>

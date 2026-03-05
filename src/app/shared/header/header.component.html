@@ -1,0 +1,94 @@
+<header class="header" [class.scrolled]="headerScrolled()">
+  <div class="header-shell">
+    <div class="header-inner">
+      <a routerLink="/" class="brand">NeoGaming</a>
+
+      <button
+        class="menu-toggle"
+        type="button"
+        (click)="toggleMobileMenu()"
+        [attr.aria-expanded]="mobileMenuOpen()"
+        aria-label="Abrir menu"
+      >
+        ☰
+      </button>
+
+      <nav class="nav" [class.open]="mobileMenuOpen()">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+        <a routerLink="/catalog" routerLinkActive="active">Categorias</a>
+      </nav>
+
+      <form class="search" (submit)="submitSearch($event)">
+        <label class="search-input-wrap" for="site-search">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input
+            id="site-search"
+            type="search"
+            [value]="searchTerm()"
+            (focus)="showSuggestions.set(true)"
+            (input)="updateSearch($any($event.target).value)"
+            placeholder="Buscar teclados, VR, GPUs..."
+            autocomplete="off"
+          />
+        </label>
+
+        @if (showSuggestions() && filteredSuggestions().length > 0) {
+          <ul class="search-suggestions" role="listbox" aria-label="Sugerencias">
+            @for (item of filteredSuggestions(); track item.label) {
+              <li>
+                <button type="button" (click)="selectSuggestion(item)">
+                  <span>{{ item.label }}</span>
+                  <small>{{ item.type }}</small>
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </form>
+
+      <div class="header-actions">
+        <div class="cart-box">
+          <button type="button" class="icon-btn cart-btn" [class.bounce]="cartBounce()" (click)="goToCart()" aria-label="Abrir carrito">
+            🛒
+            @if (cartUi.totalItems() > 0) {
+              <span class="cart-count">{{ cartUi.totalItems() }}</span>
+            }
+          </button>
+        </div>
+
+        @if (!authSession.loggedIn()) {
+          <div class="auth-actions">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              (click)="openLoginModal()"
+            >
+              Iniciar sesion
+            </button>
+            <button
+              type="button"
+              class="btn btn-dark"
+              (click)="openRegisterModal()"
+            >
+              Registro
+            </button>
+          </div>
+        } @else {
+          <div class="profile-box">
+            <button type="button" class="icon-btn profile-btn" (click)="toggleProfileMenu()" aria-label="Abrir perfil">
+              {{ authSession.currentUser()?.name?.slice(0, 1) }}
+            </button>
+
+            @if (profileMenuOpen()) {
+              <div class="profile-dropdown">
+                <p class="profile-name">{{ authSession.currentUser()?.name }}</p>
+                <small>{{ authSession.currentUser()?.email }}</small>
+                <button type="button" (click)="logout()">Cerrar sesion</button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</header>

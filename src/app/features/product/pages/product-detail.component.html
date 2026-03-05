@@ -1,0 +1,246 @@
+<section class="detail-page">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a routerLink="/">Inicio</a>
+    <span>›</span>
+    <a routerLink="/catalog">Catalogo</a>
+    <span>›</span>
+    <span>{{ product().category || 'Producto' }}</span>
+    <span>›</span>
+    <strong>{{ product().name }}</strong>
+  </nav>
+
+  <article class="detail-grid">
+    <div class="gallery">
+      <div
+        class="main-image-wrap"
+        (mouseenter)="onImageMouseEnter()"
+        (mousemove)="onImageMouseMove($event)"
+        (mouseleave)="onImageMouseLeave()"
+      >
+        <img
+          class="main-image"
+          [class.switching]="imageChanging()"
+          [src]="product().images[selectedImage()]"
+          [alt]="product().name"
+          [style.transform]="imageTransform()"
+          [style.transform-origin]="imageTransformOrigin()"
+          width="920"
+          height="680"
+        />
+      </div>
+
+      <div class="thumbs">
+        @for (image of product().images; track image; let idx = $index) {
+          <button type="button" class="thumb" [class.active]="selectedImage() === idx" (click)="setImage(idx)">
+            <img [src]="image" [alt]="'Vista ' + (idx + 1)" width="120" height="80" />
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="detail-info">
+      <header class="title-row">
+        <div>
+          <h1>{{ product().name }}</h1>
+          <p class="subtitle">{{ product().subtitle }}</p>
+        </div>
+        <button
+          type="button"
+          class="favorite-btn"
+          [class.active]="favorite()"
+          [class.pulse]="favoritePulse()"
+          [attr.aria-pressed]="favorite()"
+          aria-label="Agregar a favoritos"
+          (click)="toggleFavorite()"
+        >
+          <span class="heart" aria-hidden="true">♥</span>
+        </button>
+      </header>
+
+      <div class="purchase-panel">
+        <div class="price-row">
+          <strong>USD {{ product().price | number: '1.2-2' }}</strong>
+          @if (hasDiscount()) {
+            <small>USD {{ product().oldPrice | number: '1.2-2' }}</small>
+            <span class="discount-badge">-{{ discountPercent() }}%</span>
+          }
+        </div>
+
+        <div class="stock-chip" [class.low]="stockTone() === 'low'" [class.out]="stockTone() === 'out'">
+          <i class="stock-dot" aria-hidden="true"></i>
+          <span>Stock</span>
+          <strong>{{ stockLabel() }}</strong>
+        </div>
+
+        <div class="buy-row">
+          <div class="qty" [class.pulse]="quantityPulse()">
+            <button type="button" (click)="decreaseQty()">-</button>
+            <span>{{ quantity() }}</span>
+            <button type="button" (click)="increaseQty()">+</button>
+          </div>
+
+          <button type="button" class="add-btn" [class.adding]="adding()" [disabled]="adding() || stockTone() === 'out'" (click)="addToCart()">
+            @if (adding()) {
+              <span class="btn-spinner" aria-hidden="true"></span>
+              Agregando...
+            } @else {
+              Agregar al carrito
+            }
+          </button>
+        </div>
+      </div>
+
+      <div class="tag-list">
+        @for (tag of product().tags; track tag) {
+          <span>{{ tag }}</span>
+        }
+      </div>
+
+      <section class="description">
+        <h2>Descripcion del producto</h2>
+        <p>{{ product().description }}</p>
+      </section>
+
+      <section class="specs">
+        <details class="specs-panel" [open]="openSpecsPanel() === 'specs'">
+          <summary (click)="$event.preventDefault(); toggleSpecsPanel('specs')">Especificaciones tecnicas</summary>
+          <div class="details-content">
+            @for (section of product().specifications; track section.title) {
+              <article class="spec-group">
+                <h4>{{ section.title }}:</h4>
+                <ul>
+                  @for (line of section.lines; track line) {
+                    <li>{{ line }}</li>
+                  }
+                </ul>
+              </article>
+            }
+          </div>
+        </details>
+
+        <details class="specs-panel" [open]="openSpecsPanel() === 'compat'">
+          <summary (click)="$event.preventDefault(); toggleSpecsPanel('compat')">Compatibilidad</summary>
+          <div class="details-content">
+            <p>{{ product().compatibility || 'PC, PlayStation, Xbox, Nintendo Switch, Mobile (Bluetooth)' }}</p>
+          </div>
+        </details>
+      </section>
+    </div>
+  </article>
+
+  <section class="reviews" aria-labelledby="reviews-title">
+    <div class="reviews-head">
+      <div class="reviews-score">
+        <h2 id="reviews-title">Resenas de clientes</h2>
+        <p class="reviews-summary">{{ product().rating }}</p>
+        <p class="reviews-stars">{{ ratingStars(product().rating) }}</p>
+        <p class="reviews-total">{{ product().ratingCount }} reseñas</p>
+      </div>
+
+      <div class="reviews-bars">
+        @for (item of ratingBreakdown(); track item.stars) {
+          <div class="bar-row">
+            <span>{{ item.stars }}★</span>
+            <div class="bar-track"><i [style.width.%]="item.width"></i></div>
+            <small>{{ item.count }}</small>
+          </div>
+        }
+      </div>
+
+      <div class="reviews-actions">
+        <label>
+          Ordenar
+          <select [value]="reviewSort()" (change)="setReviewSort($any($event.target).value)">
+            <option value="recentes">Mas recientes</option>
+            <option value="mejor-valoradas">Mejor valoradas</option>
+          </select>
+        </label>
+        <button type="button" class="write-btn" (click)="openWriteReview()">Escribir reseña</button>
+      </div>
+    </div>
+
+    @if (showReviewForm()) {
+      <form class="review-form" (submit)="$event.preventDefault(); submitReview();">
+        <label>
+          Titulo
+          <input
+            type="text"
+            [value]="draftTitle()"
+            (input)="draftTitle.set($any($event.target).value)"
+            placeholder="Resume tu experiencia"
+          />
+        </label>
+        <label>
+          Puntuacion
+          <select [value]="draftScore()" (change)="setDraftScoreFromInput($any($event.target).value)">
+            <option [value]="5">5 estrellas</option>
+            <option [value]="4">4 estrellas</option>
+            <option [value]="3">3 estrellas</option>
+            <option [value]="2">2 estrellas</option>
+            <option [value]="1">1 estrella</option>
+          </select>
+        </label>
+        <label class="full">
+          Comentario
+          <textarea
+            rows="3"
+            [value]="draftComment()"
+            (input)="draftComment.set($any($event.target).value)"
+            placeholder="Cuenta como te fue con el producto"
+          ></textarea>
+        </label>
+        <button type="submit" class="publish-btn">Publicar reseña</button>
+      </form>
+    }
+
+    <div class="reviews-grid">
+      @for (review of visibleReviews(); track review.author + review.date + review.title) {
+        <article class="review-card">
+          <header>
+            <div>
+              <strong>{{ review.author }}</strong>
+            </div>
+            <small>{{ review.date }}</small>
+          </header>
+          <p class="score">{{ ratingStars(review.score) }}</p>
+          <h3>{{ review.title }}</h3>
+          <p>{{ review.comment }}</p>
+        </article>
+      }
+    </div>
+
+    @if (canLoadMoreReviews()) {
+      <div class="reviews-more">
+        <button type="button" class="write-btn" (click)="loadMoreReviews()">Ver mas reseñas</button>
+      </div>
+    }
+  </section>
+
+  <section class="related" aria-labelledby="related-title">
+    <h2 id="related-title">Tambien te puede interesar</h2>
+    <div class="related-grid">
+      @for (item of product().related; track item.slug) {
+        <a class="related-card" [routerLink]="['/product', item.slug]">
+          <img [src]="item.image" [alt]="item.name" width="420" height="220" />
+          <h3>{{ item.name }}</h3>
+          <strong>USD {{ item.price | number: '1.2-2' }}</strong>
+          <span>Ver detalles</span>
+        </a>
+      }
+    </div>
+  </section>
+</section>
+
+@if (message()) {
+  <div class="cart-toast" role="status">{{ message() }}</div>
+}
+
+@if (reviewGateOpen()) {
+  <div class="gate-overlay" (click)="closeGateModal()">
+    <article class="gate-modal" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <h3>Reseñas restringidas</h3>
+      <p>{{ reviewGateMessage() }}</p>
+      <button type="button" (click)="closeGateModal()">Entendido</button>
+    </article>
+  </div>
+}

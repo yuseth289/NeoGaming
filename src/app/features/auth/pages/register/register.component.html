@@ -1,0 +1,118 @@
+<section class="auth-page" [class.modal-mode]="modalMode()">
+  <div class="auth-card">
+    @if (modalMode()) {
+      <div class="auth-icon">📝</div>
+      <h1>Crea tu cuenta de NeoGaming</h1>
+      <p>Unete al squad y empieza a comprar.</p>
+    } @else {
+      <h1>Registro</h1>
+      <p>Crea tu cuenta y empieza a comprar en NeoGaming.</p>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label>
+        <span>Nombre</span>
+        <div class="input-shell" [class.invalid]="showFieldError('name')">
+          <span class="field-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 20a8 8 0 0 1 16 0"></path>
+            </svg>
+          </span>
+          <input type="text" formControlName="name" placeholder="Tu nombre" />
+        </div>
+      </label>
+      @if (showFieldError('name')) {
+        <small class="error-text">Ingresa un nombre valido.</small>
+      }
+
+      <label>
+        <span>Correo electronico</span>
+        <div class="input-shell" [class.invalid]="showFieldError('email')">
+          <span class="field-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+              <path d="m4 7 8 6 8-6"></path>
+            </svg>
+          </span>
+          <input type="email" formControlName="email" placeholder="correo@ejemplo.com" />
+        </div>
+      </label>
+      @if (showFieldError('email')) {
+        <small class="error-text">Ingresa un correo valido.</small>
+      }
+
+      <label>
+        <span>Contrasena</span>
+        <div class="input-shell" [class.invalid]="showFieldError('password')">
+          <span class="field-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="11" width="16" height="9" rx="2"></rect>
+              <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
+            </svg>
+          </span>
+          <input [type]="showPassword() ? 'text' : 'password'" formControlName="password" placeholder="******" />
+          <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
+            {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+      </label>
+      @if (showFieldError('password')) {
+        <small class="error-text">Minimo 6 caracteres.</small>
+      }
+
+      <label>
+        <span>Confirmar contrasena</span>
+        <div class="input-shell" [class.invalid]="showFieldError('confirmPassword') || passwordMismatch()">
+          <span class="field-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="11" width="16" height="9" rx="2"></rect>
+              <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
+            </svg>
+          </span>
+          <input [type]="showConfirmPassword() ? 'text' : 'password'" formControlName="confirmPassword" placeholder="******" />
+          <button type="button" class="password-toggle" (click)="toggleConfirmPasswordVisibility()">
+            {{ showConfirmPassword() ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+      </label>
+      @if (showFieldError('confirmPassword') || passwordMismatch()) {
+        <small class="error-text">Las contrasenas deben coincidir.</small>
+      }
+
+      <label class="checkbox">
+        <input type="checkbox" formControlName="acceptTerms" />
+        <span>Acepto terminos y politicas</span>
+      </label>
+      @if (showFieldError('acceptTerms')) {
+        <small class="error-text">Debes aceptar terminos y politicas.</small>
+      }
+
+      @if (error()) {
+        <p class="status error">{{ error() }}</p>
+      }
+      @if (success()) {
+        <p class="status success">{{ success() }}</p>
+      }
+
+      <button type="submit" [disabled]="loading()">
+        @if (loading()) {
+          <span class="btn-spinner" aria-hidden="true"></span>
+          Creando cuenta...
+        } @else {
+          Crear cuenta
+        }
+      </button>
+    </form>
+
+    <p class="helper">
+      @if (modalMode()) {
+        Ya tienes una cuenta?
+        <button type="button" class="inline-link" (click)="switchToLogin.emit()">Inicia sesion</button>
+      } @else {
+        Ya tienes cuenta?
+        <a routerLink="/login">Inicia sesion</a>
+      }
+    </p>
+  </div>
+</section>

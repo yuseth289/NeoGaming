@@ -1,0 +1,113 @@
+<section class="hero">
+  <div class="hero-media">
+    @for (slide of heroSlides; track slide.image; let idx = $index) {
+      <img
+        class="hero-slide"
+        [class.active]="currentHeroIndex() === idx"
+        [src]="slide.image"
+        [alt]="slide.alt"
+        width="1900"
+        height="760"
+        [attr.fetchpriority]="idx === 0 ? 'high' : 'auto'"
+        [loading]="idx === 0 ? 'eager' : 'lazy'"
+      />
+    }
+  </div>
+
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content">
+    <h1>Libera Tu Potencial de Juego</h1>
+    <p>Todo lo que necesitas para subir de nivel en un solo lugar.</p>
+
+    <div class="hero-actions">
+      <a routerLink="/catalog" class="btn-primary">Comprar ahora</a>
+      <a routerLink="/catalog" [queryParams]="{ discount: 'true' }" class="btn-secondary">Ver ofertas</a>
+    </div>
+  </div>
+
+  <div class="hero-controls">
+    <button type="button" class="hero-nav" aria-label="Imagen anterior" (click)="prevHeroSlide()">‹</button>
+    <div class="hero-dots" role="tablist" aria-label="Carrusel hero">
+      @for (slide of heroSlides; track slide.image; let idx = $index) {
+        <button
+          type="button"
+          class="hero-dot"
+          [class.active]="currentHeroIndex() === idx"
+          [attr.aria-label]="'Ir a imagen ' + (idx + 1)"
+          [attr.aria-current]="currentHeroIndex() === idx"
+          (click)="goToHeroSlide(idx)"
+        ></button>
+      }
+    </div>
+    <button type="button" class="hero-nav" aria-label="Siguiente imagen" (click)="nextHeroSlide()">›</button>
+  </div>
+</section>
+
+<section class="products" aria-labelledby="featured-title">
+  <h2 id="featured-title">Productos destacados</h2>
+
+  <div class="products-grid">
+    @if (loadingProducts()) {
+      @for (_item of skeletonCards; track $index) {
+        <article class="product-card skeleton">
+          <div class="sk-image"></div>
+          <div class="sk-title"></div>
+          <div class="sk-meta"></div>
+          <div class="sk-actions"></div>
+        </article>
+      }
+    } @else {
+      @for (product of products(); track product.name) {
+        <article class="product-card">
+          <span class="badge">{{ product.badge }}</span>
+
+          <img
+            [src]="product.image"
+            [alt]="product.name"
+            width="460"
+            height="220"
+            loading="lazy"
+            decoding="async"
+          />
+
+          <h3>{{ product.name }}</h3>
+
+          <p class="support-info">{{ product.supportInfo }}</p>
+          <p class="rating">{{ productStars(product.rating) }} <span>({{ product.ratingCount }})</span></p>
+
+          <div class="price-line">
+            <strong>{{ product.price | currency: 'USD' }}</strong>
+          </div>
+
+          <div class="card-actions">
+            <a class="btn-primary" href="#">Agregar al carrito</a>
+            <a
+              class="btn-secondary"
+              [routerLink]="['/product', toSlug(product.name)]"
+            >
+              Ver detalles
+            </a>
+          </div>
+        </article>
+      }
+    }
+  </div>
+</section>
+
+<section class="categories" aria-labelledby="categories-title">
+  <h2 id="categories-title">Explorar categorías</h2>
+
+  <div class="categories-grid">
+    @for (category of categories(); track category.slug) {
+      <a
+        class="category-card"
+        routerLink="/catalog"
+        [queryParams]="{ category: category.slug }"
+      >
+        <span class="category-icon" aria-hidden="true">{{ category.icon }}</span>
+        <span>{{ category.label }}</span>
+      </a>
+    }
+  </div>
+</section>

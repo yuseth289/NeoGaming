@@ -1,0 +1,180 @@
+<section class="catalog-page">
+  @if (mobileFiltersOpen()) {
+    <button type="button" class="filters-backdrop" (click)="closeMobileFilters()" aria-label="Cerrar filtros"></button>
+  }
+
+  <aside class="filters-panel" [class.open-mobile]="mobileFiltersOpen()">
+    <div class="filters-header">
+      <h2>Filtros</h2>
+      <div class="filters-header-actions">
+        @if (activeFiltersCount() > 0) {
+          <span class="active-count">{{ activeFiltersCount() }}</span>
+        }
+        <button type="button" class="clear-btn" (click)="clearFilters()">Limpiar</button>
+      </div>
+    </div>
+
+    <section class="filter-group">
+      <h3>Categoria</h3>
+      @for (item of categoryOptions; track item) {
+        <label>
+          <input
+            type="checkbox"
+            [checked]="selectedCategories().has(item)"
+            (change)="toggleCategory(item, $any($event.target).checked)"
+          />
+          <span>{{ labelFromSlug(item) }}</span>
+        </label>
+      }
+    </section>
+
+    <section class="filter-group">
+      <h3>Rango de precio</h3>
+      <div class="price-row">
+        <span>$0</span>
+        <span>${{ maxPrice() }}</span>
+      </div>
+      <input type="range" min="0" max="1000" step="10" [value]="maxPrice()" (input)="updatePrice($any($event.target).value)" />
+    </section>
+
+    <section class="filter-group">
+      <h3>Marca</h3>
+      @for (item of brandOptions; track item) {
+        <label>
+          <input
+            type="checkbox"
+            [checked]="selectedBrands().has(item)"
+            (change)="toggleBrand(item, $any($event.target).checked)"
+          />
+          <span>{{ item }}</span>
+        </label>
+      }
+    </section>
+
+    <section class="filter-group">
+      <h3>Compatibilidad</h3>
+      @for (item of platformOptions; track item) {
+        <label>
+          <input
+            type="checkbox"
+            [checked]="selectedPlatforms().has(item)"
+            (change)="togglePlatform(item, $any($event.target).checked)"
+          />
+          <span>{{ labelFromSlug(item) }}</span>
+        </label>
+      }
+    </section>
+  </aside>
+
+  <section class="catalog-content" aria-labelledby="catalog-title">
+    <div class="content-head">
+      <div>
+        <h1 id="catalog-title">Catalogo de productos</h1>
+        <p class="results">{{ filteredProducts().length }} resultados</p>
+        @if (cartMessage()) {
+          <p class="cart-message">{{ cartMessage() }}</p>
+        }
+      </div>
+
+      <button type="button" class="open-filters-btn" (click)="openMobileFilters()">
+        Filtros
+        @if (activeFiltersCount() > 0) {
+          <span>{{ activeFiltersCount() }}</span>
+        }
+      </button>
+
+      <div class="chips">
+        @if (search()) {
+          <span>Busqueda: {{ search() }}</span>
+        }
+        @if (category()) {
+          <span>Categoria: {{ labelFromSlug(category()!) }}</span>
+        }
+        @if (discount()) {
+          <span>Solo descuentos</span>
+        }
+      </div>
+    </div>
+
+    <div class="products-grid" [class.filtering]="filtering()">
+      @if (filtering()) {
+        @for (_item of skeletonCards; track $index) {
+          <article class="product-card skeleton">
+            <div class="sk-image"></div>
+            <div class="sk-title"></div>
+            <div class="sk-meta"></div>
+            <div class="sk-actions"></div>
+          </article>
+        }
+      } @else {
+        @for (product of pagedProducts(); track product.name) {
+          <article class="product-card">
+            @if (product.badge) {
+              <span class="badge">{{ product.badge }}</span>
+            }
+
+            <button
+              type="button"
+              class="wish-btn"
+              [class.active]="isFavorite(product.name)"
+              aria-label="Agregar a favoritos"
+              (click)="toggleFavorite(product.name)"
+            >
+              ♥
+            </button>
+
+            <img [src]="product.image" [alt]="product.name" width="420" height="240" loading="lazy" decoding="async" />
+
+            <div class="card-body">
+              <h3>{{ product.name }}</h3>
+
+              <div class="price-row-card">
+                <strong>{{ product.price | currency: 'USD' }}</strong>
+                @if (product.oldPrice) {
+                  <small>{{ product.oldPrice | currency: 'USD' }}</small>
+                }
+              </div>
+
+              <p class="rating">{{ ratingStars(product.rating) }} <span>({{ product.reviews }})</span></p>
+              <p class="shipping">{{ product.shipping }}</p>
+
+              <div class="card-actions">
+                <button
+                  type="button"
+                  class="add-btn"
+                  [class.loading]="addingProductName() === product.name"
+                  [disabled]="addingProductName() === product.name"
+                  (click)="addToCart(product)"
+                >
+                  @if (addingProductName() === product.name) {
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                    Agregando...
+                  } @else {
+                    Agregar al carrito
+                  }
+                </button>
+                <button type="button" class="details-link" (click)="openProductDetail(product)">Ver detalles</button>
+              </div>
+            </div>
+          </article>
+        }
+      }
+    </div>
+
+    @if (pagedProducts().length === 0) {
+      <div class="empty-state">
+        <h3>No encontramos productos</h3>
+        <p>Prueba ajustando filtros o cambiando la busqueda.</p>
+        <button type="button" class="clear-btn" (click)="clearFilters()">Reiniciar filtros</button>
+      </div>
+    }
+
+    <div class="pagination" aria-label="Paginacion">
+      <button type="button" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">Anterior</button>
+      @for (page of pages(); track page) {
+        <button type="button" [class.active]="page === currentPage()" (click)="goToPage(page)">{{ page }}</button>
+      }
+      <button type="button" (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()">Siguiente</button>
+    </div>
+  </section>
+</section>

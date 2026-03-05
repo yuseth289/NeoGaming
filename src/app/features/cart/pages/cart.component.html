@@ -1,0 +1,161 @@
+<section class="cart-page">
+  <div class="cart-head">
+    <div>
+      <h1>Tu carrito</h1>
+      <p class="top-items-count">{{ itemsLabel() }}</p>
+    </div>
+  </div>
+
+  <div class="cart-layout">
+    <section class="cart-items">
+      @if (cartUi.cartItems().length === 0) {
+        <article class="empty-cart">
+          <div class="empty-icon" aria-hidden="true">🛒</div>
+          <h2>Tu carrito está vacío</h2>
+          <p>Explora el catálogo y agrega tus productos favoritos.</p>
+          <a routerLink="/catalog" class="go-shop">Ir al catálogo</a>
+        </article>
+      } @else {
+        @for (item of cartUi.cartItems(); track item.name) {
+          <article class="cart-item" [class.removing]="isRemoving(item.name)">
+            <img
+              [src]="item.image || 'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=320&q=80'"
+              [alt]="item.name"
+              width="120"
+              height="120"
+            />
+
+            <div class="item-info">
+              <h3>{{ item.name }}</h3>
+              <p class="stock" [class.low]="isLowStock(item.stockLabel)">
+                <span class="stock-dot" aria-hidden="true"></span>
+                {{ item.stockLabel || 'En stock' }}
+              </p>
+              <strong>{{ item.price | currency: 'USD' }}</strong>
+              @if (item.oldPrice && item.oldPrice > item.price) {
+                <small>{{ item.oldPrice | currency: 'USD' }}</small>
+              }
+              <small class="shipping-eta">Llega en 2-4 dias</small>
+            </div>
+
+            <div class="item-actions">
+              <div class="qty" [class.pulse]="quantityPulseName() === item.name">
+                <button type="button" (click)="decrease(item.name)">-</button>
+                <span>{{ item.quantity }}</span>
+                <button type="button" (click)="increase(item.name)">+</button>
+              </div>
+              <button type="button" class="remove-btn" aria-label="Eliminar producto" (click)="remove(item)">🗑</button>
+            </div>
+          </article>
+        }
+
+        <div class="cart-secondary-actions">
+          <a routerLink="/catalog" class="continue-shopping">Seguir comprando</a>
+        </div>
+      }
+    </section>
+
+    <aside class="order-summary" [class.pulse]="summaryPulse()">
+      <button type="button" class="summary-toggle" (click)="toggleSummaryMobile()">
+        <span>Resumen de compra</span>
+        <strong>{{ total() | currency: 'USD' }}</strong>
+      </button>
+
+      <div class="summary-content" [class.collapsed]="isMobile() && summaryCollapsed()">
+        <h2>Resumen de compra</h2>
+        <p class="items-count">{{ itemsLabel() }}</p>
+
+        <div class="summary-row subtotal-row">
+          <span>Subtotal</span>
+          <strong [class.pulse-value]="summaryPulse()">{{ subtotal() | currency: 'USD' }}</strong>
+        </div>
+        <div class="summary-row">
+          <span>Envio estimado</span>
+          <strong>{{ shipping() | currency: 'USD' }}</strong>
+        </div>
+        <div class="free-shipping">
+          @if (remainingForFreeShipping() > 0) {
+            <p>Te faltan <strong>{{ remainingForFreeShipping() | currency: 'USD' }}</strong> para envio gratis.</p>
+          } @else {
+            <p>Ya calificas para envio gratis.</p>
+          }
+          <div class="free-bar"><i [style.width.%]="freeShippingProgress()" [class.complete]="freeShippingProgress() >= 100"></i></div>
+        </div>
+        <p class="shipping-message">{{ shippingEta() }}</p>
+        <div class="summary-row">
+          <span>Impuestos</span>
+          <strong>{{ tax() | currency: 'USD' }}</strong>
+        </div>
+        @if (discountValue() > 0) {
+          <div class="summary-row discount">
+            <span>Descuento</span>
+            <strong>-{{ discountValue() | currency: 'USD' }}</strong>
+          </div>
+        }
+        @if (totalSavings() > 0) {
+          <div class="summary-row savings">
+            <span>💰 Ahorro total</span>
+            <strong [class.pulse-value]="summaryPulse()">{{ totalSavings() | currency: 'USD' }}</strong>
+          </div>
+        }
+        <div class="summary-total">
+          <span>Total</span>
+          <strong [class.pulse-value]="summaryPulse()">{{ total() | currency: 'USD' }}</strong>
+        </div>
+
+        <label class="coupon">
+          <span>Codigo de descuento</span>
+          <div>
+            <input
+              type="text"
+              [value]="couponCode()"
+              (input)="couponCode.set($any($event.target).value)"
+              placeholder="Ingresa codigo"
+            />
+            <button type="button" [disabled]="applyingCoupon()" (click)="applyCoupon()">
+              @if (applyingCoupon()) {
+                Aplicando...
+              } @else {
+                Aplicar
+              }
+            </button>
+          </div>
+        </label>
+
+        @if (couponMessage()) {
+          <p class="coupon-message" [class.success]="couponMessageType() === 'success'" [class.error]="couponMessageType() === 'error'" [class.pop]="couponPulse()">
+            {{ couponMessage() }}
+          </p>
+        }
+
+        <button type="button" class="checkout-btn" [disabled]="cartUi.cartItems().length === 0" (click)="checkout()">
+          Proceder al pago
+        </button>
+        <small class="secure-note">Pago 100% seguro</small>
+      </div>
+    </aside>
+  </div>
+
+  @if (cartUi.cartItems().length > 0 && visibleRecommendations().length > 0) {
+    <section class="cross-sell">
+      <h2>Tambien te puede interesar</h2>
+      <div class="cross-grid">
+        @for (item of visibleRecommendations(); track item.name) {
+          <article class="cross-card">
+            <img [src]="item.image" [alt]="item.name" width="320" height="180" />
+            <h3>{{ item.name }}</h3>
+            <strong>{{ item.price | currency: 'USD' }}</strong>
+            <button type="button" (click)="addRecommendation(item)">Agregar</button>
+          </article>
+        }
+      </div>
+    </section>
+  }
+</section>
+
+@if (lastRemoved()) {
+  <div class="undo-toast">
+    <span>{{ lastRemoved()?.name }} eliminado.</span>
+    <button type="button" (click)="undoRemove()">Deshacer</button>
+  </div>
+}
