@@ -23,6 +23,7 @@ export class HeaderComponent {
   readonly authRequested = output<'login' | 'register'>();
 
   protected readonly mobileMenuOpen = signal(false);
+  protected readonly mobileSearchOpen = signal(false);
   protected readonly searchTerm = signal('');
   protected readonly showSuggestions = signal(false);
   protected readonly headerScrolled = signal(false);
@@ -82,27 +83,39 @@ export class HeaderComponent {
     });
     this.showSuggestions.set(false);
     this.mobileMenuOpen.set(false);
+    this.mobileSearchOpen.set(false);
   }
 
   protected selectSuggestion(item: Suggestion): void {
     this.searchTerm.set(item.label);
     this.showSuggestions.set(false);
     this.mobileMenuOpen.set(false);
+    this.mobileSearchOpen.set(false);
     void this.router.navigate(['/catalog'], { queryParams: item.queryParams });
   }
 
   protected toggleMobileMenu(): void {
     this.mobileMenuOpen.update((value) => !value);
+    this.mobileSearchOpen.set(false);
+    this.showSuggestions.set(false);
+  }
+
+  protected toggleMobileSearch(): void {
+    this.mobileSearchOpen.update((value) => !value);
+    this.mobileMenuOpen.set(false);
+    this.showSuggestions.set(false);
   }
 
   protected openLoginModal(): void {
     this.authRequested.emit('login');
     this.mobileMenuOpen.set(false);
+    this.mobileSearchOpen.set(false);
   }
 
   protected openRegisterModal(): void {
     this.authRequested.emit('register');
     this.mobileMenuOpen.set(false);
+    this.mobileSearchOpen.set(false);
   }
 
   protected toggleProfileMenu(): void {
@@ -117,6 +130,7 @@ export class HeaderComponent {
 
   protected goToCart(): void {
     this.mobileMenuOpen.set(false);
+    this.mobileSearchOpen.set(false);
     this.showSuggestions.set(false);
     this.profileMenuOpen.set(false);
     this.cartOpen.set(false);
@@ -133,6 +147,7 @@ export class HeaderComponent {
     const target = event.target as Node | null;
     if (target && !this.host.nativeElement.contains(target)) {
       this.showSuggestions.set(false);
+      this.mobileSearchOpen.set(false);
       this.profileMenuOpen.set(false);
       this.cartOpen.set(false);
     }

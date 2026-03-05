@@ -1,7 +1,10 @@
 <header class="header" [class.scrolled]="headerScrolled()">
   <div class="header-shell">
-    <div class="header-inner">
-      <a routerLink="/" class="brand">NeoGaming</a>
+    <div class="header-inner" [class.search-open]="mobileSearchOpen()">
+      <a routerLink="/" class="brand" aria-label="NeoGaming">
+        <span class="brand-full">NeoGaming</span>
+        <span class="brand-compact">NG</span>
+      </a>
 
       <button
         class="menu-toggle"
@@ -18,7 +21,7 @@
         <a routerLink="/catalog" routerLinkActive="active">Categorias</a>
       </nav>
 
-      <form class="search" (submit)="submitSearch($event)">
+      <form class="search" [class.open]="mobileSearchOpen()" (submit)="submitSearch($event)">
         <label class="search-input-wrap" for="site-search">
           <span class="search-icon" aria-hidden="true">⌕</span>
           <input
@@ -47,6 +50,17 @@
       </form>
 
       <div class="header-actions">
+        <button
+          type="button"
+          class="icon-btn search-toggle"
+          (click)="toggleMobileSearch()"
+          [attr.aria-expanded]="mobileSearchOpen()"
+          aria-controls="site-search"
+          aria-label="Abrir busqueda"
+        >
+          ⌕
+        </button>
+
         <div class="cart-box">
           <button type="button" class="icon-btn cart-btn" [class.bounce]="cartBounce()" (click)="goToCart()" aria-label="Abrir carrito">
             🛒
@@ -63,14 +77,16 @@
               class="btn btn-ghost"
               (click)="openLoginModal()"
             >
-              Iniciar sesion
+              <span class="label-desktop">Iniciar sesion</span>
+              <span class="label-mobile">Entrar</span>
             </button>
             <button
               type="button"
               class="btn btn-dark"
               (click)="openRegisterModal()"
             >
-              Registro
+              <span class="label-desktop">Registro</span>
+              <span class="label-mobile">Crear</span>
             </button>
           </div>
         } @else {
