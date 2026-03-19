@@ -1,0 +1,26 @@
+.simple-page {
+  width: min(1100px, 92vw);
+  margin: 0 auto;
+  padding: 32px 0 80px;
+  display: grid;
+  gap: 12px;
+}
+
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #a1a1a1;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+}
+
+.breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: #ffffff;
+}

@@ -1,0 +1,102 @@
+<section class="edit-profile-page">
+  <header class="page-head">
+    <nav class="breadcrumb" aria-label="breadcrumb">
+      <a routerLink="/catalog">Tienda</a>
+      <span>/</span>
+      <a routerLink="/perfil">Perfil</a>
+      <span>/</span>
+      <span>Editar perfil</span>
+    </nav>
+    <div class="head-content">
+      <div>
+        <h1>Editar perfil</h1>
+        <p>Actualiza tu informacion personal y preferencias de comunicacion.</p>
+      </div>
+      <div class="head-actions">
+        <a class="btn-ghost" routerLink="/perfil">Volver al perfil</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="edit-grid">
+    <section class="panel">
+      <h2>Informacion personal</h2>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="field-grid">
+          <label class="field">
+            <span>Nombre completo</span>
+            <input type="text" formControlName="name" placeholder="Tu nombre" />
+            @if (showError('name')) {
+              <small>Ingresa un nombre valido.</small>
+            }
+          </label>
+
+          <label class="field">
+            <span>Correo electronico</span>
+            <input type="email" formControlName="email" placeholder="correo@ejemplo.com" />
+            @if (showError('email')) {
+              <small>Ingresa un correo valido.</small>
+            }
+          </label>
+
+          <label class="field">
+            <span>Telefono</span>
+            <input type="text" formControlName="phone" placeholder="Numero de contacto" />
+          </label>
+
+          <label class="field">
+            <span>Pais</span>
+            <input type="text" formControlName="country" placeholder="Pais" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Sobre mi</span>
+          <textarea rows="4" formControlName="about" placeholder="Describe tus gustos gamer"></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" routerLink="/perfil">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            @if (saving()) {
+              <span class="spinner" aria-hidden="true"></span>
+              Guardando...
+            } @else {
+              Guardar cambios
+            }
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel tone">
+      <h2>Preferencias</h2>
+      <p>Gestiona como quieres recibir novedades de NeoGaming.</p>
+      <div class="toggle-list">
+        <label class="toggle">
+          <input type="checkbox" formControlName="notifyNews" />
+          <span>
+            <strong>Noticias y lanzamientos</strong>
+            <small>Recibe actualizaciones sobre nuevos productos y lanzamientos.</small>
+          </span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" formControlName="notifyOffers" />
+          <span>
+            <strong>Ofertas y descuentos</strong>
+            <small>Enterate primero de promociones especiales y cupones.</small>
+          </span>
+        </label>
+      </div>
+
+      <div class="security-card">
+        <h3>Privacidad y seguridad</h3>
+        <p>Actualiza tu contrasena o revisa la actividad de tu cuenta.</p>
+        <div class="security-actions">
+          <button type="button" class="btn-ghost">Cambiar contrasena</button>
+          <button type="button" class="btn-outline">Revisar actividad</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>

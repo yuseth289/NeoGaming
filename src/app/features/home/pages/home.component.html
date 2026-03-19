@@ -74,10 +74,19 @@
           <h3>{{ product.name }}</h3>
 
           <p class="support-info">{{ product.supportInfo }}</p>
-          <p class="rating">{{ productStars(product.rating) }} <span>({{ product.ratingCount }})</span></p>
+          <p class="rating">
+  @for (star of productStars(product.rating); track $index) {
+    <span class="star" [class.filled]="star">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6z" fill="currentColor" />
+      </svg>
+    </span>
+  }
+  <span class="count">({{ product.ratingCount }})</span>
+</p>
 
           <div class="price-line">
-            <strong>{{ product.price | currency: 'USD' }}</strong>
+            <strong>{{ product.price | copPrice }}</strong>
           </div>
 
           <div class="card-actions">
@@ -105,9 +114,53 @@
         routerLink="/catalog"
         [queryParams]="{ category: category.slug }"
       >
-        <span class="category-icon" aria-hidden="true">{{ category.icon }}</span>
+        <span class="category-icon" aria-hidden="true">
+          @switch (category.icon) {
+            @case ('console') {
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="8" width="18" height="8" rx="3" fill="none" stroke="currentColor" stroke-width="2" />
+                <circle cx="8" cy="12" r="1.4" fill="currentColor" />
+                <circle cx="16" cy="12" r="1.4" fill="currentColor" />
+              </svg>
+            }
+            @case ('gamepad') {
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M7 9h10a4 4 0 0 1 3.7 5.4l-1.2 3a2.5 2.5 0 0 1-4.5.3l-1.2-1.9a3 3 0 0 0-5.1 0l-1.2 1.9a2.5 2.5 0 0 1-4.5-.3l-1.2-3A4 4 0 0 1 7 9z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linejoin="round"
+                />
+                <path d="M9 12h-2M8 11v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                <circle cx="16" cy="12" r="1" fill="currentColor" />
+                <circle cx="18" cy="10.5" r="1" fill="currentColor" />
+              </svg>
+            }
+            @case ('cpu') {
+              <svg viewBox="0 0 24 24">
+                <rect x="7" y="7" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+                <path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            }
+            @case ('headset') {
+              <svg viewBox="0 0 24 24">
+                <path d="M4 12a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2" />
+                <rect x="3" y="12" width="4" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+                <rect x="17" y="12" width="4" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+              </svg>
+            }
+            @case ('monitor') {
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="5" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
+                <path d="M9 19h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            }
+          }
+        </span>
         <span>{{ category.label }}</span>
       </a>
     }
   </div>
 </section>
+

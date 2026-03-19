@@ -1,11 +1,11 @@
-<section class="detail-page">
+﻿<section class="detail-page">
   <nav class="breadcrumb" aria-label="Breadcrumb">
     <a routerLink="/">Inicio</a>
-    <span>›</span>
+    <span>></span>
     <a routerLink="/catalog">Catalogo</a>
-    <span>›</span>
+    <span>></span>
     <span>{{ product().category || 'Producto' }}</span>
-    <span>›</span>
+    <span>></span>
     <strong>{{ product().name }}</strong>
   </nav>
 
@@ -53,15 +53,19 @@
           aria-label="Agregar a favoritos"
           (click)="toggleFavorite()"
         >
-          <span class="heart" aria-hidden="true">♥</span>
+          <span class="heart" aria-hidden="true">
+  <svg viewBox="0 0 24 24">
+    <path d="M12 20s-7-4.5-9-8.5C1.7 8.6 3.5 5.5 6.6 5.5c2 0 3.4 1.1 4.4 2.6 1-1.5 2.4-2.6 4.4-2.6 3.1 0 4.9 3.1 3.6 6-2 4-9 8.5-9 8.5z" fill="currentColor" />
+  </svg>
+</span>
         </button>
       </header>
 
       <div class="purchase-panel">
         <div class="price-row">
-          <strong>USD {{ product().price | number: '1.2-2' }}</strong>
+          <strong>{{ product().price | copPrice }}</strong>
           @if (hasDiscount()) {
-            <small>USD {{ product().oldPrice | number: '1.2-2' }}</small>
+            <small>{{ product().oldPrice | copPrice }}</small>
             <span class="discount-badge">-{{ discountPercent() }}%</span>
           }
         </div>
@@ -133,14 +137,27 @@
       <div class="reviews-score">
         <h2 id="reviews-title">Resenas de clientes</h2>
         <p class="reviews-summary">{{ product().rating }}</p>
-        <p class="reviews-stars">{{ ratingStars(product().rating) }}</p>
-        <p class="reviews-total">{{ product().ratingCount }} reseñas</p>
+        <p class="reviews-stars">
+  @for (star of ratingStars(product().rating); track $index) {
+    <span class="star" [class.filled]="star">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6z" fill="currentColor" />
+      </svg>
+    </span>
+  }
+</p>
+        <p class="reviews-total">{{ product().ratingCount }} resenas</p>
       </div>
 
       <div class="reviews-bars">
         @for (item of ratingBreakdown(); track item.stars) {
           <div class="bar-row">
-            <span>{{ item.stars }}★</span>
+            <span class="rating-count">
+  {{ item.stars }}
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6z" fill="currentColor" />
+  </svg>
+</span>
             <div class="bar-track"><i [style.width.%]="item.width"></i></div>
             <small>{{ item.count }}</small>
           </div>
@@ -155,7 +172,7 @@
             <option value="mejor-valoradas">Mejor valoradas</option>
           </select>
         </label>
-        <button type="button" class="write-btn" (click)="openWriteReview()">Escribir reseña</button>
+        <button type="button" class="write-btn" (click)="openWriteReview()">Escribir resena</button>
       </div>
     </div>
 
@@ -189,7 +206,7 @@
             placeholder="Cuenta como te fue con el producto"
           ></textarea>
         </label>
-        <button type="submit" class="publish-btn">Publicar reseña</button>
+        <button type="submit" class="publish-btn">Publicar resena</button>
       </form>
     }
 
@@ -211,7 +228,7 @@
 
     @if (canLoadMoreReviews()) {
       <div class="reviews-more">
-        <button type="button" class="write-btn" (click)="loadMoreReviews()">Ver mas reseñas</button>
+        <button type="button" class="write-btn" (click)="loadMoreReviews()">Ver mas resenas</button>
       </div>
     }
   </section>
@@ -223,7 +240,7 @@
         <a class="related-card" [routerLink]="['/product', item.slug]">
           <img [src]="item.image" [alt]="item.name" width="420" height="220" />
           <h3>{{ item.name }}</h3>
-          <strong>USD {{ item.price | number: '1.2-2' }}</strong>
+          <strong>{{ item.price | copPrice }}</strong>
           <span>Ver detalles</span>
         </a>
       }
@@ -238,9 +255,13 @@
 @if (reviewGateOpen()) {
   <div class="gate-overlay" (click)="closeGateModal()">
     <article class="gate-modal" role="alertdialog" aria-modal="true" (click)="$event.stopPropagation()">
-      <h3>Reseñas restringidas</h3>
+      <h3>Resenas restringidas</h3>
       <p>{{ reviewGateMessage() }}</p>
       <button type="button" (click)="closeGateModal()">Entendido</button>
     </article>
   </div>
 }
+
+
+
+

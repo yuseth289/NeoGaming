@@ -1,4 +1,3 @@
-import { CurrencyPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -6,7 +5,9 @@ import { finalize, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { CartApi } from '../../cart/data-access/cart.api';
 import { CartUiService } from '../../cart/data-access/cart-ui.service';
+import { WishlistUiService } from '../../wishlist/data-access/wishlist-ui.service';
 import { CatalogApi } from '../data-access/catalog.api';
+import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
 
 interface CatalogProduct {
   slug?: string;
@@ -25,7 +26,7 @@ interface CatalogProduct {
 
 @Component({
   selector: 'app-catalog-page',
-  imports: [CurrencyPipe],
+  imports: [CopPricePipe],
   templateUrl: './catalog.component.html',
   styleUrl: './catalog.component.css'
 })
@@ -35,6 +36,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   private readonly cartApi = inject(CartApi);
   private readonly cartUi = inject(CartUiService);
   private readonly catalogApi = inject(CatalogApi);
+  private readonly wishlistUi = inject(WishlistUiService);
 
   protected readonly categoryOptions = ['consoles', 'video-games', 'hardware', 'peripherals', 'accessories'];
   protected readonly brandOptions = ['NeoTech', 'QuantumGear', 'GameForge', 'EA Games', 'Ubisoft'];
@@ -49,7 +51,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
   protected readonly addingProductName = signal<string | null>(null);
   protected readonly filtering = signal(false);
   protected readonly mobileFiltersOpen = signal(false);
-  protected readonly favoriteProducts = signal<Set<string>>(new Set());
   protected readonly skeletonCards = Array.from({ length: 8 });
 
   private filterFeedbackTimeout?: ReturnType<typeof setTimeout>;
@@ -282,20 +283,12 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.mobileFiltersOpen.set(false);
   }
 
-  protected toggleFavorite(name: string): void {
-    this.favoriteProducts.update((current) => {
-      const next = new Set(current);
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
-      }
-      return next;
-    });
+  protected toggleFavorite(product: CatalogProduct): void {
+    this.wishlistUi.toggle(this.toWishlistItem(product));
   }
 
-  protected isFavorite(name: string): boolean {
-    return this.favoriteProducts().has(name);
+  protected isFavorite(product: CatalogProduct): boolean {
+    return this.wishlistUi.has(this.toWishlistId(product));
   }
 
   protected goToPage(page: number): void {
@@ -310,8 +303,9 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.router.navigate(['/product', product.slug ?? this.toSlug(product.name)]);
   }
 
-  protected ratingStars(rating: number): string {
-    return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+  protected ratingStars(rating: number): boolean[] {
+    const full = Math.max(0, Math.min(5, Math.round(rating)));
+    return Array.from({ length: 5 }, (_, index) => index < full);
   }
 
   protected addToCart(product: CatalogProduct): void {
@@ -322,8 +316,9 @@ export class CatalogComponent implements OnInit, OnDestroy {
       .addItem({ productName: product.name, quantity: 1 })
       .pipe(finalize(() => this.addingProductName.set(null)))
       .subscribe({
-        next: () => {
-          this.cartUi.addItem(product.name, product.price, {
+        next: (response) => {
+          this.cartUi.hydrateFromApi(response);
+          this.cartUi.decorateItem(product.name, {
             image: product.image,
             stockLabel: product.shipping,
             oldPrice: product.oldPrice
@@ -474,5 +469,37 @@ export class CatalogComponent implements OnInit, OnDestroy {
       return Number.isFinite(parsed) ? parsed : 0;
     }
     return 0;
+  }
+
+  private toWishlistId(product: CatalogProduct): string {
+    return product.slug ?? this.toSlug(product.name);
+  }
+
+  private toWishlistCategory(category: string): 'hardware' | 'games' | 'peripherals' | 'gear' {
+    if (category === 'video-games') {
+      return 'games';
+    }
+    if (category === 'peripherals') {
+      return 'peripherals';
+    }
+    if (category === 'hardware' || category === 'consoles') {
+      return 'hardware';
+    }
+    return 'gear';
+  }
+
+  private toWishlistItem(product: CatalogProduct) {
+    return {
+      id: this.toWishlistId(product),
+      name: product.name,
+      image: product.image,
+      price: product.price,
+      oldPrice: product.oldPrice,
+      rating: product.rating,
+      badge: product.badge,
+      category: this.toWishlistCategory(product.category),
+      addedAt: Date.now(),
+      stockLabel: product.shipping
+    };
   }
 }

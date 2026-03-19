@@ -1,0 +1,86 @@
+<section class="profile-page">
+  <aside class="profile-menu">
+    <h2>Menu de cuenta</h2>
+    <a class="menu-item" routerLink="/perfil" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Perfil</a>
+    <a class="menu-item" routerLink="/pedidos" routerLinkActive="active">Pedidos</a>
+    <a class="menu-item" routerLink="/wishlist" routerLinkActive="active">Wishlist</a>
+    <a class="menu-item" routerLink="/segurity/pages" routerLinkActive="active">Seguridad</a>
+    <a class="menu-item" routerLink="/metodos-pago" routerLinkActive="active">Metodos de pago</a>
+    <button type="button" class="menu-item logout">Cerrar sesion</button>
+  </aside>
+
+  <section class="profile-content">
+    <header class="profile-hero">
+      <div class="avatar">
+        <span>AN</span>
+      </div>
+      <div>
+        <h1>{{ user.name }}</h1>
+        <p>{{ user.email }}</p>
+        <div class="meta">
+          <span>Miembro desde {{ user.memberSince | date: 'MM/y' }}</span>
+          <span>{{ user.orders }} pedidos</span>
+        </div>
+      </div>
+      <a class="btn-ghost" routerLink="/perfil/editar">Editar perfil</a>
+    </header>
+
+    <div class="profile-grid">
+      <article class="panel">
+        <h3>Informacion personal</h3>
+        <div class="info-grid">
+          <div>
+            <small>Nombre</small>
+            <p>{{ user.name }}</p>
+          </div>
+          <div>
+            <small>Email</small>
+            <p>{{ user.email }}</p>
+          </div>
+          <div>
+            <small>Telefono</small>
+            <p>{{ user.phone }}</p>
+          </div>
+          <div>
+            <small>Pais</small>
+            <p>{{ user.country }}</p>
+          </div>
+        </div>
+        <div class="about">
+          <small>Sobre mi</small>
+          <p>{{ user.about }}</p>
+        </div>
+        <div class="panel-actions">
+          <button type="button" class="btn-ghost">Cancelar</button>
+          <button type="button" class="btn-primary">Guardar cambios</button>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h3>Pedidos recientes</h3>
+          <button type="button" class="link-btn" routerLink="/pedidos">Ver todo</button>
+        </div>
+        <div class="order-list">
+          @for (order of orders(); track order.id) {
+            <div class="order-row">
+              <div>
+                <strong>{{ order.product }}</strong>
+                <small>ID {{ order.id }} | {{ order.date | date: 'dd/MM/y' }}</small>
+              </div>
+              <div class="order-meta">
+                <span>{{ order.total | currency: 'USD' }}</span>
+                <span class="pill" [class.pending]="order.status === 'En proceso'">{{ order.status }}</span>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="secure-box">
+          <p>Proteccion NeoGaming</p>
+          <small>Tus datos estan cifrados y protegidos.</small>
+          <button type="button" class="link-btn">Administrar</button>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

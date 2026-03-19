@@ -176,7 +176,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
   transition: all 220ms ease;
@@ -280,6 +279,17 @@
 .savings strong {
   color: #9bffbf;
   text-shadow: 0 0 10px rgba(118, 255, 164, 0.18);
+}
+
+.savings-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.savings-label .icon {
+  width: 14px;
+  height: 14px;
 }
 
 .free-shipping {
@@ -419,7 +429,19 @@
 }
 
 .empty-icon {
-  font-size: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon .icon {
+  width: 32px;
+  height: 32px;
+}
+
+.remove-btn .icon {
+  width: 16px;
+  height: 16px;
 }
 
 .empty-cart h2 {

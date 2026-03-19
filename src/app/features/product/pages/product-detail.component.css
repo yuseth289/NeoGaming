@@ -146,10 +146,16 @@
 }
 
 .favorite-btn .heart {
-  font-size: 1.35rem;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transform: translateY(0);
   transition: transform 220ms ease, color 220ms ease, text-shadow 220ms ease;
+}
+
+.favorite-btn .heart svg {
+  width: 1.35rem;
+  height: 1.35rem;
 }
 
 .favorite-btn:hover {
@@ -464,6 +470,36 @@
 .reviews-stars {
   margin: 0.26rem 0 0;
   color: #f7be3a;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.reviews-stars .star {
+  display: inline-flex;
+  align-items: center;
+  color: rgba(247, 190, 58, 0.35);
+}
+
+.reviews-stars .star.filled {
+  color: #f7be3a;
+}
+
+.reviews-stars .star svg {
+  width: 16px;
+  height: 16px;
+}
+
+.rating-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #f7be3a;
+}
+
+.rating-count svg {
+  width: 14px;
+  height: 14px;
 }
 
 .reviews-total {

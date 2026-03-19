@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
-import { CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
 
 interface Product {
   name: string;
@@ -25,7 +25,7 @@ interface HeroSlide {
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, CurrencyPipe],
+  imports: [RouterLink, CopPricePipe],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -112,11 +112,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   ]);
 
   protected readonly categories = signal<Category[]>([
-    { label: 'Consolas', icon: '🕹', slug: 'consolas' },
-    { label: 'Videojuegos', icon: '⚡', slug: 'videojuegos' },
-    { label: 'Hardware', icon: '⚙', slug: 'hardware' },
-    { label: 'Perifericos', icon: '🎧', slug: 'perifericos' },
-    { label: 'Monitores', icon: '🖥', slug: 'monitores' }
+    { label: 'Consolas', icon: 'console', slug: 'consolas' },
+    { label: 'Videojuegos', icon: 'gamepad', slug: 'videojuegos' },
+    { label: 'Hardware', icon: 'cpu', slug: 'hardware' },
+    { label: 'Perifericos', icon: 'headset', slug: 'perifericos' },
+    { label: 'Monitores', icon: 'monitor', slug: 'monitores' }
   ]);
 
   protected readonly skeletonCards = Array.from({ length: 6 });
@@ -132,8 +132,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected productStars(total: number): string {
-    return '★'.repeat(total) + '☆'.repeat(5 - total);
+  protected productStars(total: number): boolean[] {
+    return Array.from({ length: 5 }, (_, index) => index < total);
   }
 
   protected prevHeroSlide(): void {
@@ -158,3 +158,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       .replace(/\s+/g, '-');
   }
 }
+
+
+

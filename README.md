@@ -1,59 +1,83 @@
-# Neogaming
+# NeoGaming Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.0.
+Este proyecto es el frontend de NeoGaming, desarrollado con Angular. Incluye funcionalidades de catálogo, carrito, pagos, autenticación, perfil de usuario y más.
 
-## Development server
+## Estructura del Proyecto
 
-To start a local development server, run:
+- **src/app/core/**: Servicios y utilidades centrales (autenticación, HTTP, layout).
+- **src/app/features/**: Módulos de funcionalidades principales (catálogo, carrito, pagos, etc.).
+- **src/app/shared/**: Componentes y servicios reutilizables (header, footer, etc.).
+- **public/**: Recursos públicos (imágenes, favicon, etc.).
+- **docs/**: Documentación adicional y planes de prototipo.
+
+## Comandos Básicos
+
+### Instalación
 
 ```bash
+npm install
+```
+
+### Desarrollo
+
+```bash
+npm start
+# o
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Pruebas
 
 ```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
+npm test
+# o
 ng test
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+### Build de Producción
 
 ```bash
-ng e2e
+npm run build
+# o
+ng build --configuration production
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### Linting
 
-## Additional Resources
+```bash
+npm run lint
+# o
+ng lint
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Buenas Prácticas
+
+- Usa servicios para la lógica de negocio y mantén los componentes simples.
+- Aplica pruebas unitarias a servicios y componentes críticos.
+- Sigue la convención de carpetas y nombres para facilitar el mantenimiento.
+- Usa `ChangeDetectionStrategy.OnPush` cuando sea posible para mejorar el rendimiento.
+- Mantén el código formateado con Prettier y sigue las reglas de ESLint.
+
+## Docker
+
+Puedes construir y correr el frontend en un contenedor Docker:
+
+```bash
+docker build -t neogaming-frontend .
+docker run -p 4200:4200 neogaming-frontend
+```
+
+## Contribuciones
+
+1. Haz un fork del repositorio.
+2. Crea una rama para tu feature o fix.
+3. Haz commit de tus cambios.
+4. Abre un Pull Request.
+
+## Contacto
+
+Para dudas o sugerencias, contacta al equipo de desarrollo.
+
+---
+
+> **Nota:** Consulta el archivo `docs/PROTOTYPE_PLAN.md` para detalles sobre el plan de prototipo y futuras funcionalidades.

@@ -1,0 +1,132 @@
+<section class="wishlist-page">
+  <header class="wishlist-hero">
+    <div class="title-block">
+      <nav class="breadcrumb" aria-label="breadcrumb">
+        <a routerLink="/catalog">Tienda</a>
+        <span>/</span>
+        <a routerLink="/perfil">Perfil</a>
+        <span>/</span>
+        <span>Wishlist</span>
+      
+      </nav>
+      <h1>Tu Wishlist</h1>
+      <p class="meta">{{ items().length }} productos guardados</p>
+      @if (feedback()) {
+        <p class="feedback">{{ feedback() }}</p>
+      }
+    </div>
+
+    <div class="hero-actions">
+      <div class="chip">
+        <span class="chip-dot"></span>
+        <span>Filtrar resultados</span>
+      </div>
+      <label class="sort">
+        <span>Ordenar por</span>
+        <select (change)="setSort($any($event.target).value)" [value]="activeSort()">
+          @for (option of sortOptions; track option.id) {
+            <option [value]="option.id">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </header>
+
+  @if (items().length === 0) {
+    <section class="empty-state">
+      <h2>Aun no tienes productos guardados</h2>
+      <p>Explora el catalogo y agrega tus favoritos para verlos aqui.</p>
+      <a class="btn-primary" routerLink="/catalog">Ir al catalogo</a>
+    </section>
+  } @else {
+    <nav class="wishlist-tabs">
+      @for (category of categories; track category.id) {
+        <button
+          type="button"
+          [class.active]="activeCategory() === category.id"
+          (click)="setCategory(category.id)"
+        >
+          {{ category.label }}
+        </button>
+      }
+    </nav>
+
+    <section class="wishlist-grid">
+      @for (item of visibleItems(); track item.id) {
+        <article class="wishlist-card">
+          @if (item.badge) {
+            <span class="badge">{{ item.badge }}</span>
+          }
+          <div class="media">
+            <img [src]="item.image" [alt]="item.name" width="360" height="220" loading="lazy" decoding="async" />
+            <button type="button" class="remove" (click)="removeItem(item.id)">Quitar</button>
+          </div>
+
+          <div class="card-body">
+            <div class="card-top">
+              <h3>{{ item.name }}</h3>
+            </div>
+
+            <div class="price-row">
+              <strong>{{ item.price | copPrice }}</strong>
+              @if (item.oldPrice) {
+                <small>{{ item.oldPrice | copPrice }}</small>
+              }
+            </div>
+
+            <div class="rating-stars" aria-label="Calificacion {{ ratingLabel(item.rating) }}">{{ ratingStars(item.rating) }}</div>
+
+
+            <p class="stock">{{ item.stockLabel }}</p>
+
+            <div class="card-actions">
+              <button
+                type="button"
+                class="add-btn"
+                [class.loading]="addingItem() === item.id"
+                [disabled]="addingItem() === item.id"
+                (click)="addToCart(item)"
+              >
+                @if (addingItem() === item.id) {
+                  <span class="btn-spinner" aria-hidden="true"></span>
+                  Agregando...
+                } @else {
+                  Agregar al carrito
+                }
+              </button>
+              <button type="button" class="ghost-btn">Mover al carrito</button>
+            </div>
+          </div>
+        </article>
+      }
+
+      <a class="wishlist-card add-more" routerLink="/catalog">
+        <div class="plus">+</div>
+        <p>Agregar mas items</p>
+        <span>Ver catalogo</span>
+      </a>
+    </section>
+
+    <section class="wishlist-faq">
+      <div class="faq-head">
+        <h2>FAQ de Wishlist</h2>
+        <p>Respuestas rapidas para administrar tus productos guardados.</p>
+      </div>
+
+      <div class="faq-grid">
+        <details>
+          <summary>¿Cuando bajan de precio los productos de mi wishlist?</summary>
+          <p>Te avisamos cuando detectemos promociones. Tambien puedes activar notificaciones desde catalogo.</p>
+        </details>
+        <details>
+          <summary>¿Puedo compartir mi wishlist?</summary>
+          <p>Si. Usa el boton de compartir dentro de la tarjeta del producto.</p>
+        </details>
+        <details>
+          <summary>¿Se vencen los productos guardados?</summary>
+          <p>No. Permanecen guardados hasta que los elimines manualmente.</p>
+        </details>
+      </div>
+    </section>
+  }
+</section>

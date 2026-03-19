@@ -1,5 +1,7 @@
 import { Component, ElementRef, HostListener, computed, effect, inject, output, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { finalize } from 'rxjs';
+import { AuthApi } from '../../core/auth/data-access/auth.api';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { CartUiService } from '../../features/cart/data-access/cart-ui.service';
 
@@ -18,6 +20,7 @@ interface Suggestion {
 export class HeaderComponent {
   private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly authApi = inject(AuthApi);
   protected readonly authSession = inject(AuthSessionService);
   protected readonly cartUi = inject(CartUiService);
   readonly authRequested = output<'login' | 'register'>();
@@ -138,8 +141,15 @@ export class HeaderComponent {
   }
 
   protected logout(): void {
-    this.authSession.logout();
-    this.profileMenuOpen.set(false);
+    this.authApi
+      .logout()
+      .pipe(
+        finalize(() => {
+          this.authSession.logout();
+          this.profileMenuOpen.set(false);
+        })
+      )
+      .subscribe({ error: () => {} });
   }
 
   @HostListener('document:click', ['$event'])

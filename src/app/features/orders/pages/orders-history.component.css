@@ -1,0 +1,239 @@
+.orders-page {
+  width: min(1180px, 92vw);
+  margin: 0 auto;
+  padding: 28px 0 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-head {
+  display: grid;
+  gap: 14px;
+}
+
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #a1a1a1;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+}
+
+.breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: #ffffff;
+}
+
+.page-head h1 {
+  margin: 0 0 6px;
+  font-size: clamp(26px, 4vw, 38px);
+}
+
+.page-head p {
+  margin: 0;
+  color: #b5b5b5;
+}
+
+.orders-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 18px;
+}
+
+.filters {
+  background: linear-gradient(180deg, rgba(18, 18, 18, 0.95), rgba(6, 6, 6, 0.98));
+  border-radius: 18px;
+  border: 1px solid rgba(255, 70, 70, 0.18);
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+  height: fit-content;
+  box-shadow: inset 0 0 0 1px rgba(255, 70, 70, 0.06);
+}
+
+.filters h2 {
+  margin: 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #9b9b9b;
+}
+
+.filters p {
+  margin: 0;
+  color: #c8c8c8;
+  font-size: 12.5px;
+}
+
+.filter-list {
+  display: grid;
+  gap: 8px;
+}
+
+.filter-list button {
+  text-align: left;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #d8d8d8;
+  padding: 9px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+}
+
+.filter-list button:hover {
+  border-color: rgba(255, 80, 80, 0.35);
+  transform: translateY(-1px);
+}
+
+.filter-list button.active {
+  background: rgba(255, 80, 80, 0.12);
+  border-color: rgba(255, 80, 80, 0.5);
+  color: #fff;
+  box-shadow: 0 8px 16px rgba(255, 60, 60, 0.12);
+}
+
+.orders-list {
+  display: grid;
+  gap: 14px;
+}
+
+.order-card {
+  background: linear-gradient(180deg, rgba(20, 20, 20, 0.95), rgba(6, 6, 6, 0.98));
+  border-radius: 12px;
+  border: 1px solid rgba(255, 70, 70, 0.16);
+  padding: 12px 14px;
+  display: grid;
+  grid-template-rows: auto 10fr auto;
+  gap: 10px;
+  box-shadow: none;
+}
+
+.order-card:hover {
+  border-color: rgba(255, 80, 80, 0.35);
+}
+
+.order-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 8px;
+  align-items: center;
+}
+
+.order-main h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+.order-main p {
+  margin: 0;
+  color: #b1b1b1;
+  font-size: 12.5px;
+}
+
+.order-main p span {
+  display: block;
+  color: #9a9a9a;
+}
+
+.order-meta {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+  text-align: right;
+}
+
+.total {
+  font-weight: 600;
+}
+
+.status {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(46, 168, 113, 0.18);
+  color: #87f2b8;
+}
+
+.status.pending {
+  background: rgba(255, 184, 77, 0.18);
+  color: #ffd28a;
+}
+
+.status.shipped {
+  background: rgba(93, 173, 255, 0.18);
+  color: #9ad1ff;
+}
+
+.status.canceled {
+  background: rgba(255, 97, 97, 0.18);
+  color: #ff9a9a;
+}
+
+.order-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-self: end;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  color: #f1f1f1;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e0e0e0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 980px) {
+  .orders-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .orders-page {
+    width: min(100%, 94vw);
+  }
+
+  .order-meta {
+    justify-items: start;
+  }
+}
+
+@media (max-width: 720px) {
+  .order-main {
+    grid-template-columns: 1fr;
+  }
+
+  .order-meta {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .order-actions {
+    justify-content: flex-start;
+  }
+}

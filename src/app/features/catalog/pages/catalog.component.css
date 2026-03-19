@@ -328,10 +328,28 @@
   margin: 0.3rem 0 0;
   color: #f6bd32;
   transition: transform 220ms ease, text-shadow 220ms ease;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
 }
 
-.rating span {
+.rating .count {
   color: #c7c7c7;
+}
+
+.rating .star {
+  display: inline-flex;
+  align-items: center;
+  color: rgba(246, 189, 50, 0.35);
+}
+
+.rating .star.filled {
+  color: #f6bd32;
+}
+
+.rating .star svg {
+  width: 14px;
+  height: 14px;
 }
 
 .shipping {

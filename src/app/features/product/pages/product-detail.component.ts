@@ -1,10 +1,11 @@
-import { DecimalPipe } from '@angular/common';
 import { Component, HostListener, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, finalize, of } from 'rxjs';
+import { CartApi } from '../../cart/data-access/cart.api';
 import { CartUiService } from '../../cart/data-access/cart-ui.service';
 import { ProductApi } from '../data-access/product.api';
+import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
 
 interface ProductReview {
   author: string;
@@ -46,13 +47,14 @@ type SpecsPanel = 'specs' | 'compat' | null;
 
 @Component({
   selector: 'app-product-detail-page',
-  imports: [RouterLink, DecimalPipe],
+  imports: [RouterLink, CopPricePipe],
   templateUrl: './product-detail.component.html',
   styleUrl: './product-detail.component.css'
 })
 export class ProductDetailComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly cartUi = inject(CartUiService);
+  private readonly cartApi = inject(CartApi);
   private readonly productApi = inject(ProductApi);
   private readonly params = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap
@@ -390,18 +392,24 @@ export class ProductDetailComponent {
     this.adding.set(true);
     this.message.set(null);
 
-    setTimeout(() => {
-      const item = this.product();
-      for (let idx = 0; idx < this.quantity(); idx += 1) {
-        this.cartUi.addItem(item.name, item.price, {
-          image: item.images[0],
-          stockLabel: this.stockLabel(),
-          oldPrice: item.oldPrice
-        });
-      }
-      this.message.set(`${item.name} agregado al carrito.`);
-      this.adding.set(false);
-    }, 550);
+    const item = this.product();
+    this.cartApi
+      .addItem({ productName: item.name, quantity: this.quantity() })
+      .pipe(finalize(() => this.adding.set(false)))
+      .subscribe({
+        next: (response) => {
+          this.cartUi.hydrateFromApi(response);
+          this.cartUi.decorateItem(item.name, {
+            image: item.images[0],
+            stockLabel: this.stockLabel(),
+            oldPrice: item.oldPrice
+          });
+          this.message.set(`${item.name} agregado al carrito.`);
+        },
+        error: () => {
+          this.message.set('No se pudo agregar al carrito. Intenta de nuevo.');
+        }
+      });
   }
 
   protected setReviewSort(value: string): void {
@@ -471,9 +479,9 @@ export class ProductDetailComponent {
     this.openSpecsPanel.update((current) => (current === panel ? null : panel));
   }
 
-  protected ratingStars(score: number): string {
+  protected ratingStars(score: number): boolean[] {
     const full = Math.round(score);
-    return '★'.repeat(full) + '☆'.repeat(5 - full);
+    return Array.from({ length: 5 }, (_, index) => index < full);
   }
 
   private pulseQuantity(): void {

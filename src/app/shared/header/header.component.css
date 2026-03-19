@@ -239,6 +239,13 @@
   transition: transform 240ms ease, box-shadow 240ms ease, background-color 240ms ease;
 }
 
+.icon-btn .icon {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  margin: 0 auto;
+}
+
 .icon-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
@@ -356,6 +363,18 @@
 
 .profile-dropdown small {
   color: #b3b3b3;
+}
+
+.profile-dropdown a {
+  color: #f0f0f0;
+  text-decoration: none;
+  padding: 0.35rem 0.4rem;
+  border-radius: 0.45rem;
+  transition: background-color 200ms ease;
+}
+
+.profile-dropdown a:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .profile-dropdown button {

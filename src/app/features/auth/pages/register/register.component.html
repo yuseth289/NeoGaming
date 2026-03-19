@@ -1,10 +1,14 @@
 <section class="auth-page" [class.modal-mode]="modalMode()">
   <div class="auth-card">
     @if (modalMode()) {
-      <div class="auth-icon">📝</div>
+      <div class="auth-icon"><svg class="auth-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+  <path d="M4 20h4l10-10-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+  <path d="M13 6l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+</svg></div>
       <h1>Crea tu cuenta de NeoGaming</h1>
       <p>Unete al squad y empieza a comprar.</p>
     } @else {
+      <div class="auth-icon">NG+</div>
       <h1>Registro</h1>
       <p>Crea tu cuenta y empieza a comprar en NeoGaming.</p>
     }
@@ -116,3 +120,4 @@
     </p>
   </div>
 </section>
+

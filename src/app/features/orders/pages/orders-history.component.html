@@ -1,0 +1,52 @@
+<section class="orders-page">
+  <header class="page-head">
+    <nav class="breadcrumb" aria-label="breadcrumb">
+      <a routerLink="/catalog">Tienda</a>
+      <span>/</span>
+      <a routerLink="/perfil">Perfil</a>
+      <span>/</span>
+      <span>Pedidos</span>
+    </nav>
+    <div>
+      <h1>Historial de pedidos</h1>
+      <p>Consulta el estado y el detalle de tus compras recientes.</p>
+    </div>
+  </header>
+
+  <div class="orders-layout">
+    <aside class="filters">
+      <h2>Filtros de pedido</h2>
+      <p>Estado</p>
+      <div class="filter-list">
+        <button type="button" [class.active]="statusFilter() === 'Todos'" (click)="setFilter('Todos')">Todos</button>
+        <button type="button" [class.active]="statusFilter() === 'En proceso'" (click)="setFilter('En proceso')">En proceso</button>
+        <button type="button" [class.active]="statusFilter() === 'Enviado'" (click)="setFilter('Enviado')">Enviado</button>
+        <button type="button" [class.active]="statusFilter() === 'Entregado'" (click)="setFilter('Entregado')">Entregado</button>
+        <button type="button" [class.active]="statusFilter() === 'Cancelado'" (click)="setFilter('Cancelado')">Cancelado</button>
+      </div>
+    </aside>
+
+    <section class="orders-list">
+      @for (order of filteredOrders(); track order.id) {
+        <article class="order-card">
+          <div class="order-main">
+            <div>
+              <h3>Pedido ID: {{ order.id }}</h3>
+              <p>Fecha: {{ order.date | date: 'dd/MM/y' }}</p>
+            </div>
+            <div class="order-meta">
+              <span class="total">Total: {{ order.total | currency: 'USD' }}</span>
+              <span class="status" [class.pending]="order.status === 'En proceso'" [class.shipped]="order.status === 'Enviado'" [class.canceled]="order.status === 'Cancelado'">
+                {{ order.status }}
+              </span>
+            </div>
+          </div>
+          <div class="order-actions">
+            <button type="button" class="btn-outline">Ver detalle</button>
+            <button type="button" class="btn-ghost">Reordenar</button>
+          </div>
+        </article>
+      }
+    </section>
+  </div>
+</section>
