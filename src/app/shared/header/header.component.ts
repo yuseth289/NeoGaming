@@ -126,6 +126,10 @@ export class HeaderComponent {
     this.cartOpen.set(false);
   }
 
+  protected closeProfileMenu(): void {
+    this.profileMenuOpen.set(false);
+  }
+
   protected toggleCart(): void {
     this.cartOpen.update((value) => !value);
     this.profileMenuOpen.set(false);
@@ -167,5 +171,14 @@ export class HeaderComponent {
   protected handleWindowScroll(): void {
     const currentScrollY = window.scrollY || 0;
     this.headerScrolled.set(currentScrollY > 8);
+  }
+
+  @HostListener('document:keydown.escape')
+  protected handleEscape(): void {
+    this.showSuggestions.set(false);
+    this.mobileSearchOpen.set(false);
+    this.mobileMenuOpen.set(false);
+    this.profileMenuOpen.set(false);
+    this.cartOpen.set(false);
   }
 }

@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnDestroy, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -8,8 +8,10 @@ import { RouterLink } from '@angular/router';
   templateUrl: './edit-profile.component.html',
   styleUrl: './edit-profile.component.css'
 })
-export class EditProfileComponent {
+export class EditProfileComponent implements OnDestroy {
   protected readonly saving = signal(false);
+  protected readonly avatarPreview = signal<string | null>(null);
+  private avatarObjectUrl: string | null = null;
 
   protected readonly form = new FormBuilder().nonNullable.group({
     name: ['Alex Neo', [Validators.required, Validators.minLength(2)]],
@@ -35,5 +37,50 @@ export class EditProfileComponent {
   protected showError(control: 'name' | 'email'): boolean {
     const field = this.form.controls[control];
     return field.invalid && (field.dirty || field.touched);
+  }
+
+  protected avatarInitials(): string {
+    const name = this.form.controls.name.value.trim();
+    if (!name) {
+      return 'AN';
+    }
+
+    const parts = name.split(/\s+/).slice(0, 2);
+    return parts.map((part) => part[0]?.toUpperCase() ?? '').join('') || 'AN';
+  }
+
+  protected openFilePicker(input: HTMLInputElement): void {
+    input.click();
+  }
+
+  protected onAvatarSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (this.avatarObjectUrl) {
+      URL.revokeObjectURL(this.avatarObjectUrl);
+    }
+
+    this.avatarObjectUrl = URL.createObjectURL(file);
+    this.avatarPreview.set(this.avatarObjectUrl);
+  }
+
+  protected removeAvatar(input: HTMLInputElement): void {
+    if (this.avatarObjectUrl) {
+      URL.revokeObjectURL(this.avatarObjectUrl);
+      this.avatarObjectUrl = null;
+    }
+    input.value = '';
+    this.avatarPreview.set(null);
+  }
+
+  ngOnDestroy(): void {
+    if (this.avatarObjectUrl) {
+      URL.revokeObjectURL(this.avatarObjectUrl);
+      this.avatarObjectUrl = null;
+    }
   }
 }
