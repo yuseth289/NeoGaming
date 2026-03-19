@@ -1,18 +1,22 @@
-import { CurrencyPipe } from '@angular/common';
 import { Component, HostListener, computed, effect, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { Observable, finalize } from 'rxjs';
+import { CartApi } from '../data-access/cart.api';
 import { CartItem, CartUiService } from '../data-access/cart-ui.service';
+import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
 
 type CouponMessageType = 'success' | 'error' | null;
 
 @Component({
   selector: 'app-cart-page',
-  imports: [CurrencyPipe, RouterLink],
+  imports: [RouterLink, CopPricePipe],
   templateUrl: './cart.component.html',
   styleUrl: './cart.component.css'
 })
 export class CartComponent {
   protected readonly cartUi = inject(CartUiService);
+  private readonly router = inject(Router);
+  private readonly cartApi = inject(CartApi);
   protected readonly couponCode = signal('');
   protected readonly applyingCoupon = signal(false);
   protected readonly discountValue = signal(0);
@@ -25,6 +29,7 @@ export class CartComponent {
   protected readonly lastRemoved = signal<CartItem | null>(null);
   protected readonly summaryCollapsed = signal(false);
   protected readonly isMobile = signal(false);
+  protected readonly mutatingNames = signal<Set<string>>(new Set());
 
   private quantityPulseTimeout?: ReturnType<typeof setTimeout>;
   private summaryPulseTimeout?: ReturnType<typeof setTimeout>;
@@ -84,13 +89,34 @@ export class CartComponent {
   }
 
   protected increase(name: string): void {
-    this.cartUi.increase(name);
-    this.pulseQuantity(name);
+    const item = this.cartUi.cartItems().find((entry) => entry.name === name);
+    if (!item?.id) {
+      this.cartUi.increase(name);
+      this.pulseQuantity(name);
+      return;
+    }
+
+    this.runItemMutation(name, this.cartApi.updateItem(item.id, { quantity: item.quantity + 1 }), () =>
+      this.pulseQuantity(name)
+    );
   }
 
   protected decrease(name: string): void {
-    this.cartUi.decrease(name);
-    this.pulseQuantity(name);
+    const item = this.cartUi.cartItems().find((entry) => entry.name === name);
+    if (!item?.id) {
+      this.cartUi.decrease(name);
+      this.pulseQuantity(name);
+      return;
+    }
+
+    if (item.quantity <= 1) {
+      this.remove(item);
+      return;
+    }
+
+    this.runItemMutation(name, this.cartApi.updateItem(item.id, { quantity: item.quantity - 1 }), () =>
+      this.pulseQuantity(name)
+    );
   }
 
   protected remove(item: CartItem): void {
@@ -101,12 +127,13 @@ export class CartComponent {
       clearTimeout(this.removeTimeout);
     }
     this.removeTimeout = setTimeout(() => {
-      this.cartUi.remove(item.name);
-      this.removingItems.update((current) => {
-        const next = new Set(current);
-        next.delete(item.name);
-        return next;
-      });
+      if (!item.id) {
+        this.cartUi.remove(item.name);
+        this.clearRemovingState(item.name);
+        return;
+      }
+
+      this.runItemMutation(item.name, this.cartApi.removeItem(item.id), () => this.clearRemovingState(item.name));
     }, 220);
   }
 
@@ -115,13 +142,15 @@ export class CartComponent {
     if (!last) {
       return;
     }
-    this.cartUi.addItem(last.name, last.price, {
-      image: last.image,
-      stockLabel: last.stockLabel,
-      oldPrice: last.oldPrice
+
+    this.runItemMutation(last.name, this.cartApi.addItem({ productName: last.name, quantity: last.quantity }), () => {
+      this.cartUi.decorateItem(last.name, {
+        image: last.image,
+        stockLabel: last.stockLabel,
+        oldPrice: last.oldPrice
+      });
+      this.lastRemoved.set(null);
     });
-    this.cartUi.setQuantity(last.name, last.quantity);
-    this.lastRemoved.set(null);
   }
 
   protected applyCoupon(): void {
@@ -151,8 +180,10 @@ export class CartComponent {
   }
 
   protected checkout(): void {
-    this.couponMessage.set('Checkout conectado proximamente al backend.');
-    this.couponMessageType.set('success');
+    if (this.cartUi.cartItems().length === 0) {
+      return;
+    }
+    void this.router.navigate(['/checkout/shipping']);
   }
 
   protected toggleSummaryMobile(): void {
@@ -160,9 +191,11 @@ export class CartComponent {
   }
 
   protected addRecommendation(product: { name: string; price: number; image: string }): void {
-    this.cartUi.addItem(product.name, product.price, {
-      image: product.image,
-      stockLabel: 'En stock'
+    this.runItemMutation(product.name, this.cartApi.addItem({ productName: product.name, quantity: 1 }), () => {
+      this.cartUi.decorateItem(product.name, {
+        image: product.image,
+        stockLabel: 'En stock'
+      });
     });
   }
 
@@ -194,5 +227,29 @@ export class CartComponent {
       clearTimeout(this.quantityPulseTimeout);
     }
     this.quantityPulseTimeout = setTimeout(() => this.quantityPulseName.set(null), 220);
+  }
+
+  private runItemMutation(name: string, request: Observable<unknown>, onSuccess?: () => void): void {
+    this.mutatingNames.update((current) => new Set(current).add(name));
+
+    request
+      .pipe(finalize(() => this.mutatingNames.update((current) => this.withoutName(current, name))))
+      .subscribe({
+        next: (response) => {
+          this.cartUi.hydrateFromApi(response);
+          onSuccess?.();
+        },
+        error: () => {}
+      });
+  }
+
+  private clearRemovingState(name: string): void {
+    this.removingItems.update((current) => this.withoutName(current, name));
+  }
+
+  private withoutName(current: Set<string>, name: string): Set<string> {
+    const next = new Set(current);
+    next.delete(name);
+    return next;
   }
 }

@@ -31,8 +31,8 @@
     <section class="filter-group">
       <h3>Rango de precio</h3>
       <div class="price-row">
-        <span>$0</span>
-        <span>${{ maxPrice() }}</span>
+        <span>{{ 0 | copPrice }}</span>
+        <span>{{ maxPrice() | copPrice }}</span>
       </div>
       <input type="range" min="0" max="1000" step="10" [value]="maxPrice()" (input)="updatePrice($any($event.target).value)" />
     </section>
@@ -116,11 +116,11 @@
             <button
               type="button"
               class="wish-btn"
-              [class.active]="isFavorite(product.name)"
+              [class.active]="isFavorite(product)"
               aria-label="Agregar a favoritos"
-              (click)="toggleFavorite(product.name)"
+              (click)="toggleFavorite(product)"
             >
-              ♥
+              &#9829;
             </button>
 
             <img [src]="product.image" [alt]="product.name" width="420" height="240" loading="lazy" decoding="async" />
@@ -129,13 +129,25 @@
               <h3>{{ product.name }}</h3>
 
               <div class="price-row-card">
-                <strong>{{ product.price | currency: 'USD' }}</strong>
+                <strong>{{ product.price | copPrice }}</strong>
                 @if (product.oldPrice) {
-                  <small>{{ product.oldPrice | currency: 'USD' }}</small>
+                  <small>{{ product.oldPrice | copPrice }}</small>
                 }
               </div>
 
-              <p class="rating">{{ ratingStars(product.rating) }} <span>({{ product.reviews }})</span></p>
+              <p class="rating">
+                @for (star of ratingStars(product.rating); track $index) {
+                  <span class="star" [class.filled]="star">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </span>
+                }
+                <span class="count">({{ product.reviews }})</span>
+              </p>
               <p class="shipping">{{ product.shipping }}</p>
 
               <div class="card-actions">

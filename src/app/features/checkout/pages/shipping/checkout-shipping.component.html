@@ -1,0 +1,135 @@
+<section class="page">
+  <header class="page__header">
+    <p class="eyebrow">Checkout</p>
+    <h1>Detalles de envio</h1>
+    <p class="subtext">Paso 1 de 2. Dinos donde debemos entregar tu pedido.</p>
+    <a class="back-link" routerLink="/cart">← Volver al carrito</a>
+  </header>
+
+  <div class="layout">
+    <form class="card form" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="card-head">
+        <h2>Detalles de envio</h2>
+        <span class="chip">Entrega rapida</span>
+      </div>
+
+      @if (submitAttempted() && form.invalid) {
+        <div class="alert">
+          Completa los campos obligatorios para continuar.
+        </div>
+      }
+
+      <div class="grid">
+        <label>
+          Nombre completo
+          <input type="text" formControlName="fullName" placeholder="Alex Neo" />
+          @if (fieldInvalid('fullName')) {
+            <span class="error">El nombre completo es obligatorio.</span>
+          }
+        </label>
+
+        <label>
+          Correo electronico
+          <input type="email" formControlName="email" placeholder="alex.neo@example.com" />
+          @if (fieldInvalid('email')) {
+            <span class="error">Ingresa un correo valido.</span>
+          }
+        </label>
+
+        <label>
+          Telefono
+          <input type="tel" formControlName="phone" placeholder="+57 300 000 0000" />
+          @if (fieldInvalid('phone')) {
+            <span class="error">El telefono es obligatorio.</span>
+          }
+        </label>
+
+        <label>
+          Direccion
+          <input type="text" formControlName="address" placeholder="123 Cyberpunk Blvd" />
+          @if (fieldInvalid('address')) {
+            <span class="error">La direccion es obligatoria.</span>
+          }
+        </label>
+
+        <label>
+          Ciudad
+          <input type="text" formControlName="city" placeholder="Bogota" />
+          @if (fieldInvalid('city')) {
+            <span class="error">La ciudad es obligatoria.</span>
+          }
+        </label>
+
+        <label>
+          Estado / Region
+          <input type="text" formControlName="state" placeholder="Cundinamarca" />
+          @if (fieldInvalid('state')) {
+            <span class="error">El estado o region es obligatorio.</span>
+          }
+        </label>
+
+        <label>
+          Codigo postal
+          <input type="text" formControlName="postalCode" placeholder="110111" />
+          @if (fieldInvalid('postalCode')) {
+            <span class="error">El codigo postal es obligatorio.</span>
+          }
+        </label>
+
+        <label>
+          Pais
+          <input type="text" formControlName="country" placeholder="Colombia" />
+          @if (fieldInvalid('country')) {
+            <span class="error">El pais es obligatorio.</span>
+          }
+        </label>
+      </div>
+
+      <div class="actions">
+        <a class="btn ghost" routerLink="/cart">Volver al carrito</a>
+        <button class="btn" type="submit" [disabled]="submitting()">Continuar al pago</button>
+      </div>
+    </form>
+
+    <aside class="card summary">
+      <h2>Resumen del pedido</h2>
+      <p class="summary-note">Pago seguro</p>
+      <div class="summary-items">
+        @for (item of cartUi.cartItems(); track item.name) {
+          <div class="summary-item">
+            <span>{{ item.name }} × {{ item.quantity }}</span>
+            <strong>{{ item.price * item.quantity | copPrice }}</strong>
+          </div>
+        }
+      </div>
+
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <strong>{{ subtotal() | copPrice }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Envio</span>
+        <strong>{{ shippingCost() | copPrice }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Impuestos</span>
+        <strong>{{ tax() | copPrice }}</strong>
+      </div>
+      <div class="summary-total">
+        <span>Total</span>
+        <strong>{{ total() | copPrice }}</strong>
+      </div>
+      <div class="summary-cta">
+        <span class="ssl">
+          <svg class="ssl__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M7 10V8a5 5 0 0110 0v2h1a1 1 0 011 1v8a3 3 0 01-3 3H8a3 3 0 01-3-3v-8a1 1 0 011-1h1zm2 0h6V8a3 3 0 00-6 0v2zm3 4a1.5 1.5 0 00-.75 2.8V18a.75.75 0 001.5 0v-1.2A1.5 1.5 0 0012 14z"
+              fill="currentColor"
+            />
+          </svg>
+          SSL encriptado
+        </span>
+      </div>
+    </aside>
+  </div>
+</section>

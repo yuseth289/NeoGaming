@@ -1,0 +1,121 @@
+<section class="page">
+  <header class="page__header">
+    <p class="eyebrow">Checkout</p>
+    <h1>Metodo de pago</h1>
+    <p class="subtext">Paso 2 de 2. Elige como deseas pagar.</p>
+    <a class="back-link" routerLink="/checkout/shipping">← Volver al envio</a>
+  </header>
+
+  <div class="layout">
+    <form class="card payment" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="card-head">
+        <h2>Metodo de pago</h2>
+        <span class="chip">Seguro</span>
+      </div>
+
+      @if (submitAttempted() && selectedMethod() === 'card' && form.invalid) {
+        <div class="alert">
+          Completa los campos de la tarjeta para continuar.
+        </div>
+      }
+
+      <div class="method-tabs">
+        <button type="button" [class.active]="selectedMethod() === 'card'" (click)="setMethod('card')">
+          Tarjeta
+        </button>
+        <button type="button" [class.active]="selectedMethod() === 'paypal'" (click)="setMethod('paypal')">
+          PayPal
+        </button>
+        <button type="button" [class.active]="selectedMethod() === 'wallet'" (click)="setMethod('wallet')">
+          Billetera
+        </button>
+        <button type="button" [class.active]="selectedMethod() === 'crypto'" (click)="setMethod('crypto')">
+          Cripto
+        </button>
+      </div>
+
+      @if (selectedMethod() === 'card') {
+        <div class="grid">
+          <label>
+            Nombre del titular
+            <input type="text" formControlName="cardholder" placeholder="Alex Neo" />
+            @if (fieldInvalid('cardholder')) {
+              <span class="error">El nombre del titular es obligatorio.</span>
+            }
+          </label>
+          <label>
+            Numero de tarjeta
+            <input type="text" formControlName="cardNumber" placeholder="0000 0000 0000 0000" />
+            @if (fieldInvalid('cardNumber')) {
+              <span class="error">El numero de tarjeta es obligatorio.</span>
+            }
+          </label>
+          <label>
+            Fecha de vencimiento
+            <input type="text" formControlName="expiry" placeholder="MM/AA" />
+            @if (fieldInvalid('expiry')) {
+              <span class="error">La fecha de vencimiento es obligatoria.</span>
+            }
+          </label>
+          <label>
+            CVV
+            <input type="password" formControlName="cvv" placeholder="***" />
+            @if (fieldInvalid('cvv')) {
+              <span class="error">El CVV es obligatorio.</span>
+            }
+          </label>
+        </div>
+      } @else {
+        <div class="alt-method">
+          <p>Te redireccionaremos para completar el pago.</p>
+        </div>
+      }
+
+      <div class="actions">
+        <a class="btn ghost" routerLink="/checkout/shipping">Volver al envio</a>
+        <button class="btn" type="submit" [disabled]="submitting()">Confirmar pedido</button>
+      </div>
+    </form>
+
+    <aside class="card summary">
+      <h2>Resumen del pedido</h2>
+      <p class="summary-note">Productos en tu carrito</p>
+      <div class="summary-items">
+        @for (item of cartUi.cartItems(); track item.name) {
+          <div class="summary-item">
+            <span>{{ item.name }} × {{ item.quantity }}</span>
+            <strong>{{ item.price * item.quantity | copPrice }}</strong>
+          </div>
+        }
+      </div>
+
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <strong>{{ subtotal() | copPrice }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Envio</span>
+        <strong>{{ shippingCost() | copPrice }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Impuestos</span>
+        <strong>{{ tax() | copPrice }}</strong>
+      </div>
+      <div class="summary-total">
+        <span>Total</span>
+        <strong>{{ total() | copPrice }}</strong>
+      </div>
+      <div class="summary-cta">
+        <span class="ssl">
+          <svg class="ssl__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M7 10V8a5 5 0 0110 0v2h1a1 1 0 011 1v8a3 3 0 01-3 3H8a3 3 0 01-3-3v-8a1 1 0 011-1h1zm2 0h6V8a3 3 0 00-6 0v2zm3 4a1.5 1.5 0 00-.75 2.8V18a.75.75 0 001.5 0v-1.2A1.5 1.5 0 0012 14z"
+              fill="currentColor"
+            />
+          </svg>
+          SSL encriptado
+        </span>
+      </div>
+    </aside>
+  </div>
+</section>

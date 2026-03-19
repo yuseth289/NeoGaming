@@ -191,6 +191,7 @@ const productsBySlug: Record<string, MockProductDetail> = {
 };
 
 let cartState: MockCartItem[] = [];
+let authState: { email: string; name: string } | null = null;
 
 const json = (body: unknown, status = 200) =>
   of(new HttpResponse({ status, body })).pipe(delay(MOCK_DELAY_MS));
@@ -226,6 +227,34 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
     const byId = Object.values(productsBySlug).find((item) => item.id === idOrSlug);
     const bySlug = productsBySlug[idOrSlug];
     return json(byId ?? bySlug ?? productsBySlug['aetherglow-pro-gaming-headset']);
+  }
+
+  if (req.method === 'POST' && path === '/api/auth/login') {
+    const body = (req.body ?? {}) as { email?: string; password?: string };
+    const email = body.email ?? 'jugador@neogaming.com';
+    const name = email.split('@')[0] || 'Jugador';
+    authState = { email, name };
+    return json({ ok: true, user: authState });
+  }
+
+  if (req.method === 'POST' && path === '/api/auth/register') {
+    const body = (req.body ?? {}) as { email?: string; name?: string };
+    const email = body.email ?? 'jugador@neogaming.com';
+    const name = body.name ?? (email.split('@')[0] || 'Jugador');
+    authState = { email, name };
+    return json({ ok: true, user: authState });
+  }
+
+  if (req.method === 'GET' && path === '/api/auth/me') {
+    if (!authState) {
+      return json({ user: null }, 401);
+    }
+    return json({ user: authState });
+  }
+
+  if (req.method === 'POST' && path === '/api/auth/logout') {
+    authState = null;
+    return json({ ok: true });
   }
 
   if (req.method === 'GET' && path === '/api/cart') {

@@ -1,6 +1,8 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { CartApi } from './cart.api';
 
 export interface CartItem {
+  id?: string;
   name: string;
   price: number;
   quantity: number;
@@ -9,13 +11,28 @@ export interface CartItem {
   stockLabel?: string;
 }
 
+interface ApiCartItem {
+  id?: string;
+  productName?: string;
+  quantity?: number;
+  unitPrice?: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class CartUiService {
+  private readonly cartApi = inject(CartApi);
   private readonly items = signal<CartItem[]>([]);
 
   readonly cartItems = computed(() => this.items());
   readonly totalItems = computed(() => this.items().reduce((sum, item) => sum + item.quantity, 0));
   readonly totalPrice = computed(() => this.items().reduce((sum, item) => sum + item.price * item.quantity, 0));
+
+  constructor() {
+    this.cartApi.getCart().subscribe({
+      next: (response) => this.hydrateFromApi(response),
+      error: () => {}
+    });
+  }
 
   addItem(name: string, price: number, extras?: Pick<CartItem, 'image' | 'stockLabel' | 'oldPrice'>): void {
     this.items.update((current) => {
@@ -63,5 +80,42 @@ export class CartUiService {
 
   clear(): void {
     this.items.set([]);
+  }
+
+  decorateItem(name: string, extras: Pick<CartItem, 'image' | 'stockLabel' | 'oldPrice'>): void {
+    this.items.update((current) =>
+      current.map((item) => (item.name === name ? { ...item, ...extras } : item))
+    );
+  }
+
+  hydrateFromApi(response: unknown): void {
+    const nextItems = this.extractApiItems(response)
+      .map((item) => this.mapApiItem(item))
+      .filter((item): item is CartItem => item !== null);
+
+    this.items.set(nextItems);
+  }
+
+  private extractApiItems(response: unknown): ApiCartItem[] {
+    if (!response || typeof response !== 'object') {
+      return [];
+    }
+
+    const maybeItems = (response as { items?: unknown }).items;
+    return Array.isArray(maybeItems) ? (maybeItems as ApiCartItem[]) : [];
+  }
+
+  private mapApiItem(item: ApiCartItem): CartItem | null {
+    const name = typeof item.productName === 'string' ? item.productName : '';
+    if (!name) {
+      return null;
+    }
+
+    return {
+      id: typeof item.id === 'string' ? item.id : undefined,
+      name,
+      price: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
+      quantity: typeof item.quantity === 'number' ? item.quantity : 1
+    };
   }
 }

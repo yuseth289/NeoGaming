@@ -1,0 +1,151 @@
+<section class="edit-profile-page">
+  <header class="page-head">
+    <nav class="breadcrumb" aria-label="breadcrumb">
+      <a routerLink="/catalog">Tienda</a>
+      <span>/</span>
+      <a routerLink="/perfil">Perfil</a>
+      <span>/</span>
+      <span>Editar perfil</span>
+    </nav>
+    <div class="head-content">
+      <div>
+        <h1>Editar perfil</h1>
+        <p>Actualiza tu informacion personal y preferencias de comunicacion.</p>
+      </div>
+      <div class="head-actions">
+        <a class="btn-ghost" routerLink="/perfil">Volver al perfil</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="edit-grid">
+    <section class="panel">
+      <input #avatarInput class="sr-only" type="file" accept="image/*" (change)="onAvatarSelected($event)" />
+
+      <div class="avatar-editor">
+        <button type="button" class="avatar-button" (click)="openFilePicker(avatarInput)" aria-label="Cambiar foto de perfil">
+          @if (avatarPreview()) {
+            <img [src]="avatarPreview()" alt="Vista previa de foto de perfil" />
+          } @else {
+            <span>{{ avatarInitials() }}</span>
+          }
+          <span class="avatar-overlay">
+            <span class="overlay-icon" aria-hidden="true">📷</span>
+            <span>Cambiar foto</span>
+          </span>
+        </button>
+
+        <div class="avatar-meta">
+          <h3>{{ form.controls.name.value }}</h3>
+          <p>{{ form.controls.email.value }}</p>
+          <div class="avatar-actions">
+            <button type="button" class="btn-outline avatar-upload" (click)="openFilePicker(avatarInput)">
+              <span class="action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 16V6m0 0-3.5 3.5M12 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M5 16v1.5A1.5 1.5 0 0 0 6.5 19h11a1.5 1.5 0 0 0 1.5-1.5V16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+                </svg>
+              </span>
+              <span>Subir nueva</span>
+            </button>
+            <button type="button" class="btn-ghost avatar-remove" (click)="removeAvatar(avatarInput)" [disabled]="!avatarPreview()">
+              <span class="action-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M5 7h14M10 4h4m-7 3 1 12a1.4 1.4 0 0 0 1.4 1.3h5.2A1.4 1.4 0 0 0 16 19L17 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M10 10v6M14 10v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </span>
+              <span>Eliminar foto</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <h2>Informacion personal</h2>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="field-grid">
+          <label class="field">
+            <span>Nombre completo</span>
+            <input type="text" formControlName="name" placeholder="Tu nombre" />
+            @if (showError('name')) {
+              <small>Ingresa un nombre valido.</small>
+            }
+          </label>
+
+          <label class="field">
+            <span>Correo electronico</span>
+            <input type="email" formControlName="email" placeholder="correo@ejemplo.com" />
+            @if (showError('email')) {
+              <small>Ingresa un correo valido.</small>
+            }
+          </label>
+
+          <label class="field">
+            <span>Telefono</span>
+            <input type="text" formControlName="phone" placeholder="Numero de contacto" />
+          </label>
+
+          <label class="field">
+            <span>Pais</span>
+            <input type="text" formControlName="country" placeholder="Pais" />
+          </label>
+        </div>
+
+        <label class="field about-field">
+          <span>Sobre mi</span>
+          <textarea rows="4" formControlName="about" placeholder="Describe tus gustos gamer"></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" routerLink="/perfil">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="saving()">
+            @if (saving()) {
+              <span class="spinner" aria-hidden="true"></span>
+              Guardando...
+            } @else {
+              Guardar cambios
+            }
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel tone">
+      <h2>Preferencias</h2>
+      <p>Gestiona como quieres recibir novedades de NeoGaming.</p>
+      <div class="prefs-content">
+        <div class="toggle-list">
+          <label class="toggle">
+            <input type="checkbox" formControlName="notifyNews" />
+            <span class="check-ui" aria-hidden="true"></span>
+            <span>
+              <strong>Noticias y lanzamientos</strong>
+              <small>Recibe actualizaciones sobre nuevos productos y lanzamientos.</small>
+            </span>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" formControlName="notifyOffers" />
+            <span class="check-ui" aria-hidden="true"></span>
+            <span>
+              <strong>Ofertas y descuentos</strong>
+              <small>Enterate primero de promociones especiales y cupones.</small>
+            </span>
+          </label>
+        </div>
+
+        <div class="security-card">
+          <h3>Privacidad y seguridad</h3>
+          <p>Actualiza tu contrasena o revisa la actividad de tu cuenta.</p>
+          <div class="security-actions">
+            <button type="button" class="btn-ghost">Cambiar contrasena</button>
+            <button type="button" class="btn-outline">Revisar actividad</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="prefs-footer">
+        <small>Tu configuracion se guarda automaticamente en NeoGaming.</small>
+      </div>
+    </section>
+  </div>
+</section>

@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthApi } from '../../../../core/auth/data-access/auth.api';
+import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 
 @Component({
   selector: 'app-register-page',
@@ -14,6 +15,7 @@ export class RegisterComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authApi = inject(AuthApi);
   private readonly router = inject(Router);
+  private readonly authSession = inject(AuthSessionService);
   readonly modalMode = input(false);
   readonly switchToLogin = output<void>();
   readonly closeModal = output<void>();
@@ -58,13 +60,17 @@ export class RegisterComponent {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: () => {
+          this.authSession.login({
+            name: payload.name,
+            email: payload.email
+          });
           this.success.set('Cuenta creada correctamente.');
           if (this.modalMode()) {
             this.closeModal.emit();
             return;
           }
 
-          void this.router.navigate(['/login']);
+          void this.router.navigate(['/']);
         },
         error: () => {
           this.error.set('No se pudo crear la cuenta. Intenta de nuevo.');

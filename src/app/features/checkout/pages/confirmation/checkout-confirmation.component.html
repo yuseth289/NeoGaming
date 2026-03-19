@@ -1,0 +1,45 @@
+<section class="page">
+  <header class="page__header">
+    <p class="eyebrow">Checkout</p>
+    <h1>Gracias por tu compra</h1>
+    <p class="subtext">Tu pedido ha sido confirmado y se preparara en breve.</p>
+  </header>
+
+  <div class="card">
+    <div class="summary-row">
+      <span>ID del pedido</span>
+      <strong>{{ orderId ?? 'Pending' }}</strong>
+    </div>
+    @if (!missingOrder() && order()) {
+      <div class="summary-row">
+        <span>Total pagado</span>
+        <strong>{{ order()?.total | copPrice }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Metodo de pago</span>
+        <strong>{{ order()?.paymentMethod }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Items</span>
+        <strong>{{ order()?.items?.length }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Entrega estimada</span>
+        <strong>3-5 dias habiles</strong>
+      </div>
+    } @else {
+      <div class="summary-row">
+        <span>Estado</span>
+        <strong>Resumen no disponible</strong>
+      </div>
+      <div class="summary-row">
+        <span>Entrega estimada</span>
+        <strong>3-5 dias habiles</strong>
+      </div>
+    }
+    <div class="actions">
+      <a class="btn ghost" routerLink="/">Volver al inicio</a>
+      <a class="btn" routerLink="/orders">Ver pedidos</a>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,44 @@
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.page__header {
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  color: #9a9a9a;
+  margin: 0 0 6px 0;
+}
+
+.subtext {
+  color: #c5c5c5;
+  margin: 8px 0 0 0;
+}
+
+.card {
+  background: #0e0e0e;
+  border: 1px solid #242424;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.card__title {
+  font-weight: 600;
+  margin: 0 0 12px 0;
+}
+
+.list {
+  margin: 0;
+  padding-left: 18px;
+  color: #c7c7c7;
+}
+
+.list li {
+  margin-bottom: 6px;
+}

@@ -13,7 +13,7 @@
         [attr.aria-expanded]="mobileMenuOpen()"
         aria-label="Abrir menu"
       >
-        ☰
+        ?
       </button>
 
       <nav class="nav" [class.open]="mobileMenuOpen()">
@@ -23,7 +23,7 @@
 
       <form class="search" [class.open]="mobileSearchOpen()" (submit)="submitSearch($event)">
         <label class="search-input-wrap" for="site-search">
-          <span class="search-icon" aria-hidden="true">⌕</span>
+          <span class="search-icon" aria-hidden="true"></span>
           <input
             id="site-search"
             type="search"
@@ -58,12 +58,16 @@
           aria-controls="site-search"
           aria-label="Abrir busqueda"
         >
-          ⌕
+          
         </button>
 
         <div class="cart-box">
           <button type="button" class="icon-btn cart-btn" [class.bounce]="cartBounce()" (click)="goToCart()" aria-label="Abrir carrito">
-            🛒
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+  <path d="M6 6h14l-1.4 7.6a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.6L5 4H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="9" cy="20" r="1.4" fill="currentColor" />
+  <circle cx="17" cy="20" r="1.4" fill="currentColor" />
+</svg>
             @if (cartUi.totalItems() > 0) {
               <span class="cart-count">{{ cartUi.totalItems() }}</span>
             }
@@ -91,15 +95,80 @@
           </div>
         } @else {
           <div class="profile-box">
-            <button type="button" class="icon-btn profile-btn" (click)="toggleProfileMenu()" aria-label="Abrir perfil">
-              {{ authSession.currentUser()?.name?.slice(0, 1) }}
+            <button
+              type="button"
+              class="icon-btn profile-btn"
+              (click)="toggleProfileMenu()"
+              [attr.aria-expanded]="profileMenuOpen()"
+              aria-haspopup="menu"
+              aria-label="Abrir perfil"
+            >
+              <span class="profile-initial">{{ authSession.currentUser()?.name?.slice(0, 1) }}</span>
             </button>
 
             @if (profileMenuOpen()) {
-              <div class="profile-dropdown">
-                <p class="profile-name">{{ authSession.currentUser()?.name }}</p>
-                <small>{{ authSession.currentUser()?.email }}</small>
-                <button type="button" (click)="logout()">Cerrar sesion</button>
+              <div class="profile-dropdown" role="menu" aria-label="Menu de perfil">
+                <a class="profile-summary" routerLink="/perfil" (click)="closeProfileMenu()">
+                  <span class="profile-avatar" aria-hidden="true">{{ authSession.currentUser()?.name?.slice(0, 1) }}</span>
+                  <span class="profile-meta">
+                    <strong class="profile-name">{{ authSession.currentUser()?.name }}</strong>
+                    <small>{{ authSession.currentUser()?.email }}</small>
+                  </span>
+                </a>
+
+                <hr class="profile-divider" />
+
+                <div class="profile-menu-options">
+                  <a routerLink="/perfil" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeProfileMenu()">
+                    <span class="item-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" fill="none" stroke="currentColor" stroke-width="1.8" />
+                        <path d="M4 20a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                      </svg>
+                    </span>
+                    <span>Mi perfil</span>
+                  </a>
+                  <a routerLink="/pedidos" routerLinkActive="active" (click)="closeProfileMenu()">
+                    <span class="item-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9Z" fill="none" stroke="currentColor" stroke-width="1.8" />
+                        <path d="m12 3 8 4.5-8 4.5L4 7.5Z" fill="none" stroke="currentColor" stroke-width="1.8" />
+                        <path d="M12 12v9" fill="none" stroke="currentColor" stroke-width="1.8" />
+                      </svg>
+                    </span>
+                    <span>Pedidos</span>
+                  </a>
+                  <a routerLink="/favoritos" routerLinkActive="active" (click)="closeProfileMenu()">
+                    <span class="item-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </span>
+                    <span>Favoritos</span>
+                  </a>
+                  <a routerLink="/seguridad" routerLinkActive="active" (click)="closeProfileMenu()">
+                    <span class="item-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M10.4 2h3.2l.5 2a7.9 7.9 0 0 1 1.7.7l1.8-1.1 2.3 2.3-1.1 1.8c.3.6.5 1.1.7 1.7l2 .5v3.2l-2 .5a7.9 7.9 0 0 1-.7 1.7l1.1 1.8-2.3 2.3-1.8-1.1c-.6.3-1.1.5-1.7.7l-.5 2h-3.2l-.5-2a7.9 7.9 0 0 1-1.7-.7l-1.8 1.1-2.3-2.3 1.1-1.8a7.9 7.9 0 0 1-.7-1.7l-2-.5V10l2-.5a7.9 7.9 0 0 1 .7-1.7L3.6 6l2.3-2.3 1.8 1.1a7.9 7.9 0 0 1 1.7-.7Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                        <circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6" />
+                      </svg>
+                    </span>
+                    <span>Seguridad</span>
+                  </a>
+                </div>
+
+                <hr class="profile-divider" />
+
+                <button type="button" class="logout-item" (click)="logout()">
+                  <span class="item-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4" fill="none" stroke="currentColor" stroke-width="1.8" />
+                      <path d="M14 8l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M18 12H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                    </svg>
+                  </span>
+                  <span>Cerrar sesion</span>
+                </button>
               </div>
             }
           </div>

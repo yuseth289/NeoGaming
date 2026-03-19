@@ -187,10 +187,28 @@ h2 {
   color: #f4b938;
   font-size: 0.9rem;
   transition: transform 220ms ease, text-shadow 220ms ease;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
 }
 
-.rating span {
+.rating .count {
   color: #cccccc;
+}
+
+.rating .star {
+  display: inline-flex;
+  align-items: center;
+  color: rgba(244, 185, 56, 0.35);
+}
+
+.rating .star.filled {
+  color: #f4b938;
+}
+
+.rating .star svg {
+  width: 14px;
+  height: 14px;
 }
 
 .product-card:hover .rating {
@@ -277,7 +295,15 @@ h2 {
 }
 
 .category-icon {
-  font-size: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffb3b3;
+}
+
+.category-icon svg {
+  width: 22px;
+  height: 22px;
 }
 
 .skeleton {
