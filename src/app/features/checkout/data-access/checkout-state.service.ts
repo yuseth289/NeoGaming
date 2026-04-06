@@ -1,17 +1,19 @@
 import { Injectable, signal } from '@angular/core';
 import { CartItem } from '../../cart/data-access/cart-ui.service';
 
-export type PaymentMethod = 'card' | 'paypal' | 'wallet' | 'crypto';
+export type PaymentMethod = 'card' | 'paypal' | 'efecty' | 'nequi';
 
 export interface ShippingDetails {
   fullName: string;
   email: string;
   phone: string;
   address: string;
+  apartment?: string;
   city: string;
   state: string;
   postalCode: string;
   country: string;
+  reference?: string;
 }
 
 export interface CheckoutOrder {

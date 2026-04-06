@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize, of } from 'rxjs';
@@ -24,11 +24,31 @@ interface CatalogProduct {
   badge?: 'Nuevo' | 'Top ventas' | '-20%';
 }
 
+interface MegaMenuLink {
+  label: string;
+  search?: string;
+}
+
+interface MegaMenuColumn {
+  title: string;
+  links: MegaMenuLink[];
+}
+
+interface MegaMenuCategory {
+  id: string;
+  label: string;
+  eyebrow: string;
+  description: string;
+  highlight: string;
+  featured: MegaMenuLink[];
+  columns: MegaMenuColumn[];
+}
+
 @Component({
   selector: 'app-catalog-page',
   imports: [CopPricePipe],
   templateUrl: './catalog.component.html',
-  styleUrl: './catalog.component.css'
+  styleUrls: ['./catalog.component.css']
 })
 export class CatalogComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
@@ -51,6 +71,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
   protected readonly addingProductName = signal<string | null>(null);
   protected readonly filtering = signal(false);
   protected readonly mobileFiltersOpen = signal(false);
+  protected readonly megaMenuOpen = signal(false);
+  protected readonly activeMegaCategoryId = signal('peripherals');
   protected readonly skeletonCards = Array.from({ length: 8 });
 
   private filterFeedbackTimeout?: ReturnType<typeof setTimeout>;
@@ -64,6 +86,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   protected readonly search = computed(() => this.params().get('search'));
   protected readonly category = computed(() => this.params().get('category'));
   protected readonly discount = computed(() => this.params().get('discount') === 'true');
+  protected readonly hasSearch = computed(() => !!this.search()?.trim());
 
   protected readonly products = signal<CatalogProduct[]>([
     {
@@ -186,8 +209,243 @@ export class CatalogComponent implements OnInit, OnDestroy {
     }
   ]);
 
+  protected readonly megaMenuCategories: MegaMenuCategory[] = [
+    {
+      id: 'peripherals',
+      label: 'Perifericos',
+      eyebrow: 'Setup competitivo',
+      description: 'Mouse, teclados y audio para estaciones de juego rapidas y precisas.',
+      highlight: 'Lo mas buscado en NeoGaming esta semana',
+      featured: [
+        { label: 'Teclados mecanicos', search: 'keyboard' },
+        { label: 'Mouse ultraligeros', search: 'mouse' },
+        { label: 'Headsets inmersivos', search: 'headset' }
+      ],
+      columns: [
+        {
+          title: 'Escritorio gamer',
+          links: [
+            { label: 'Teclados 60%' },
+            { label: 'Teclados TKL' },
+            { label: 'Teclas PBT' },
+            { label: 'Reposamuñecas RGB' }
+          ]
+        },
+        {
+          title: 'Control y precision',
+          links: [
+            { label: 'Mouse inalambricos' },
+            { label: 'Mousepads XL' },
+            { label: 'Sensores eSports' },
+            { label: 'Bungees y docks' }
+          ]
+        },
+        {
+          title: 'Audio y streaming',
+          links: [
+            { label: 'Headsets 7.1' },
+            { label: 'Microfonos USB' },
+            { label: 'Interfaces compactas' },
+            { label: 'Webcams 2K' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'hardware',
+      label: 'Hardware',
+      eyebrow: 'Potencia central',
+      description: 'Componentes para armar, actualizar o exprimir tu build sin perder estilo.',
+      highlight: 'Componentes que mas se mueven en la tienda',
+      featured: [
+        { label: 'GPUs de ultima generacion', search: 'gpu' },
+        { label: 'Procesadores para streaming', search: 'cpu' },
+        { label: 'Monitores high refresh', search: 'monitor' }
+      ],
+      columns: [
+        {
+          title: 'Procesamiento',
+          links: [
+            { label: 'Procesadores gaming' },
+            { label: 'Placas madre ATX' },
+            { label: 'Memoria DDR5' },
+            { label: 'Refrigeracion liquida' }
+          ]
+        },
+        {
+          title: 'Visual y rendimiento',
+          links: [
+            { label: 'Tarjetas graficas RTX' },
+            { label: 'Monitores 240 Hz' },
+            { label: 'Capturadoras' },
+            { label: 'Docking para creator' }
+          ]
+        },
+        {
+          title: 'Almacenamiento',
+          links: [
+            { label: 'SSD NVMe' },
+            { label: 'Discos externos' },
+            { label: 'Gabinetes airflow' },
+            { label: 'Fuentes certificadas' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'consoles',
+      label: 'Consolas',
+      eyebrow: 'Listo para jugar',
+      description: 'Equipos, bundles y accesorios para sesiones casuales o maratones.',
+      highlight: 'Bundles con mayor conversion',
+      featured: [
+        { label: 'Consolas de nueva generacion', search: 'console' },
+        { label: 'Mandos pro', search: 'gamepad' },
+        { label: 'Kits para sala', search: 'dock' }
+      ],
+      columns: [
+        {
+          title: 'Plataformas',
+          links: [
+            { label: 'PlayStation' },
+            { label: 'Xbox' },
+            { label: 'Nintendo Switch' },
+            { label: 'Consolas retro' }
+          ]
+        },
+        {
+          title: 'Accesorios',
+          links: [
+            { label: 'Mandos premium' },
+            { label: 'Bases de carga' },
+            { label: 'Audifonos para consola' },
+            { label: 'Maletas de viaje' }
+          ]
+        },
+        {
+          title: 'Experiencias',
+          links: [
+            { label: 'Bundles familiares' },
+            { label: 'Ediciones coleccionista' },
+            { label: 'Suscripciones' },
+            { label: 'Gift cards digitales' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'video-games',
+      label: 'Videojuegos',
+      eyebrow: 'Catalogo digital',
+      description: 'Lanzamientos, expansiones y joyas multijugador para todas las plataformas.',
+      highlight: 'Tendencias en preorden y descarga inmediata',
+      featured: [
+        { label: 'Lanzamientos destacados', search: 'new' },
+        { label: 'Pases de temporada', search: 'season pass' },
+        { label: 'Titulos cooperativos', search: 'co-op' }
+      ],
+      columns: [
+        {
+          title: 'Por genero',
+          links: [
+            { label: 'FPS tacticos' },
+            { label: 'RPG de mundo abierto' },
+            { label: 'Indies narrativos' },
+            { label: 'Sim racing' }
+          ]
+        },
+        {
+          title: 'Por formato',
+          links: [
+            { label: 'Descarga digital' },
+            { label: 'Edicion fisica' },
+            { label: 'Deluxe y ultimate' },
+            { label: 'Coleccionables' }
+          ]
+        },
+        {
+          title: 'Comunidad',
+          links: [
+            { label: 'Top multiplayer' },
+            { label: 'Cross-platform' },
+            { label: 'Mods y expansions' },
+            { label: 'Gift cards' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'accessories',
+      label: 'Accesorios',
+      eyebrow: 'Detalles que elevan el setup',
+      description: 'Complementos funcionales para escritorio, movilidad y ambientacion RGB.',
+      highlight: 'Pequenos upgrades con alto impacto visual',
+      featured: [
+        { label: 'Sillas y soportes', search: 'chair' },
+        { label: 'Iluminacion RGB', search: 'rgb' },
+        { label: 'Wearables y VR', search: 'vr' }
+      ],
+      columns: [
+        {
+          title: 'Orden del espacio',
+          links: [
+            { label: 'Soportes para monitor' },
+            { label: 'Organizadores de cables' },
+            { label: 'Brazos articulados' },
+            { label: 'Tapetes premium' }
+          ]
+        },
+        {
+          title: 'Comodidad',
+          links: [
+            { label: 'Sillas gamer' },
+            { label: 'Reposapies' },
+            { label: 'Lentes blue light' },
+            { label: 'Cooling pads' }
+          ]
+        },
+        {
+          title: 'Immersion',
+          links: [
+            { label: 'Luces ambientales' },
+            { label: 'VR y trackers' },
+            { label: 'Camaras y soportes' },
+            { label: 'Figuras coleccionables' }
+          ]
+        }
+      ]
+    }
+  ];
+
+  protected readonly activeMegaCategory = computed(() => {
+    return this.megaMenuCategories.find((item) => item.id === this.activeMegaCategoryId()) ?? this.megaMenuCategories[0];
+  });
+
   ngOnInit(): void {
     this.loadCatalogFromApi();
+  }
+
+  constructor() {
+    effect(() => {
+      const productsLength = this.filteredProducts().length;
+      const totalPages = Math.max(1, Math.ceil(productsLength / this.pageSize));
+      if (this.currentPage() > totalPages) {
+        this.currentPage.set(totalPages);
+      }
+    });
+
+    effect(() => {
+      const activeCategory = this.category();
+      if (activeCategory) {
+        this.activeMegaCategoryId.set(activeCategory);
+      }
+    });
+
+    effect(() => {
+      if (!this.showResultsLayout()) {
+        this.mobileFiltersOpen.set(false);
+      }
+    });
   }
 
   protected readonly filteredProducts = computed(() => {
@@ -245,6 +503,12 @@ export class CatalogComponent implements OnInit, OnDestroy {
     return total;
   });
 
+  protected readonly showResultsLayout = computed(() => {
+    // The catalog route should always render the product listing when visited directly
+    // from the navbar, even before any search or filters are applied.
+    return true;
+  });
+
   protected toggleCategory(value: string, checked: boolean): void {
     this.toggleSetValue(this.selectedCategories, value, checked);
     this.triggerFilteringFeedback();
@@ -276,6 +540,9 @@ export class CatalogComponent implements OnInit, OnDestroy {
   }
 
   protected openMobileFilters(): void {
+    if (!this.showResultsLayout()) {
+      return;
+    }
     this.mobileFiltersOpen.set(true);
   }
 
@@ -297,6 +564,40 @@ export class CatalogComponent implements OnInit, OnDestroy {
     }
 
     this.currentPage.set(page);
+  }
+
+  protected openMegaMenu(): void {
+    if (this.showResultsLayout()) {
+      return;
+    }
+    this.megaMenuOpen.set(true);
+  }
+
+  protected closeMegaMenu(): void {
+    this.megaMenuOpen.set(false);
+  }
+
+  protected setActiveMegaCategory(categoryId: string): void {
+    this.activeMegaCategoryId.set(categoryId);
+  }
+
+  protected openCategoryResults(categoryId: string, search?: string): void {
+    this.activeMegaCategoryId.set(categoryId);
+    this.currentPage.set(1);
+    this.megaMenuOpen.set(false);
+
+    void this.router.navigate(['/catalog'], {
+      queryParams: {
+        category: categoryId,
+        ...(search ? { search } : {})
+      }
+    });
+  }
+
+  protected clearCatalogState(): void {
+    this.clearFilters();
+    this.megaMenuOpen.set(false);
+    void this.router.navigate(['/catalog']);
   }
 
   protected openProductDetail(product: CatalogProduct): void {

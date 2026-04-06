@@ -1,121 +1,324 @@
 <section class="page">
   <header class="page__header">
-    <p class="eyebrow">Checkout</p>
-    <h1>Metodo de pago</h1>
-    <p class="subtext">Paso 2 de 2. Elige como deseas pagar.</p>
-    <a class="back-link" routerLink="/checkout/shipping">← Volver al envio</a>
+    <div>
+      <p class="eyebrow">CHECKOUT</p>
+      <h1>Método de pago</h1>
+      <p class="subtext">Paso 2 de 2. Elige cómo deseas pagar.</p>
+    </div>
+    <a class="back-link" routerLink="/checkout/shipping">Volver al envío</a>
   </header>
+
+  <section class="stepper card">
+    <article class="step is-complete">
+      <span class="step__icon">
+        <lucide-angular [img]="icons.shipping" [size]="18" [strokeWidth]="2"></lucide-angular>
+      </span>
+      <div>
+        <strong>Envío</strong>
+        <small>Completado</small>
+      </div>
+    </article>
+    <span class="step__line is-complete" aria-hidden="true"></span>
+    <article class="step is-active">
+      <span class="step__icon">
+        <lucide-angular [img]="icons.payment" [size]="18" [strokeWidth]="2"></lucide-angular>
+      </span>
+      <div>
+        <strong>Pago</strong>
+        <small>Método y validación</small>
+      </div>
+    </article>
+    <span class="step__line" aria-hidden="true"></span>
+    <article class="step">
+      <span class="step__icon">
+        <lucide-angular [img]="icons.confirmation" [size]="18" [strokeWidth]="2"></lucide-angular>
+      </span>
+      <div>
+        <strong>Confirmación</strong>
+        <small>Resumen final</small>
+      </div>
+    </article>
+  </section>
 
   <div class="layout">
     <form class="card payment" [formGroup]="form" (ngSubmit)="submit()">
       <div class="card-head">
-        <h2>Metodo de pago</h2>
-        <span class="chip">Seguro</span>
+        <div>
+          <p class="section-label">Pago</p>
+          <h2>Elige cómo deseas pagar</h2>
+        </div>
+        <span class="chip">Pago seguro</span>
       </div>
 
-      @if (submitAttempted() && selectedMethod() === 'card' && form.invalid) {
+      @if (submitAttempted() && selectedMethod() === 'card') {
         <div class="alert">
-          Completa los campos de la tarjeta para continuar.
+          Completa correctamente los datos de la tarjeta para continuar.
+        </div>
+      }
+
+      @if (submitAttempted() && selectedMethod() === 'efecty') {
+        <div class="alert">
+          Completa los datos del pagador para generar la referencia de Efecty.
+        </div>
+      }
+
+      @if (submitAttempted() && selectedMethod() === 'nequi') {
+        <div class="alert">
+          Completa el número y nombre asociados a Nequi.
         </div>
       }
 
       <div class="method-tabs">
         <button type="button" [class.active]="selectedMethod() === 'card'" (click)="setMethod('card')">
-          Tarjeta
+          <span class="method-brand method-brand--card" aria-hidden="true">
+            <span class="method-brand__duo">
+              <span class="method-brand__dot method-brand__dot--visa"></span>
+              <span class="method-brand__dot method-brand__dot--mastercard"></span>
+            </span>
+            <span class="method-brand__text">Visa + MC</span>
+          </span>
+          <span class="method-title">Tarjeta</span>
+          <small>Pago inmediato con débito o crédito</small>
         </button>
         <button type="button" [class.active]="selectedMethod() === 'paypal'" (click)="setMethod('paypal')">
-          PayPal
+          <span class="method-brand method-brand--paypal" aria-hidden="true">
+            <span class="method-brand__logo method-brand__logo--paypal">P</span>
+            <span class="method-brand__text">PayPal</span>
+          </span>
+          <span class="method-title">PayPal</span>
+          <small>Pago rápido con tu cuenta PayPal</small>
         </button>
-        <button type="button" [class.active]="selectedMethod() === 'wallet'" (click)="setMethod('wallet')">
-          Billetera
+        <button type="button" [class.active]="selectedMethod() === 'efecty'" (click)="setMethod('efecty')">
+          <span class="method-brand method-brand--efecty" aria-hidden="true">
+            <span class="method-brand__logo method-brand__logo--efecty">E</span>
+            <span class="method-brand__text">Efecty</span>
+          </span>
+          <span class="method-title">Efecty</span>
+          <small>Paga en efectivo en puntos físicos</small>
         </button>
-        <button type="button" [class.active]="selectedMethod() === 'crypto'" (click)="setMethod('crypto')">
-          Cripto
+        <button type="button" [class.active]="selectedMethod() === 'nequi'" (click)="setMethod('nequi')">
+          <span class="method-brand method-brand--nequi" aria-hidden="true">
+            <span class="method-brand__logo method-brand__logo--nequi">n</span>
+            <span class="method-brand__text">Nequi</span>
+          </span>
+          <span class="method-title">Nequi</span>
+          <small>Paga desde tu celular</small>
         </button>
       </div>
 
       @if (selectedMethod() === 'card') {
-        <div class="grid">
-          <label>
-            Nombre del titular
-            <input type="text" formControlName="cardholder" placeholder="Alex Neo" />
-            @if (fieldInvalid('cardholder')) {
-              <span class="error">El nombre del titular es obligatorio.</span>
-            }
-          </label>
-          <label>
-            Numero de tarjeta
-            <input type="text" formControlName="cardNumber" placeholder="0000 0000 0000 0000" />
-            @if (fieldInvalid('cardNumber')) {
-              <span class="error">El numero de tarjeta es obligatorio.</span>
-            }
-          </label>
-          <label>
-            Fecha de vencimiento
-            <input type="text" formControlName="expiry" placeholder="MM/AA" />
-            @if (fieldInvalid('expiry')) {
-              <span class="error">La fecha de vencimiento es obligatoria.</span>
-            }
-          </label>
-          <label>
-            CVV
-            <input type="password" formControlName="cvv" placeholder="***" />
-            @if (fieldInvalid('cvv')) {
-              <span class="error">El CVV es obligatorio.</span>
-            }
-          </label>
-        </div>
+        <section class="method-panel">
+          <div class="method-panel__head">
+            <div>
+              <h3>Pago con tarjeta</h3>
+              <p>Ingresa los datos de tu tarjeta para finalizar la compra.</p>
+            </div>
+            <div class="card-brands" aria-label="Tarjetas compatibles">
+              <span>Visa</span>
+              <span>Mastercard</span>
+            </div>
+          </div>
+
+          <div class="grid">
+            <label>
+              <span>Nombre del titular</span>
+              <input type="text" formControlName="cardholder" placeholder="Alejandro Moreno" autocomplete="cc-name" />
+              @if (fieldInvalid('cardholder')) {
+                <span class="error">Ingresa el nombre del titular.</span>
+              }
+            </label>
+            <label>
+              <span>Número de tarjeta</span>
+              <input type="text" formControlName="cardNumber" placeholder="4242 4242 4242 4242" inputmode="numeric" autocomplete="cc-number" (input)="formatCardNumber($event)" />
+              @if (fieldInvalid('cardNumber')) {
+                <span class="error">Ingresa un número de tarjeta válido.</span>
+              }
+            </label>
+            <label>
+              <span>Fecha de vencimiento</span>
+              <input type="text" formControlName="expiry" placeholder="MM/AA" inputmode="numeric" autocomplete="cc-exp" (input)="formatExpiry($event)" />
+              @if (fieldInvalid('expiry')) {
+                <span class="error">Usa el formato MM/AA.</span>
+              }
+            </label>
+            <label>
+              <span>CVV</span>
+              <input type="password" formControlName="cvv" placeholder="123" inputmode="numeric" autocomplete="cc-csc" />
+              @if (fieldInvalid('cvv')) {
+                <span class="error">Ingresa un CVV válido.</span>
+              }
+            </label>
+          </div>
+        </section>
+      } @else if (selectedMethod() === 'paypal') {
+        <section class="method-panel alt-method">
+          <div class="method-panel__head">
+            <div>
+              <h3>PayPal</h3>
+              <p>Serás redirigido a PayPal para completar tu pago de forma segura.</p>
+            </div>
+          </div>
+        </section>
+      } @else if (selectedMethod() === 'efecty') {
+        <section class="method-panel">
+          <div class="method-panel__head">
+            <div>
+              <h3>Pago en Efecty</h3>
+              <p>Generaremos una referencia para pagar en un punto físico Efecty.</p>
+            </div>
+          </div>
+
+          <div class="grid">
+            <label>
+              <span>Nombre del pagador</span>
+              <input type="text" formControlName="payerName" placeholder="Alejandro Moreno" autocomplete="name" />
+              @if (fieldInvalid('payerName')) {
+                <span class="error">Ingresa el nombre del pagador.</span>
+              }
+            </label>
+            <label>
+              <span>Correo</span>
+              <input type="email" formControlName="payerEmail" placeholder="alex@neogaming.com" autocomplete="email" />
+              @if (fieldInvalid('payerEmail')) {
+                <span class="error">Ingresa un correo válido.</span>
+              }
+            </label>
+            <label class="field-wide">
+              <span>Celular</span>
+              <input type="tel" formControlName="payerPhone" placeholder="+57 300 123 4567" autocomplete="tel" (input)="formatPhone('payerPhone', $event)" />
+              @if (fieldInvalid('payerPhone')) {
+                <span class="error">Ingresa un celular válido.</span>
+              }
+            </label>
+          </div>
+        </section>
       } @else {
-        <div class="alt-method">
-          <p>Te redireccionaremos para completar el pago.</p>
-        </div>
+        <section class="method-panel">
+          <div class="method-panel__head">
+            <div>
+              <h3>Pago con Nequi</h3>
+              <p>Te enviaremos una solicitud o referencia para completar el pago desde Nequi.</p>
+            </div>
+          </div>
+
+          <div class="grid">
+            <label>
+              <span>Celular asociado a Nequi</span>
+              <input type="tel" formControlName="nequiPhone" placeholder="+57 300 123 4567" autocomplete="tel" (input)="formatPhone('nequiPhone', $event)" />
+              @if (fieldInvalid('nequiPhone')) {
+                <span class="error">Ingresa el celular asociado a Nequi.</span>
+              }
+            </label>
+            <label>
+              <span>Nombre del titular</span>
+              <input type="text" formControlName="nequiHolder" placeholder="Alejandro Moreno" autocomplete="name" />
+              @if (fieldInvalid('nequiHolder')) {
+                <span class="error">Ingresa el nombre del titular.</span>
+              }
+            </label>
+          </div>
+        </section>
       }
 
       <div class="actions">
-        <a class="btn ghost" routerLink="/checkout/shipping">Volver al envio</a>
-        <button class="btn" type="submit" [disabled]="submitting()">Confirmar pedido</button>
+        <a class="btn ghost" routerLink="/checkout/shipping">Volver al envío</a>
+        <button class="btn" type="submit" [disabled]="submitting()" [class.is-loading]="submitting()">
+          {{ primaryActionLabel() }}
+          <lucide-angular [img]="submitting() ? icons.loading : icons.next" [size]="16" [strokeWidth]="2"></lucide-angular>
+        </button>
+      </div>
+
+      <div class="security-strip">
+        <span class="security-item">
+          <lucide-angular [img]="icons.secure" [size]="15" [strokeWidth]="2"></lucide-angular>
+          Pago seguro
+        </span>
+        <span class="security-item">
+          <lucide-angular [img]="icons.lock" [size]="15" [strokeWidth]="2"></lucide-angular>
+          SSL cifrado
+        </span>
+        <span class="security-item">
+          <lucide-angular [img]="icons.cvv" [size]="15" [strokeWidth]="2"></lucide-angular>
+          No almacenamos tu CVV
+        </span>
+        <span class="security-item">
+          <lucide-angular [img]="icons.secure" [size]="15" [strokeWidth]="2"></lucide-angular>
+          Protección al comprador
+        </span>
+        <span class="security-item">
+          <lucide-angular [img]="icons.confirmation" [size]="15" [strokeWidth]="2"></lucide-angular>
+          Soporte 24/7
+        </span>
       </div>
     </form>
 
     <aside class="card summary">
-      <h2>Resumen del pedido</h2>
-      <p class="summary-note">Productos en tu carrito</p>
-      <div class="summary-items">
-        @for (item of cartUi.cartItems(); track item.name) {
-          <div class="summary-item">
-            <span>{{ item.name }} × {{ item.quantity }}</span>
-            <strong>{{ item.price * item.quantity | copPrice }}</strong>
-          </div>
-        }
+      <div class="summary-head">
+        <div>
+          <p class="section-label">Resumen</p>
+          <h2>Resumen del pedido</h2>
+        </div>
+        <span class="chip chip--soft">Total protegido</span>
       </div>
 
-      <div class="summary-row">
-        <span>Subtotal</span>
-        <strong>{{ subtotal() | copPrice }}</strong>
-      </div>
-      <div class="summary-row">
-        <span>Envio</span>
-        <strong>{{ shippingCost() | copPrice }}</strong>
-      </div>
-      <div class="summary-row">
-        <span>Impuestos</span>
-        <strong>{{ tax() | copPrice }}</strong>
-      </div>
-      <div class="summary-total">
-        <span>Total</span>
-        <strong>{{ total() | copPrice }}</strong>
-      </div>
-      <div class="summary-cta">
-        <span class="ssl">
-          <svg class="ssl__icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M7 10V8a5 5 0 0110 0v2h1a1 1 0 011 1v8a3 3 0 01-3 3H8a3 3 0 01-3-3v-8a1 1 0 011-1h1zm2 0h6V8a3 3 0 00-6 0v2zm3 4a1.5 1.5 0 00-.75 2.8V18a.75.75 0 001.5 0v-1.2A1.5 1.5 0 0012 14z"
-              fill="currentColor"
-            />
-          </svg>
-          SSL encriptado
-        </span>
-      </div>
+      @if (hasItems()) {
+        <div class="summary-items">
+          @for (item of cartUi.cartItems(); track item.name) {
+            <article class="summary-item">
+              <img [src]="imageForItem(item)" [alt]="item.name" width="64" height="64" loading="lazy" decoding="async" />
+              <div class="summary-item__copy">
+                <strong>{{ item.name }}</strong>
+                <span>Cantidad: {{ item.quantity }}</span>
+              </div>
+              <strong class="summary-item__price">{{ item.price * item.quantity | copPrice }}</strong>
+            </article>
+          }
+        </div>
+
+        <div class="summary-totals">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <strong>{{ subtotal() | copPrice }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Envío</span>
+            <strong>{{ shippingCost() | copPrice }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Impuestos</span>
+            <strong>{{ tax() | copPrice }}</strong>
+          </div>
+          <div class="summary-total">
+            <span>Total</span>
+            <div class="summary-total__value">
+              <small>Total protegido</small>
+              <strong>{{ total() | copPrice }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="trust-block">
+          <div class="trust-item">
+            <lucide-angular [img]="icons.secure" [size]="16" [strokeWidth]="2"></lucide-angular>
+            <span>Pago seguro</span>
+          </div>
+          <div class="trust-item">
+            <lucide-angular [img]="icons.lock" [size]="16" [strokeWidth]="2"></lucide-angular>
+            <span>SSL cifrado</span>
+          </div>
+          <div class="trust-item">
+            <lucide-angular [img]="icons.confirmation" [size]="16" [strokeWidth]="2"></lucide-angular>
+            <span>Tus datos están protegidos</span>
+          </div>
+        </div>
+      } @else {
+        <div class="summary-empty">
+          <lucide-angular [img]="icons.confirmation" [size]="22" [strokeWidth]="2"></lucide-angular>
+          <strong>Tu carrito está vacío</strong>
+          <p>Agrega productos antes de continuar con el pago.</p>
+          <a class="btn ghost" routerLink="/cart">Volver al carrito</a>
+        </div>
+      }
     </aside>
   </div>
 </section>

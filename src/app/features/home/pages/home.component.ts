@@ -1,6 +1,9 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
 import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
+import { CartApi } from '../../cart/data-access/cart.api';
+import { CartUiService } from '../../cart/data-access/cart-ui.service';
 
 interface Product {
   name: string;
@@ -29,9 +32,16 @@ interface HeroSlide {
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
-export class HomeComponent implements OnInit, OnDestroy {
+export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('productsSection') private readonly productsSection?: ElementRef<HTMLElement>;
+
+  private readonly cartApi = inject(CartApi);
+  private readonly cartUi = inject(CartUiService);
   protected readonly loadingProducts = signal(true);
+  protected readonly revealProducts = signal(false);
   protected readonly currentHeroIndex = signal(0);
+  protected readonly addingProductName = signal<string | null>(null);
+  protected readonly cartMessage = signal<string | null>(null);
 
   protected readonly heroSlides: HeroSlide[] = [
     {
@@ -53,6 +63,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   ];
 
   private heroIntervalId?: ReturnType<typeof setInterval>;
+  private productsObserver?: IntersectionObserver;
+  private loadingTimeoutId?: ReturnType<typeof setTimeout>;
+  private cartMessageTimeout?: ReturnType<typeof setTimeout>;
 
   protected readonly products = signal<Product[]>([
     {
@@ -122,13 +135,40 @@ export class HomeComponent implements OnInit, OnDestroy {
   protected readonly skeletonCards = Array.from({ length: 6 });
 
   ngOnInit(): void {
-    setTimeout(() => this.loadingProducts.set(false), 900);
     this.heroIntervalId = setInterval(() => this.nextHeroSlide(), 5000);
+  }
+
+  ngAfterViewInit(): void {
+    const section = this.productsSection?.nativeElement;
+    if (!section || typeof IntersectionObserver === 'undefined') {
+      this.startProductsReveal();
+      return;
+    }
+
+    this.productsObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          this.startProductsReveal();
+        }
+      },
+      { threshold: 0.2, rootMargin: '0px 0px -10% 0px' }
+    );
+
+    this.productsObserver.observe(section);
   }
 
   ngOnDestroy(): void {
     if (this.heroIntervalId) {
       clearInterval(this.heroIntervalId);
+    }
+    if (this.productsObserver) {
+      this.productsObserver.disconnect();
+    }
+    if (this.loadingTimeoutId) {
+      clearTimeout(this.loadingTimeoutId);
+    }
+    if (this.cartMessageTimeout) {
+      clearTimeout(this.cartMessageTimeout);
     }
   }
 
@@ -157,7 +197,42 @@ export class HomeComponent implements OnInit, OnDestroy {
       .trim()
       .replace(/\s+/g, '-');
   }
+
+  protected addToCart(product: Product): void {
+    this.cartMessage.set(null);
+    this.addingProductName.set(product.name);
+
+    this.cartApi
+      .addItem({ productName: product.name, quantity: 1 })
+      .pipe(finalize(() => this.addingProductName.set(null)))
+      .subscribe({
+        next: (response) => {
+          this.cartUi.hydrateFromApi(response);
+          this.cartMessage.set(`${product.name} se agrego al carrito.`);
+          this.scheduleCartMessageClear();
+        },
+        error: () => {
+          this.cartMessage.set('No pudimos agregar el producto. Intenta de nuevo.');
+          this.scheduleCartMessageClear();
+        }
+      });
+  }
+
+  private startProductsReveal(): void {
+    if (this.revealProducts()) {
+      return;
+    }
+
+    this.revealProducts.set(true);
+    this.productsObserver?.disconnect();
+    this.loadingTimeoutId = setTimeout(() => this.loadingProducts.set(false), 700);
+  }
+
+  private scheduleCartMessageClear(): void {
+    if (this.cartMessageTimeout) {
+      clearTimeout(this.cartMessageTimeout);
+    }
+    this.cartMessageTimeout = setTimeout(() => this.cartMessage.set(null), 2600);
+  }
 }
-
-
 

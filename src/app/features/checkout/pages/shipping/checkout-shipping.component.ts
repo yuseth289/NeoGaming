@@ -4,10 +4,23 @@ import { Router, RouterLink } from '@angular/router';
 import { CartUiService } from '../../../cart/data-access/cart-ui.service';
 import { CheckoutStateService } from '../../data-access/checkout-state.service';
 import { CopPricePipe } from '../../../../shared/pipes/cop-price.pipe';
+import {
+  Check,
+  ChevronRight,
+  House,
+  LucideAngularModule,
+  Mail,
+  MapPinned,
+  MapPinHouse,
+  Phone,
+  ShieldCheck,
+  SquareStack,
+  Truck
+} from 'lucide-angular';
 
 @Component({
   selector: 'app-checkout-shipping',
-  imports: [ReactiveFormsModule, RouterLink, CopPricePipe],
+  imports: [ReactiveFormsModule, RouterLink, CopPricePipe, LucideAngularModule],
   templateUrl: './checkout-shipping.component.html',
   styleUrl: './checkout-shipping.component.css'
 })
@@ -16,19 +29,38 @@ export class CheckoutShippingComponent {
   private readonly router = inject(Router);
   protected readonly cartUi = inject(CartUiService);
   private readonly checkoutState = inject(CheckoutStateService);
+  protected readonly icons = {
+    shipping: MapPinned,
+    payment: ShieldCheck,
+    lock: ShieldCheck,
+    confirmation: ShieldCheck,
+    done: Check,
+    next: ChevronRight,
+    home: House,
+    truck: Truck,
+    emailField: Mail,
+    phoneField: Phone,
+    addressField: MapPinHouse,
+    cityField: MapPinned,
+    apartmentField: SquareStack,
+    referenceField: MapPinHouse
+  };
 
   protected readonly submitting = signal(false);
   protected readonly submitAttempted = signal(false);
+  protected readonly hasItems = () => this.cartUi.cartItems().length > 0;
 
   protected readonly form = this.fb.nonNullable.group({
     fullName: ['', [Validators.required, Validators.minLength(3)]],
     email: ['', [Validators.required, Validators.email]],
-    phone: ['', [Validators.required, Validators.minLength(7)]],
-    address: ['', [Validators.required]],
+    phone: ['', [Validators.required, Validators.pattern(/^[0-9+\s()-]{7,}$/)]],
+    address: ['', [Validators.required, Validators.minLength(6)]],
+    apartment: [''],
     city: ['', [Validators.required]],
     state: ['', [Validators.required]],
-    postalCode: ['', [Validators.required]],
-    country: ['Colombia', [Validators.required]]
+    postalCode: ['', [Validators.required, Validators.minLength(4)]],
+    country: ['Colombia', [Validators.required]],
+    reference: ['']
   });
 
   protected readonly subtotal = () => this.cartUi.totalPrice();
@@ -41,6 +73,13 @@ export class CheckoutShippingComponent {
     if (saved) {
       this.form.patchValue(saved);
     }
+  }
+
+  protected imageForItem(item: { image?: string }): string {
+    return (
+      item.image ||
+      'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=320&q=80'
+    );
   }
 
   protected submit(): void {
@@ -64,6 +103,26 @@ export class CheckoutShippingComponent {
 
   protected fieldInvalid(controlName: keyof typeof this.form.controls): boolean {
     const control = this.form.controls[controlName];
-    return control.invalid && (control.touched || this.submitAttempted());
+    return control.invalid && (control.dirty || control.touched || this.submitAttempted());
+  }
+
+  protected formatPhone(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 12);
+    const local = digits.startsWith('57') ? digits.slice(2) : digits;
+    const padded = local.slice(0, 10);
+    let formatted = '+57';
+
+    if (padded.length > 0) {
+      formatted += ` ${padded.slice(0, 3)}`;
+    }
+    if (padded.length > 3) {
+      formatted += ` ${padded.slice(3, 6)}`;
+    }
+    if (padded.length > 6) {
+      formatted += ` ${padded.slice(6, 10)}`;
+    }
+
+    this.form.controls.phone.setValue(formatted.trim(), { emitEvent: false });
   }
 }

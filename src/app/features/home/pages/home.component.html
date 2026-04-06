@@ -17,7 +17,10 @@
   <div class="hero-overlay"></div>
 
   <div class="hero-content">
-    <h1>Libera Tu Potencial de Juego</h1>
+    <h1>
+      <span class="typewriter-line typewriter-line--first">Libera Tu Potencial</span>
+      <span class="typewriter-line typewriter-line--second">de Juego</span>
+    </h1>
     <p>Todo lo que necesitas para subir de nivel en un solo lugar.</p>
 
     <div class="hero-actions">
@@ -44,11 +47,15 @@
   </div>
 </section>
 
-<section class="products" aria-labelledby="featured-title">
+<section class="products" aria-labelledby="featured-title" #productsSection [class.revealed]="revealProducts()">
   <h2 id="featured-title">Productos destacados</h2>
 
+  @if (cartMessage()) {
+    <p class="home-cart-message">{{ cartMessage() }}</p>
+  }
+
   <div class="products-grid">
-    @if (loadingProducts()) {
+    @if (!revealProducts() || loadingProducts()) {
       @for (_item of skeletonCards; track $index) {
         <article class="product-card skeleton">
           <div class="sk-image"></div>
@@ -90,7 +97,19 @@
           </div>
 
           <div class="card-actions">
-            <a class="btn-primary" href="#">Agregar al carrito</a>
+            <button
+              type="button"
+              class="btn-primary"
+              [class.loading]="addingProductName() === product.name"
+              [disabled]="addingProductName() === product.name"
+              (click)="addToCart(product)"
+            >
+              @if (addingProductName() === product.name) {
+                Agregando...
+              } @else {
+                Agregar al carrito
+              }
+            </button>
             <a
               class="btn-secondary"
               [routerLink]="['/product', toSlug(product.name)]"
@@ -163,4 +182,3 @@
     }
   </div>
 </section>
-
