@@ -570,10 +570,6 @@
   margin-top: 0.18rem;
 }
 
-.search-toggle {
-  display: none;
-}
-
 .nav-mobile-account {
   display: none;
 }
@@ -608,10 +604,6 @@
   transform: translateY(-1px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
   border-color: rgba(255, 92, 92, 0.52);
-}
-
-.search-toggle {
-  display: none;
 }
 
 .cart-box,
@@ -1010,8 +1002,8 @@
     justify-content: flex-start;
   }
 
-  .nav-mega-menu {
-    display: none;
+  .nav-mega-menu,
+  .nav-mega-menu.open {
     position: static;
     width: 100%;
     transform: none;
@@ -1021,15 +1013,12 @@
     grid-template-columns: 1fr;
   }
 
+  .nav-mega-menu {
+    display: none;
+  }
+
   .nav-mega-menu.open {
     display: grid;
-    position: static;
-    width: 100%;
-    transform: none;
-    opacity: 1;
-    pointer-events: auto;
-    margin-top: 0.5rem;
-    grid-template-columns: 1fr;
   }
 
   .nav-mega-sidebar {
