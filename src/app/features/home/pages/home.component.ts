@@ -6,6 +6,7 @@ import { CartApi } from '../../cart/data-access/cart.api';
 import { CartUiService } from '../../cart/data-access/cart-ui.service';
 
 interface Product {
+  slug: string;
   name: string;
   image: string;
   price: number;
@@ -69,57 +70,43 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected readonly products = signal<Product[]>([
     {
-      name: 'Quantum Core Processor X1',
-      image: 'https://images.unsplash.com/photo-1591799265444-d66432b91588?auto=format&fit=crop&w=920&q=80',
-      price: 499.99,
-      rating: 5,
-      ratingCount: 123,
-      badge: 'Nuevo',
-      supportInfo: 'Existencias: 12'
-    },
-    {
-      name: 'Aetheria VR Headset',
-      image: 'https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?auto=format&fit=crop&w=920&q=80',
-      price: 899,
+      slug: 'neogamer-pro-headset',
+      name: 'NeoGamer Pro Headset',
+      image: 'https://images.unsplash.com/photo-1612444530582-fc66183b16f7?auto=format&fit=crop&w=920&q=80',
+      price: 129.99,
       rating: 4,
-      ratingCount: 87,
+      ratingCount: 214,
       badge: '-20%',
       supportInfo: 'Envio en 24 h'
     },
     {
-      name: 'ChronoShift Gaming Keyboard',
+      slug: 'quantumgear-mechanical-keyboard',
+      name: 'QuantumGear Mechanical Keyboard',
       image: 'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=920&q=80',
-      price: 189.5,
+      price: 189.99,
       rating: 5,
-      ratingCount: 314,
+      ratingCount: 173,
       badge: 'Top ventas',
-      supportInfo: 'Existencias: 35'
+      supportInfo: 'Existencias: 18'
     },
     {
-      name: 'NovaStrike Wireless Mouse',
+      slug: 'aetherblade-gaming-mouse',
+      name: 'AetherBlade Gaming Mouse',
       image: 'https://images.unsplash.com/photo-1613141412501-9012977f1969?auto=format&fit=crop&w=920&q=80',
-      price: 99.99,
+      price: 79.99,
       rating: 4,
-      ratingCount: 209,
-      badge: 'Top ventas',
-      supportInfo: 'Envio en 24 h'
+      ratingCount: 122,
+      badge: 'Oferta',
+      supportInfo: 'Existencias: 32'
     },
     {
-      name: 'SpectraFlow Cooling System',
-      image: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=920&q=80',
-      price: 150,
+      slug: 'chronopulse-gaming-monitor',
+      name: 'ChronoPulse Gaming Monitor',
+      image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=920&q=80',
+      price: 499,
       rating: 4,
-      ratingCount: 78,
+      ratingCount: 96,
       badge: 'Nuevo',
-      supportInfo: 'Existencias: 9'
-    },
-    {
-      name: 'Nebula Stream Capture Card',
-      image: 'https://images.unsplash.com/photo-1587202372616-b43abea06c2a?auto=format&fit=crop&w=920&q=80',
-      price: 249,
-      rating: 5,
-      ratingCount: 156,
-      badge: '-20%',
       supportInfo: 'Envio en 24 h'
     }
   ]);
@@ -188,14 +175,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   protected goToHeroSlide(index: number): void {
     this.currentHeroIndex.set(index);
-  }
-
-  protected toSlug(value: string): string {
-    return value
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-');
   }
 
   protected addToCart(product: Product): void {
