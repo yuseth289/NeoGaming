@@ -187,6 +187,86 @@ const productsBySlug: Record<string, MockProductDetail> = {
     ratingCount: 890,
     reviews: [],
     related: []
+  },
+  'aetherblade-gaming-mouse': {
+    id: 'p-003',
+    slug: 'aetherblade-gaming-mouse',
+    name: 'AetherBlade Gaming Mouse',
+    category: 'Accesorios',
+    price: 79.99,
+    stock: 32,
+    subtitle: 'Mouse liviano con sensor preciso para sesiones competitivas.',
+    tags: ['Sensor de alta precision', 'Diseño ultraligero', 'Iluminacion RGB'],
+    description:
+      'Pensado para jugadores que priorizan velocidad y control. Su carcasa ligera, sensor estable y switches rapidos lo hacen ideal para FPS y MOBA.',
+    images: [
+      'https://images.unsplash.com/photo-1613141412501-9012977f1969?auto=format&fit=crop&w=1200&q=80'
+    ],
+    specifications: [
+      { title: 'Sensor', lines: ['Optico de alta precision', 'Hasta 26000 DPI'] },
+      { title: 'Peso', lines: ['58 g', 'Cable flexible de baja friccion'] },
+      { title: 'Botones', lines: ['6 programables', 'Switches de respuesta rapida'] }
+    ],
+    compatibility: 'PC, Mac',
+    rating: 4.5,
+    ratingCount: 122,
+    reviews: [
+      {
+        author: 'AimShift',
+        score: 5,
+        date: '2026-03-04',
+        title: 'Muy preciso',
+        comment: 'Se siente muy ligero y el tracking es estable incluso en partidas rapidas.'
+      }
+    ],
+    related: [
+      {
+        slug: 'quantumgear-mechanical-keyboard',
+        name: 'QuantumGear Mechanical Keyboard',
+        image: 'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=820&q=80',
+        price: 189.99
+      }
+    ]
+  },
+  'chronopulse-gaming-monitor': {
+    id: 'p-004',
+    slug: 'chronopulse-gaming-monitor',
+    name: 'ChronoPulse Gaming Monitor',
+    category: 'Hardware',
+    price: 499,
+    stock: 11,
+    subtitle: 'Monitor de alto refresco para juego fluido y respuesta inmediata.',
+    tags: ['240 Hz', 'Panel rapido', 'Compatibilidad Adaptive Sync'],
+    description:
+      'Monitor diseñado para setups competitivos con imagen nitida, baja latencia y gran fluidez para shooters, carreras y experiencias inmersivas.',
+    images: [
+      'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=1200&q=80'
+    ],
+    specifications: [
+      { title: 'Pantalla', lines: ['27 pulgadas', 'Resolucion QHD'] },
+      { title: 'Rendimiento', lines: ['240 Hz', '1 ms GtG'] },
+      { title: 'Conectividad', lines: ['DisplayPort 1.4', 'HDMI 2.1'] }
+    ],
+    compatibility: 'PC, PlayStation 5, Xbox Series X/S',
+    rating: 4.6,
+    ratingCount: 96,
+    reviews: [
+      {
+        author: 'FrameRush',
+        score: 5,
+        date: '2026-03-06',
+        title: 'Fluidez total',
+        comment: 'El salto a 240 Hz se nota bastante y los colores se ven muy bien.'
+      }
+    ],
+    related: [
+      {
+        slug: 'aetherblade-gaming-mouse',
+        name: 'AetherBlade Gaming Mouse',
+        image: 'https://images.unsplash.com/photo-1613141412501-9012977f1969?auto=format&fit=crop&w=820&q=80',
+        price: 79.99
+      }
+    ]
   }
 };
 
@@ -219,14 +299,16 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
 
   if (req.method === 'GET' && path.startsWith('/api/products/slug/')) {
     const slug = path.replace('/api/products/slug/', '');
-    return json(productsBySlug[slug] ?? productsBySlug['aetherglow-pro-gaming-headset']);
+    const product = productsBySlug[slug];
+    return product ? json(product) : json({ message: 'Producto no encontrado' }, 404);
   }
 
   if (req.method === 'GET' && path.startsWith('/api/products/')) {
     const idOrSlug = path.replace('/api/products/', '');
     const byId = Object.values(productsBySlug).find((item) => item.id === idOrSlug);
     const bySlug = productsBySlug[idOrSlug];
-    return json(byId ?? bySlug ?? productsBySlug['aetherglow-pro-gaming-headset']);
+    const product = byId ?? bySlug;
+    return product ? json(product) : json({ message: 'Producto no encontrado' }, 404);
   }
 
   if (req.method === 'POST' && path === '/api/auth/login') {

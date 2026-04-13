@@ -601,7 +601,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
   }
 
   protected openProductDetail(product: CatalogProduct): void {
-    this.router.navigate(['/product', product.slug ?? this.toSlug(product.name)]);
+    this.mobileFiltersOpen.set(false);
+    void this.router.navigate(['/product', product.slug ?? this.toSlug(product.name)]);
   }
 
   protected ratingStars(rating: number): boolean[] {
