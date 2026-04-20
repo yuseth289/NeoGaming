@@ -1,11 +1,14 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
 import { CartApi } from '../../cart/data-access/cart.api';
 import { CartUiService } from '../../cart/data-access/cart-ui.service';
+import { CatalogApi } from '../../catalog/data-access/catalog.api';
 
 interface Product {
+  id?: number;
   slug: string;
   name: string;
   image: string;
@@ -38,6 +41,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private readonly cartApi = inject(CartApi);
   private readonly cartUi = inject(CartUiService);
+  private readonly catalogApi = inject(CatalogApi);
   protected readonly loadingProducts = signal(true);
   protected readonly revealProducts = signal(false);
   protected readonly currentHeroIndex = signal(0);
@@ -123,6 +127,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.heroIntervalId = setInterval(() => this.nextHeroSlide(), 5000);
+    this.loadFeaturedProducts();
   }
 
   ngAfterViewInit(): void {
@@ -181,8 +186,15 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cartMessage.set(null);
     this.addingProductName.set(product.name);
 
+    if (typeof product.id !== 'number') {
+      this.cartMessage.set('No se pudo identificar el producto para agregarlo al carrito.');
+      this.addingProductName.set(null);
+      this.scheduleCartMessageClear();
+      return;
+    }
+
     this.cartApi
-      .addItem({ productName: product.name, quantity: 1 })
+      .addItem({ productoId: product.id, cantidad: 1 })
       .pipe(finalize(() => this.addingProductName.set(null)))
       .subscribe({
         next: (response) => {
@@ -212,6 +224,91 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       clearTimeout(this.cartMessageTimeout);
     }
     this.cartMessageTimeout = setTimeout(() => this.cartMessage.set(null), 2600);
+  }
+
+  private loadFeaturedProducts(): void {
+    this.catalogApi
+      .getCatalog({ size: 4 })
+      .pipe(catchError(() => of([])))
+      .subscribe((response) => {
+        const featured = this.normalizeCatalogResponse(response).slice(0, 4);
+        if (featured.length > 0) {
+          this.products.set(featured);
+        }
+      });
+  }
+
+  private normalizeCatalogResponse(response: unknown): Product[] {
+    const payload = Array.isArray(response)
+      ? response
+      : Array.isArray((response as { content?: unknown[] } | null)?.content)
+        ? ((response as { content: unknown[] }).content ?? [])
+        : [];
+
+    return payload
+      .map((item) => this.normalizeProduct(item))
+      .filter((item): item is Product => item !== null);
+  }
+
+  private normalizeProduct(raw: unknown): Product | null {
+    if (!raw || typeof raw !== 'object') {
+      return null;
+    }
+
+    const source = raw as any;
+    const name = this.stringOrEmpty(source.nombre) || this.stringOrEmpty(source.name);
+    if (!name) {
+      return null;
+    }
+
+    const price = this.numberOrZero(source.precioVigente) || this.numberOrZero(source.price);
+    const oldPrice = this.numberOrZero(source.precioLista) || undefined;
+    const stock = this.numberOrZero(source.stockDisponible);
+    const reviews = this.numberOrZero(source.totalResenas) || this.numberOrZero(source.ratingCount);
+    const rating = Math.max(1, Math.min(5, Math.round(this.numberOrZero(source.ratingPromedio) || this.numberOrZero(source.rating) || 4)));
+
+    return {
+      id: this.numberOrUndefined(source.idProducto),
+      slug: this.stringOrEmpty(source.slug) || this.toSlug(name),
+      name,
+      image:
+        this.stringOrEmpty(source.urlImagenPrincipal) ||
+        this.stringOrEmpty(source.image) ||
+        'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=960&q=80',
+      price,
+      rating,
+      ratingCount: reviews,
+      badge: stock > 0 && stock <= 5 ? 'Ultimas' : 'Destacado',
+      supportInfo: stock > 0 ? `Existencias: ${stock}` : 'Sin stock'
+    };
+  }
+
+  private stringOrEmpty(value: unknown): string {
+    return typeof value === 'string' ? value : '';
+  }
+
+  private numberOrZero(value: unknown): number {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
+  }
+
+  private numberOrUndefined(value: unknown): number | undefined {
+    const parsed = this.numberOrZero(value);
+    return parsed > 0 ? parsed : undefined;
+  }
+
+  private toSlug(value: string): string {
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
   }
 }
 

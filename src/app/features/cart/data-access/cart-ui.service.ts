@@ -3,6 +3,8 @@ import { CartApi } from './cart.api';
 
 export interface CartItem {
   id?: string;
+  productId?: number;
+  slug?: string;
   name: string;
   price: number;
   quantity: number;
@@ -13,9 +15,16 @@ export interface CartItem {
 
 interface ApiCartItem {
   id?: string;
+  idItem?: string | number;
+  productId?: number;
+  idProducto?: number;
+  slug?: string;
   productName?: string;
+  nombreProducto?: string;
   quantity?: number;
+  cantidad?: number;
   unitPrice?: number;
+  precioUnitario?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -89,8 +98,9 @@ export class CartUiService {
   }
 
   hydrateFromApi(response: unknown): void {
+    const currentItems = new Map(this.items().map((item) => [item.name, item]));
     const nextItems = this.extractApiItems(response)
-      .map((item) => this.mapApiItem(item))
+      .map((item) => this.mapApiItem(item, currentItems))
       .filter((item): item is CartItem => item !== null);
 
     this.items.set(nextItems);
@@ -105,17 +115,51 @@ export class CartUiService {
     return Array.isArray(maybeItems) ? (maybeItems as ApiCartItem[]) : [];
   }
 
-  private mapApiItem(item: ApiCartItem): CartItem | null {
-    const name = typeof item.productName === 'string' ? item.productName : '';
+  private mapApiItem(item: ApiCartItem, currentItems: Map<string, CartItem>): CartItem | null {
+    const name =
+      typeof item.nombreProducto === 'string'
+        ? item.nombreProducto
+        : typeof item.productName === 'string'
+          ? item.productName
+          : '';
     if (!name) {
       return null;
     }
 
+    const existing = currentItems.get(name);
+
     return {
-      id: typeof item.id === 'string' ? item.id : undefined,
+      id:
+        typeof item.idItem === 'number'
+          ? `${item.idItem}`
+          : typeof item.idItem === 'string'
+            ? item.idItem
+            : typeof item.id === 'string'
+              ? item.id
+              : undefined,
+      productId:
+        typeof item.idProducto === 'number'
+          ? item.idProducto
+          : typeof item.productId === 'number'
+            ? item.productId
+            : existing?.productId,
+      slug: typeof item.slug === 'string' ? item.slug : existing?.slug,
       name,
-      price: typeof item.unitPrice === 'number' ? item.unitPrice : 0,
-      quantity: typeof item.quantity === 'number' ? item.quantity : 1
+      price:
+        typeof item.precioUnitario === 'number'
+          ? item.precioUnitario
+          : typeof item.unitPrice === 'number'
+            ? item.unitPrice
+            : 0,
+      quantity:
+        typeof item.cantidad === 'number'
+          ? item.cantidad
+          : typeof item.quantity === 'number'
+            ? item.quantity
+            : 1,
+      image: existing?.image,
+      oldPrice: existing?.oldPrice,
+      stockLabel: existing?.stockLabel
     };
   }
 }

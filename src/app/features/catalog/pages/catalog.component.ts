@@ -10,6 +10,7 @@ import { CatalogApi } from '../data-access/catalog.api';
 import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
 
 interface CatalogProduct {
+  id?: number;
   slug?: string;
   name: string;
   image: string;
@@ -614,8 +615,14 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.cartMessage.set(null);
     this.addingProductName.set(product.name);
 
+    if (typeof product.id !== 'number') {
+      this.cartMessage.set('No se pudo identificar el producto para agregarlo al carrito.');
+      this.addingProductName.set(null);
+      return;
+    }
+
     this.cartApi
-      .addItem({ productName: product.name, quantity: 1 })
+      .addItem({ productoId: product.id, cantidad: 1 })
       .pipe(finalize(() => this.addingProductName.set(null)))
       .subscribe({
         next: (response) => {
@@ -686,8 +693,15 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   private loadCatalogFromApi(): void {
     this.filtering.set(true);
+    const params: Record<string, string | number | boolean> = {
+      size: 100
+    };
+    const search = this.search()?.trim();
+    if (search) {
+      params['texto'] = search;
+    }
     this.catalogApi
-      .getCatalog()
+      .getCatalog(params)
       .pipe(
         catchError(() => of([])),
         finalize(() => this.filtering.set(false))
@@ -703,6 +717,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
   private normalizeCatalogResponse(response: unknown): CatalogProduct[] {
     const payload = Array.isArray(response)
       ? response
+      : Array.isArray((response as { content?: unknown[] } | null)?.content)
+        ? ((response as { content: unknown[] }).content ?? [])
       : Array.isArray((response as { items?: unknown[] } | null)?.items)
         ? ((response as { items: unknown[] }).items ?? [])
         : [];
@@ -718,24 +734,30 @@ export class CatalogComponent implements OnInit, OnDestroy {
     }
 
     const source = raw as any;
-    const name = this.stringOrEmpty(source.name) || this.stringOrEmpty(source.title);
+    const name =
+      this.stringOrEmpty(source.nombre) ||
+      this.stringOrEmpty(source.name) ||
+      this.stringOrEmpty(source.title);
     if (!name) {
       return null;
     }
 
-    const category = this.stringOrEmpty(source.category) || 'accessories';
-    const brand = this.stringOrEmpty(source.brand) || 'NeoTech';
+    const category = this.normalizeCategory(source.nombreCategoria) || this.stringOrEmpty(source.category) || 'accessories';
+    const brand = this.stringOrEmpty(source.nombreVendedor) || this.stringOrEmpty(source.brand) || 'NeoGaming';
     const platform = this.stringOrEmpty(source.platform) || 'pc';
-    const reviews = this.numberOrZero(source.reviews) || this.numberOrZero(source.ratingCount);
+    const reviews = this.numberOrZero(source.totalResenas) || this.numberOrZero(source.reviews) || this.numberOrZero(source.ratingCount);
     const rating = Math.max(1, Math.min(5, Math.round(this.numberOrZero(source.rating) || 4)));
-    const price = this.numberOrZero(source.price);
-    const oldPrice = this.numberOrZero(source.oldPrice);
+    const price = this.numberOrZero(source.precioVigente) || this.numberOrZero(source.price);
+    const oldPrice = this.numberOrZero(source.precioLista) || this.numberOrZero(source.oldPrice);
     const badge = this.normalizeBadge(source.badge);
+    const stock = this.numberOrZero(source.stockDisponible);
 
     return {
+      id: this.numberOrUndefined(source.idProducto),
       slug: this.stringOrEmpty(source.slug) || this.toSlug(name),
       name,
       image:
+        this.stringOrEmpty(source.urlImagenPrincipal) ||
         this.stringOrEmpty(source.image) ||
         this.stringOrEmpty(source.imageUrl) ||
         'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=960&q=80',
@@ -746,7 +768,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
       oldPrice: oldPrice > 0 ? oldPrice : undefined,
       rating,
       reviews,
-      shipping: this.stringOrEmpty(source.shipping) || 'Envio en 24 h',
+      shipping: this.stringOrEmpty(source.shipping) || (stock > 0 ? `Existencias: ${stock}` : 'Sin stock'),
       badge
     };
   }
@@ -773,6 +795,31 @@ export class CatalogComponent implements OnInit, OnDestroy {
     return 0;
   }
 
+  private numberOrUndefined(value: unknown): number | undefined {
+    const parsed = this.numberOrZero(value);
+    return parsed > 0 ? parsed : undefined;
+  }
+
+  private normalizeCategory(value: unknown): string {
+    const category = this.stringOrEmpty(value).toLowerCase();
+    if (!category) {
+      return '';
+    }
+    if (category.includes('videoj')) {
+      return 'video-games';
+    }
+    if (category.includes('consol')) {
+      return 'consoles';
+    }
+    if (category.includes('perif')) {
+      return 'peripherals';
+    }
+    if (category.includes('hardware')) {
+      return 'hardware';
+    }
+    return 'accessories';
+  }
+
   private toWishlistId(product: CatalogProduct): string {
     return product.slug ?? this.toSlug(product.name);
   }
@@ -793,6 +840,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   private toWishlistItem(product: CatalogProduct) {
     return {
       id: this.toWishlistId(product),
+      productId: product.id,
       name: product.name,
       image: product.image,
       price: product.price,

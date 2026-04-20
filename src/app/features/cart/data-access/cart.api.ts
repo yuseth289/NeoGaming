@@ -7,22 +7,22 @@ export class CartApi {
   private readonly api = inject(ApiClient);
 
   getCart(): Observable<unknown> {
-    return this.api.get('/cart');
+    return this.api.get('/carrito');
   }
 
   addItem(payload: unknown): Observable<unknown> {
-    return this.api.post('/cart/items', payload);
+    return this.api.post('/carrito/items', payload);
   }
 
   updateItem(itemId: string, payload: unknown): Observable<unknown> {
-    return this.api.patch(`/cart/items/${itemId}`, payload);
+    return this.api.patch(`/carrito/items/${itemId}`, payload);
   }
 
   removeItem(itemId: string): Observable<unknown> {
-    return this.api.delete(`/cart/items/${itemId}`);
+    return this.api.delete(`/carrito/items/${itemId}`);
   }
 
   clear(): Observable<unknown> {
-    return this.api.delete('/cart');
+    return this.api.delete('/carrito');
   }
 }

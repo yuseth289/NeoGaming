@@ -2,6 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 
 export interface WishlistItem {
   id: string;
+  productId?: number;
   name: string;
   image: string;
   price: number;

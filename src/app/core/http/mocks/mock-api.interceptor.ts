@@ -316,22 +316,44 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
     const email = body.email ?? 'jugador@neogaming.com';
     const name = email.split('@')[0] || 'Jugador';
     authState = { email, name };
-    return json({ ok: true, user: authState });
+    return json({
+      token: 'mock-jwt-token',
+      usuarioId: 1,
+      nombre: name,
+      email,
+      rol: 'ROLE_CLIENTE'
+    });
   }
 
-  if (req.method === 'POST' && path === '/api/auth/register') {
-    const body = (req.body ?? {}) as { email?: string; name?: string };
+  if (req.method === 'POST' && (path === '/api/auth/register' || path === '/api/auth/registro')) {
+    const body = (req.body ?? {}) as { email?: string; name?: string; nombre?: string };
     const email = body.email ?? 'jugador@neogaming.com';
-    const name = body.name ?? (email.split('@')[0] || 'Jugador');
+    const name = body.nombre ?? body.name ?? (email.split('@')[0] || 'Jugador');
     authState = { email, name };
-    return json({ ok: true, user: authState });
+    return json({
+      id: 1,
+      nombre: name,
+      email,
+      telefono: null,
+      numeroDocumento: null,
+      rol: 'CLIENTE',
+      estado: 'ACTIVO'
+    }, 201);
   }
 
-  if (req.method === 'GET' && path === '/api/auth/me') {
+  if (req.method === 'GET' && (path === '/api/auth/me' || path === '/api/usuarios/me')) {
     if (!authState) {
-      return json({ user: null }, 401);
+      return json({ message: 'No autenticado' }, 401);
     }
-    return json({ user: authState });
+    return json({
+      id: 1,
+      nombre: authState.name,
+      email: authState.email,
+      telefono: null,
+      numeroDocumento: null,
+      rol: 'CLIENTE',
+      estado: 'ACTIVO'
+    });
   }
 
   if (req.method === 'POST' && path === '/api/auth/logout') {
@@ -339,19 +361,48 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
     return json({ ok: true });
   }
 
-  if (req.method === 'GET' && path === '/api/cart') {
-    return json({ items: cartState });
+  if (req.method === 'GET' && (path === '/api/cart' || path === '/api/carrito')) {
+    return json({
+      idCarrito: 1,
+      idUsuario: 1,
+      estado: 'ACTIVO',
+      items: cartState.map((item) => ({
+        idItem: item.id,
+        idProducto: catalogData.find((catalogItem) => catalogItem.name === item.productName)?.id ?? item.id,
+        slug: catalogData.find((catalogItem) => catalogItem.name === item.productName)?.slug,
+        nombreProducto: item.productName,
+        cantidad: item.quantity,
+        precioUnitario: item.unitPrice,
+        subtotal: item.unitPrice * item.quantity,
+        moneda: 'COP'
+      })),
+      resumen: {
+        cantidadProductosDistintos: cartState.length,
+        cantidadUnidades: cartState.reduce((total, item) => total + item.quantity, 0),
+        subtotal: cartState.reduce((total, item) => total + item.unitPrice * item.quantity, 0),
+        total: cartState.reduce((total, item) => total + item.unitPrice * item.quantity, 0),
+        moneda: 'COP'
+      }
+    });
   }
 
-  if (req.method === 'POST' && path === '/api/cart/items') {
-    const body = (req.body ?? {}) as { productName?: string; quantity?: number };
-    const productName = body.productName ?? '';
-    const quantity = Math.max(1, Number(body.quantity ?? 1));
-    const catalogMatch = catalogData.find((item) => item.name === productName);
+  if (req.method === 'POST' && (path === '/api/cart/items' || path === '/api/carrito/items')) {
+    const body = (req.body ?? {}) as {
+      productName?: string;
+      quantity?: number;
+      productoId?: string | number;
+      cantidad?: number;
+    };
+    const quantity = Math.max(1, Number(body.cantidad ?? body.quantity ?? 1));
+    const productId = `${body.productoId ?? ''}`;
+    const catalogMatch =
+      catalogData.find((item) => item.id === productId) ??
+      catalogData.find((item) => item.name === (body.productName ?? ''));
     if (!catalogMatch) {
       return json({ ok: false, message: 'Producto no encontrado' }, 404);
     }
 
+    const productName = catalogMatch.name;
     const existing = cartState.find((item) => item.productName === productName);
     if (existing) {
       existing.quantity += quantity;
@@ -366,26 +417,56 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
         }
       ];
     }
-    return json({ ok: true, items: cartState });
+    return mockApiInterceptor(
+      req.clone({
+        method: 'GET',
+        url: '/api/carrito'
+      }),
+      next
+    );
   }
 
-  if (req.method === 'PATCH' && path.startsWith('/api/cart/items/')) {
-    const itemId = path.replace('/api/cart/items/', '');
-    const body = (req.body ?? {}) as { quantity?: number };
-    const quantity = Math.max(1, Number(body.quantity ?? 1));
+  if (
+    req.method === 'PATCH' &&
+    (path.startsWith('/api/cart/items/') || path.startsWith('/api/carrito/items/'))
+  ) {
+    const itemId = path.split('/').at(-1) ?? '';
+    const body = (req.body ?? {}) as { quantity?: number; cantidad?: number };
+    const quantity = Math.max(1, Number(body.cantidad ?? body.quantity ?? 1));
     cartState = cartState.map((item) => (item.id === itemId ? { ...item, quantity } : item));
-    return json({ ok: true, items: cartState });
+    return mockApiInterceptor(
+      req.clone({
+        method: 'GET',
+        url: '/api/carrito'
+      }),
+      next
+    );
   }
 
-  if (req.method === 'DELETE' && path.startsWith('/api/cart/items/')) {
-    const itemId = path.replace('/api/cart/items/', '');
+  if (
+    req.method === 'DELETE' &&
+    (path.startsWith('/api/cart/items/') || path.startsWith('/api/carrito/items/'))
+  ) {
+    const itemId = path.split('/').at(-1) ?? '';
     cartState = cartState.filter((item) => item.id !== itemId);
-    return json({ ok: true, items: cartState });
+    return mockApiInterceptor(
+      req.clone({
+        method: 'GET',
+        url: '/api/carrito'
+      }),
+      next
+    );
   }
 
-  if (req.method === 'DELETE' && path === '/api/cart') {
+  if (req.method === 'DELETE' && (path === '/api/cart' || path === '/api/carrito')) {
     cartState = [];
-    return json({ ok: true, items: cartState });
+    return mockApiInterceptor(
+      req.clone({
+        method: 'GET',
+        url: '/api/carrito'
+      }),
+      next
+    );
   }
 
   return next(req);

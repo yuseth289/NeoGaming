@@ -1,5 +1,7 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { CartItem } from '../../../cart/data-access/cart-ui.service';
+import { CheckoutApi } from '../../data-access/checkout.api';
 import { CheckoutStateService } from '../../data-access/checkout-state.service';
 import { CopPricePipe } from '../../../../shared/pipes/cop-price.pipe';
 import {
@@ -27,7 +29,49 @@ import {
   styleUrl: './checkout-confirmation.component.css'
 })
 export class CheckoutConfirmationComponent {
+  private readonly checkoutApi = inject(CheckoutApi);
   private readonly checkoutState = inject(CheckoutStateService);
+  private readonly remoteOrder = signal<{
+    orderId: string;
+    createdAt: string;
+    total: number;
+    summary?: {
+      subtotal: number;
+      impuesto: number;
+      costoEnvio: number;
+      total: number;
+      cantidadItems: number;
+    };
+    paymentMethod: 'card' | 'paypal' | 'efecty' | 'nequi';
+    paymentStatus: string;
+    shipping: {
+      fullName: string;
+      email: string;
+      phone: string;
+      address: string;
+      apartment?: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+      reference?: string;
+    };
+    billing: {
+      fullName: string;
+      email: string;
+      phone: string;
+      address: string;
+      apartment?: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+      reference?: string;
+    } | null;
+    items: CartItem[];
+    estimatedDelivery?: string;
+    invoiceNumber?: string | null;
+  } | null>(null);
   protected readonly icons = {
     success: BadgeCheck,
     calendar: CalendarDays,
@@ -49,25 +93,38 @@ export class CheckoutConfirmationComponent {
     back: ArrowLeft
   };
   protected readonly orderId: string | null;
-  protected readonly order = computed(() => this.checkoutState.lastOrder());
+  protected readonly order = computed(() => this.remoteOrder() ?? this.checkoutState.lastOrder());
   protected readonly missingOrder = computed(() => {
     const order = this.order();
     return !order || order.orderId !== this.orderId;
   });
   protected readonly itemsCount = computed(() => {
     const order = this.order();
+    const summaryCount = this.remoteOrder()?.summary?.cantidadItems;
+    if (typeof summaryCount === 'number') {
+      return summaryCount;
+    }
     return order ? order.items.reduce((total, item) => total + item.quantity, 0) : 0;
   });
   protected readonly subtotal = computed(() => {
+    const summary = this.remoteOrder()?.summary;
+    if (summary) {
+      return summary.subtotal;
+    }
     const order = this.order();
     return order ? order.items.reduce((total, item) => total + item.price * item.quantity, 0) : 0;
   });
-  protected readonly shippingCost = computed(() => (this.subtotal() > 0 ? 15 : 0));
-  protected readonly taxes = computed(() => this.subtotal() * 0.08);
+  protected readonly shippingCost = computed(() => this.remoteOrder()?.summary?.costoEnvio ?? 0);
+  protected readonly taxes = computed(() => this.remoteOrder()?.summary?.impuesto ?? 0);
   protected readonly estimatedDelivery = computed(() => {
     const order = this.order();
     if (!order) {
       return '3 a 5 dias habiles';
+    }
+
+    const remoteEstimatedDelivery = this.remoteOrder()?.estimatedDelivery;
+    if (remoteEstimatedDelivery) {
+      return remoteEstimatedDelivery;
     }
 
     const start = new Date(order.createdAt);
@@ -93,6 +150,10 @@ export class CheckoutConfirmationComponent {
     }
   });
   protected readonly paymentStatus = computed(() => {
+    const remoteStatus = this.remoteOrder()?.paymentStatus ?? this.checkoutState.lastOrder()?.paymentStatus;
+    if (remoteStatus) {
+      return remoteStatus;
+    }
     if (this.missingOrder()) {
       return 'Pendiente de validacion';
     }
@@ -103,6 +164,17 @@ export class CheckoutConfirmationComponent {
     return createdAt ? this.formatDate(new Date(createdAt), true) : 'Pendiente';
   });
   protected readonly billingAddress = computed(() => {
+    const billing = this.remoteOrder()?.billing;
+    if (billing) {
+      return {
+        name: billing.fullName,
+        line1: billing.address,
+        line2: `${billing.city}, ${billing.state}`,
+        line3: `${billing.country} · ${billing.postalCode}`,
+        contact: billing.email
+      };
+    }
+
     const shipping = this.order()?.shipping;
     if (!shipping) {
       return null;
@@ -117,7 +189,7 @@ export class CheckoutConfirmationComponent {
     };
   });
   protected readonly shippingAddress = computed(() => {
-    const shipping = this.order()?.shipping;
+    const shipping = this.remoteOrder()?.shipping ?? this.order()?.shipping;
     if (!shipping) {
       return null;
     }
@@ -131,12 +203,14 @@ export class CheckoutConfirmationComponent {
     };
   });
   protected readonly invoiceAvailable = computed(() => {
-    const method = this.order()?.paymentMethod;
-    return method === 'card' || method === 'paypal';
+    return !!this.remoteOrder()?.invoiceNumber || this.order()?.paymentMethod === 'card' || this.order()?.paymentMethod === 'paypal';
   });
 
   constructor(route: ActivatedRoute) {
     this.orderId = route.snapshot.paramMap.get('orderId');
+    if (this.orderId) {
+      this.loadConfirmation(this.orderId);
+    }
   }
 
   protected downloadReceipt(): void {
@@ -185,5 +259,158 @@ export class CheckoutConfirmationComponent {
     link.download = `${kind}-${order.orderId}.txt`;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  private loadConfirmation(orderId: string): void {
+    this.checkoutApi.getConfirmation(orderId).subscribe({
+      next: (response) => {
+        const normalized = this.normalizeConfirmation(response);
+        if (normalized) {
+          this.remoteOrder.set(normalized);
+        }
+      },
+      error: () => {
+        this.remoteOrder.set(null);
+      }
+    });
+  }
+
+  private normalizeConfirmation(response: unknown): {
+    orderId: string;
+    createdAt: string;
+    total: number;
+    paymentMethod: 'card' | 'paypal' | 'efecty' | 'nequi';
+    paymentStatus: string;
+    summary?: {
+      subtotal: number;
+      impuesto: number;
+      costoEnvio: number;
+      total: number;
+      cantidadItems: number;
+    };
+    shipping: {
+      fullName: string;
+      email: string;
+      phone: string;
+      address: string;
+      apartment?: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+      reference?: string;
+    };
+    billing: {
+      fullName: string;
+      email: string;
+      phone: string;
+      address: string;
+      apartment?: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+      reference?: string;
+    } | null;
+    items: CartItem[];
+    estimatedDelivery?: string;
+    invoiceNumber?: string | null;
+  } | null {
+    if (!response || typeof response !== 'object') {
+      return null;
+    }
+
+    const source = response as any;
+    if (typeof source.numeroPedido !== 'string' || typeof source.fechaPedido !== 'string') {
+      return null;
+    }
+
+    return {
+      orderId: source.numeroPedido,
+      createdAt: source.fechaPedido,
+      total: typeof source.totalPagado === 'number' ? source.totalPagado : Number(source.totalPagado ?? 0),
+      summary: source.resumen
+        ? {
+            subtotal: this.toNumber(source.resumen.subtotal),
+            impuesto: this.toNumber(source.resumen.impuesto),
+            costoEnvio: this.toNumber(source.resumen.costoEnvio),
+            total: this.toNumber(source.resumen.total),
+            cantidadItems: this.toNumber(source.resumen.cantidadItems)
+          }
+        : undefined,
+      paymentMethod: this.normalizePaymentMethod(source.metodoPago),
+      paymentStatus: typeof source.estadoPago === 'string' ? source.estadoPago : 'PENDIENTE',
+      shipping: this.normalizeAddress(source.direccionEnvio),
+      billing: source.direccionFactura ? this.normalizeAddress(source.direccionFactura) : null,
+      items: this.normalizeItems(source.items),
+      estimatedDelivery: typeof source.fechaEstimadaEntrega === 'string'
+        ? this.formatDate(new Date(source.fechaEstimadaEntrega))
+        : undefined,
+      invoiceNumber: typeof source.numeroFactura === 'string' ? source.numeroFactura : null
+    };
+  }
+
+  private normalizeItems(items: unknown): CartItem[] {
+    if (!Array.isArray(items)) {
+      return [];
+    }
+
+    return items.map((item: any) => ({
+      productId: typeof item.idProducto === 'number' ? item.idProducto : undefined,
+      name: typeof item.nombreProducto === 'string' ? item.nombreProducto : 'Producto',
+      price: typeof item.precioUnitario === 'number' ? item.precioUnitario : Number(item.precioUnitario ?? 0),
+      quantity: typeof item.cantidad === 'number' ? item.cantidad : Number(item.cantidad ?? 1)
+    }));
+  }
+
+  private normalizeAddress(value: any): {
+    fullName: string;
+    email: string;
+    phone: string;
+    address: string;
+    apartment?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    reference?: string;
+  } {
+    return {
+      fullName: typeof value?.nombreCompleto === 'string' ? value.nombreCompleto : 'Cliente NeoGaming',
+      email: typeof value?.correoElectronico === 'string' ? value.correoElectronico : '',
+      phone: typeof value?.telefono === 'string' ? value.telefono : '',
+      address: typeof value?.direccion === 'string' ? value.direccion : '',
+      apartment: typeof value?.apartamentoInterior === 'string' ? value.apartamentoInterior : undefined,
+      city: typeof value?.ciudad === 'string' ? value.ciudad : '',
+      state: typeof value?.estadoRegion === 'string' ? value.estadoRegion : '',
+      postalCode: typeof value?.codigoPostal === 'string' ? value.codigoPostal : '',
+      country: typeof value?.pais === 'string' ? value.pais : '',
+      reference: typeof value?.referenciaEntrega === 'string' ? value.referenciaEntrega : undefined
+    };
+  }
+
+  private normalizePaymentMethod(value: unknown): 'card' | 'paypal' | 'efecty' | 'nequi' {
+    const method = typeof value === 'string' ? value.toUpperCase() : '';
+    switch (method) {
+      case 'PAYPAL':
+        return 'paypal';
+      case 'EFECTY':
+        return 'efecty';
+      case 'NEQUI':
+        return 'nequi';
+      default:
+        return 'card';
+    }
+  }
+
+  private toNumber(value: unknown): number {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
   }
 }

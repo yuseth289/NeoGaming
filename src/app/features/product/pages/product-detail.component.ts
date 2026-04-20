@@ -24,6 +24,7 @@ interface RelatedProduct {
 }
 
 interface ProductDetail {
+  id?: number;
   slug: string;
   name: string;
   category?: string;
@@ -505,8 +506,14 @@ export class ProductDetailComponent {
     this.message.set(null);
 
     const item = this.product();
+    if (typeof item.id !== 'number') {
+      this.adding.set(false);
+      this.message.set('No se pudo identificar el producto para agregarlo al carrito.');
+      return;
+    }
+
     this.cartApi
-      .addItem({ productName: item.name, quantity: this.quantity() })
+      .addItem({ productoId: item.id, cantidad: this.quantity() })
       .pipe(finalize(() => this.adding.set(false)))
       .subscribe({
         next: (response) => {
@@ -636,11 +643,16 @@ export class ProductDetailComponent {
   }
 
   private loadProductFromApi(slug: string): void {
+    const fallbackById =
+      /^\d+$/.test(slug)
+        ? this.productApi.getById(slug)
+        : of(null);
+
     this.loadingRemote.set(true);
     this.productApi
       .getBySlug(slug)
       .pipe(
-        catchError(() => this.productApi.getById(slug)),
+        catchError(() => fallbackById),
         catchError(() => of(null)),
         finalize(() => this.loadingRemote.set(false))
       )
@@ -659,7 +671,10 @@ export class ProductDetailComponent {
       return null;
     }
     const source = response as any;
-    const name = this.stringOrEmpty(source.name) || this.stringOrEmpty(source.title);
+    const name =
+      this.stringOrEmpty(source.nombre) ||
+      this.stringOrEmpty(source.name) ||
+      this.stringOrEmpty(source.title);
     if (!name) {
       return null;
     }
@@ -675,20 +690,26 @@ export class ProductDetailComponent {
       : [];
 
     return {
+      id: this.numberOrUndefined(source.idProducto),
       slug: this.stringOrEmpty(source.slug) || fallbackSlug,
       name,
-      category: this.stringOrEmpty(source.category) || defaultItem.category,
-      price: this.numberOrZero(source.price) || defaultItem.price,
-      oldPrice: this.numberOrZero(source.oldPrice) || undefined,
-      stock: this.numberOrZero(source.stock) || defaultItem.stock,
+      category: this.stringOrEmpty(source.nombreCategoria) || this.stringOrEmpty(source.category) || defaultItem.category,
+      price: this.numberOrZero(source.precioVigente) || this.numberOrZero(source.price) || defaultItem.price,
+      oldPrice: this.numberOrZero(source.precioLista) || this.numberOrZero(source.oldPrice) || undefined,
+      stock: this.numberOrZero(source.stockDisponible) || this.numberOrZero(source.stock) || defaultItem.stock,
       subtitle: this.stringOrEmpty(source.subtitle) || defaultItem.subtitle,
       tags: this.stringArrayOrEmpty(source.tags).length > 0 ? this.stringArrayOrEmpty(source.tags) : defaultItem.tags,
-      description: this.stringOrEmpty(source.description) || defaultItem.description,
-      images: this.stringArrayOrEmpty(source.images).length > 0 ? this.stringArrayOrEmpty(source.images) : defaultItem.images,
+      description: this.stringOrEmpty(source.descripcion) || this.stringOrEmpty(source.description) || defaultItem.description,
+      images:
+        this.imageArray(source).length > 0
+          ? this.imageArray(source)
+          : this.stringArrayOrEmpty(source.images).length > 0
+            ? this.stringArrayOrEmpty(source.images)
+            : defaultItem.images,
       specifications: specsFromApi.length > 0 ? specsFromApi : defaultItem.specifications,
       compatibility: this.stringOrEmpty(source.compatibility) || defaultItem.compatibility,
-      rating: this.numberOrZero(source.rating) || defaultItem.rating,
-      ratingCount: this.numberOrZero(source.ratingCount) || defaultItem.ratingCount,
+      rating: this.numberOrZero(source.ratingPromedio) || this.numberOrZero(source.rating) || defaultItem.rating,
+      ratingCount: this.numberOrZero(source.totalResenas) || this.numberOrZero(source.ratingCount) || defaultItem.ratingCount,
       reviews: reviewsFromApi.length > 0 ? reviewsFromApi : defaultItem.reviews,
       related: Array.isArray(source.related)
         ? (source.related as unknown[]).map((item) => this.normalizeRelated(item)).filter((item): item is RelatedProduct => item !== null)
@@ -777,5 +798,20 @@ export class ProductDetailComponent {
       return Number.isFinite(parsed) ? parsed : 0;
     }
     return 0;
+  }
+
+  private numberOrUndefined(value: unknown): number | undefined {
+    const parsed = this.numberOrZero(value);
+    return parsed > 0 ? parsed : undefined;
+  }
+
+  private imageArray(source: any): string[] {
+    if (!Array.isArray(source.imagenes)) {
+      return [];
+    }
+
+    return source.imagenes
+      .map((image: any) => this.stringOrEmpty(image?.urlImagen))
+      .filter((value: string) => !!value);
   }
 }

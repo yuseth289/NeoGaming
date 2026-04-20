@@ -5,7 +5,11 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { API_BASE_URL } from './core/http/api-client/api-client.service';
+import { authInterceptor } from './core/auth/auth.interceptor';
 import { mockApiInterceptor } from './core/http/mocks/mock-api.interceptor';
+import { environment } from '../environments/environment';
+
+const httpInterceptors = environment.useMockApi ? [authInterceptor, mockApiInterceptor] : [authInterceptor];
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,8 +21,8 @@ export const appConfig: ApplicationConfig = {
         anchorScrolling: 'enabled'
       })
     ),
-    provideHttpClient(withFetch(), withInterceptors([mockApiInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors(httpInterceptors)),
     provideClientHydration(withEventReplay()),
-    { provide: API_BASE_URL, useValue: '/api' }
+    { provide: API_BASE_URL, useValue: environment.apiBaseUrl }
   ]
 };
