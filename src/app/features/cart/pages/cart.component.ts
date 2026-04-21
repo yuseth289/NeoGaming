@@ -96,7 +96,7 @@ export class CartComponent {
       return;
     }
 
-    this.runItemMutation(name, this.cartApi.updateItem(item.id, { quantity: item.quantity + 1 }), () =>
+    this.runItemMutation(name, this.cartApi.updateItem(item.id, { cantidad: item.quantity + 1 }), () =>
       this.pulseQuantity(name)
     );
   }
@@ -114,7 +114,7 @@ export class CartComponent {
       return;
     }
 
-    this.runItemMutation(name, this.cartApi.updateItem(item.id, { quantity: item.quantity - 1 }), () =>
+    this.runItemMutation(name, this.cartApi.updateItem(item.id, { cantidad: item.quantity - 1 }), () =>
       this.pulseQuantity(name)
     );
   }
@@ -143,7 +143,17 @@ export class CartComponent {
       return;
     }
 
-    this.runItemMutation(last.name, this.cartApi.addItem({ productName: last.name, quantity: last.quantity }), () => {
+    if (typeof last.productId !== 'number') {
+      this.cartUi.addItem(last.name, last.price, {
+        image: last.image,
+        stockLabel: last.stockLabel,
+        oldPrice: last.oldPrice
+      });
+      this.lastRemoved.set(null);
+      return;
+    }
+
+    this.runItemMutation(last.name, this.cartApi.addItem({ productoId: last.productId, cantidad: last.quantity }), () => {
       this.cartUi.decorateItem(last.name, {
         image: last.image,
         stockLabel: last.stockLabel,
@@ -191,12 +201,8 @@ export class CartComponent {
   }
 
   protected addRecommendation(product: { name: string; price: number; image: string }): void {
-    this.runItemMutation(product.name, this.cartApi.addItem({ productName: product.name, quantity: 1 }), () => {
-      this.cartUi.decorateItem(product.name, {
-        image: product.image,
-        stockLabel: 'En stock'
-      });
-    });
+    this.couponMessage.set('Las recomendaciones de esta seccion aun no estan integradas al catalogo real.');
+    this.couponMessageType.set('error');
   }
 
   protected isRemoving(name: string): boolean {

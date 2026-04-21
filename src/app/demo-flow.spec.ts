@@ -38,60 +38,53 @@ describe('Flujo demo con mocks', () => {
     );
 
     expect(loginResponse).toMatchObject({
-      ok: true,
-      user: {
-        email: 'demo@neogaming.com',
-        name: 'demo'
-      }
+      token: 'mock-jwt-token',
+      email: 'demo@neogaming.com',
+      nombre: 'demo'
     });
 
     const meResponse = await firstValueFrom(authApi.me());
 
     expect(meResponse).toMatchObject({
-      user: {
-        email: 'demo@neogaming.com',
-        name: 'demo'
-      }
+      email: 'demo@neogaming.com',
+      nombre: 'demo'
     });
   });
 
   it('debe permitir agregar, actualizar y vaciar el carrito mock', async () => {
     const addResponse = await firstValueFrom(
-      cartApi.addItem({ productName: 'AetherGlow Pro Gaming Headset', quantity: 1 })
+      cartApi.addItem({ productoId: 'p-001', cantidad: 1 })
     );
 
     expect(addResponse).toMatchObject({
-      ok: true,
       items: [
         expect.objectContaining({
-          productName: 'AetherGlow Pro Gaming Headset',
-          quantity: 1,
-          unitPrice: 249.99
+          nombreProducto: 'AetherGlow Pro Gaming Headset',
+          cantidad: 1,
+          precioUnitario: 249.99
         })
       ]
     });
 
-    const addedItems = (addResponse as { items: Array<{ id: string }> }).items;
-    expect(addedItems[0]?.id).toBeTruthy();
+    const addedItems = (addResponse as { items: Array<{ idItem: string }> }).items;
+    expect(addedItems[0]?.idItem).toBeTruthy();
 
     const updateResponse = await firstValueFrom(
-      cartApi.updateItem(addedItems[0].id, { quantity: 3 })
+      cartApi.updateItem(addedItems[0].idItem, { cantidad: 3 })
     );
 
     expect(updateResponse).toMatchObject({
-      ok: true,
       items: [
         expect.objectContaining({
-          productName: 'AetherGlow Pro Gaming Headset',
-          quantity: 3
+          nombreProducto: 'AetherGlow Pro Gaming Headset',
+          cantidad: 3
         })
       ]
     });
 
     const clearResponse = await firstValueFrom(cartApi.clear());
 
-    expect(clearResponse).toEqual({
-      ok: true,
+    expect(clearResponse).toMatchObject({
       items: []
     });
   });

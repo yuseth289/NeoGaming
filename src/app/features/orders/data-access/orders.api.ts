@@ -7,14 +7,14 @@ export class OrdersApi {
   private readonly api = inject(ApiClient);
 
   getOrders(params?: Record<string, string | number | boolean>): Observable<unknown> {
-    return this.api.get('/orders', { params });
+    return this.api.get('/pedidos/mis-pedidos', { params });
   }
 
   getById(orderId: string): Observable<unknown> {
-    return this.api.get(`/orders/${orderId}`);
+    return this.api.get(`/pedidos/${orderId}`);
   }
 
   create(payload: unknown): Observable<unknown> {
-    return this.api.post('/orders', payload);
+    return this.api.post('/pedidos', payload);
   }
 }

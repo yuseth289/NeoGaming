@@ -45,10 +45,13 @@ export class LoginComponent {
       .login(this.form.getRawValue())
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: () => {
-          const email = this.form.controls.email.value;
-          const fallbackName = email.split('@')[0] || 'Jugador';
-          this.authSession.login({ name: fallbackName, email });
+        next: (response) => {
+          const user = this.authSession.handleLoginResponse(response);
+          if (!user) {
+            this.error.set('No se pudo abrir la sesion con la respuesta del servidor.');
+            return;
+          }
+
           this.success.set('Inicio de sesion correcta.');
           if (this.modalMode()) {
             this.closeModal.emit();

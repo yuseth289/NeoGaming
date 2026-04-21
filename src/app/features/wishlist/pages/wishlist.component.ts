@@ -78,12 +78,19 @@ export class WishlistComponent {
     this.feedback.set(null);
     this.addingItem.set(item.id);
 
+    if (typeof item.productId !== 'number') {
+      this.feedback.set('Este favorito no tiene un producto asociado para agregarlo al carrito.');
+      this.addingItem.set(null);
+      return;
+    }
+
     this.cartApi
-      .addItem({ productName: item.name, quantity: 1 })
+      .addItem({ productoId: item.productId, cantidad: 1 })
       .pipe(finalize(() => this.addingItem.set(null)))
       .subscribe({
-        next: () => {
-          this.cartUi.addItem(item.name, item.price, {
+        next: (response) => {
+          this.cartUi.hydrateFromApi(response);
+          this.cartUi.decorateItem(item.name, {
             image: item.image,
             stockLabel: item.stockLabel,
             oldPrice: item.oldPrice

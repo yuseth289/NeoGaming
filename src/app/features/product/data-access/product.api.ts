@@ -7,14 +7,14 @@ export class ProductApi {
   private readonly api = inject(ApiClient);
 
   getById(productId: string): Observable<unknown> {
-    return this.api.get(`/products/${productId}`);
+    return this.api.get(`/catalogo/productos/${productId}`);
   }
 
   getBySlug(slug: string): Observable<unknown> {
-    return this.api.get(`/products/slug/${slug}`);
+    return this.api.get(`/catalogo/productos/slug/${slug}`);
   }
 
   getReviews(productId: string): Observable<unknown> {
-    return this.api.get(`/products/${productId}/reviews`);
+    return this.api.get(`/resenas/productos/${productId}`);
   }
 }

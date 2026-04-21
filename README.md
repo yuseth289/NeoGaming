@@ -1,83 +1,130 @@
 # NeoGaming Frontend
 
-Este proyecto es el frontend de NeoGaming, desarrollado con Angular. Incluye funcionalidades de catálogo, carrito, pagos, autenticación, perfil de usuario y más.
+Frontend Angular del MVP de NeoGaming. Esta version ya trabaja contra el backend real por defecto y deja los mocks solo como apoyo de desarrollo.
 
-## Estructura del Proyecto
+## Estado actual
 
-- **src/app/core/**: Servicios y utilidades centrales (autenticación, HTTP, layout).
-- **src/app/features/**: Módulos de funcionalidades principales (catálogo, carrito, pagos, etc.).
-- **src/app/shared/**: Componentes y servicios reutilizables (header, footer, etc.).
-- **public/**: Recursos públicos (imágenes, favicon, etc.).
-- **docs/**: Documentación adicional y planes de prototipo.
+- Auth real con JWT persistido en frontend.
+- Interceptor `Authorization` para requests autenticados.
+- `API_BASE_URL` por ambiente.
+- Integracion base de catalogo, detalle, carrito, checkout y pedidos contra el backend Spring Boot.
+- Home y wishlist alineados con el contrato real del carrito.
+- Checkout alineado con el resumen calculado por backend.
+- Mocks disponibles solo como opcion de desarrollo.
 
-## Comandos Básicos
+## Requisitos
 
-### Instalación
+- Node.js 20+
+- npm 10+
+- Backend NeoGaming corriendo en `http://localhost:8080`
+
+## Comandos
+
+Instalacion:
 
 ```bash
-npm install
+npm ci
 ```
 
-### Desarrollo
+Desarrollo:
 
 ```bash
 npm start
-# o
-ng serve
 ```
 
-### Pruebas
+Tests:
 
 ```bash
-npm test
-# o
-ng test
+npm test -- --watch=false
 ```
 
-### Build de Producción
+Build:
 
 ```bash
 npm run build
-# o
-ng build --configuration production
 ```
 
-### Linting
+Chequeo rapido de TypeScript:
 
 ```bash
-npm run lint
-# o
-ng lint
+npx tsc -p tsconfig.app.json --noEmit
 ```
 
-## Buenas Prácticas
+## Ambientes
 
-- Usa servicios para la lógica de negocio y mantén los componentes simples.
-- Aplica pruebas unitarias a servicios y componentes críticos.
-- Sigue la convención de carpetas y nombres para facilitar el mantenimiento.
-- Usa `ChangeDetectionStrategy.OnPush` cuando sea posible para mejorar el rendimiento.
-- Mantén el código formateado con Prettier y sigue las reglas de ESLint.
+- `src/environments/environment.ts`
+  - produccion
+  - usa `/api`
+- `src/environments/environment.development.ts`
+  - desarrollo
+  - usa `http://localhost:8080/api`
 
-## Docker
+Si quieres volver a usar mocks en desarrollo, cambia `useMockApi` a `true` en `src/environments/environment.development.ts`.
 
-Puedes construir y correr el frontend en un contenedor Docker:
+## Integracion esperada
 
-```bash
-docker build -t neogaming-frontend .
-docker run -p 4200:4200 neogaming-frontend
+Frontend:
+
+- `http://localhost:4200`
+
+Backend:
+
+- `http://localhost:8080`
+
+Swagger:
+
+- `http://localhost:8080/swagger-ui/index.html`
+
+## Flujos ya alineados
+
+- login
+- registro
+- restauracion de sesion
+- catalogo
+- detalle de producto
+- carrito
+- inicio de checkout
+- guardado de envio
+- pago
+- confirmacion
+- historial basico de pedidos
+
+## Flujos recomendados para prueba manual
+
+1. Registro de usuario.
+2. Login.
+3. Agregar al carrito desde `home`.
+4. Agregar al carrito desde `catalog`.
+5. Agregar al carrito desde `product-detail`.
+6. Agregar al carrito desde `wishlist`.
+7. Editar cantidades y vaciar carrito.
+8. Completar checkout y revisar confirmacion.
+
+## Documentacion util
+
+- `docs/fe-be-matriz-integracion.md`
+- `docs/mvp-backlog-priorizado.md`
+
+## Observaciones
+
+- Algunas pantallas todavia conservan partes demo o datos de apoyo visual fuera del flujo principal.
+- `orders`, `profile` y algunos fragmentos de `product-detail` todavia requieren mas integracion real.
+- Si el backend no esta arriba, el frontend puede caer en estados vacios o fallos de carga segun la pantalla.
+- Si aparecen errores de CORS, revisa `APP_CORS_ORIGIN_1` y `APP_CORS_ORIGIN_2` en el backend.
+
+## Arranque rapido conjunto
+
+1. Backend:
+
+```powershell
+cd C:\NeoGaming\backend
+docker compose up -d
+.\mvnw.cmd spring-boot:run
 ```
 
-## Contribuciones
+2. Frontend:
 
-1. Haz un fork del repositorio.
-2. Crea una rama para tu feature o fix.
-3. Haz commit de tus cambios.
-4. Abre un Pull Request.
-
-## Contacto
-
-Para dudas o sugerencias, contacta al equipo de desarrollo.
-
----
-
-> **Nota:** Consulta el archivo `docs/PROTOTYPE_PLAN.md` para detalles sobre el plan de prototipo y futuras funcionalidades.
+```powershell
+cd C:\NeoGaming\frontend
+npm start
+```

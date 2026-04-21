@@ -1,18 +1,164 @@
-<section class="page">
-  <header class="page__header">
-    <p class="eyebrow">NeoGaming AI</p>
-    <h1>How can we help you today?</h1>
-    <p class="subtext">Prototype mapping: AI assistant landing screen.</p>
-  </header>
+<!-- ========================================
+     PÁGINA PRINCIPAL - ASISTENTE IA
+     ======================================== -->
 
-  <div class="card">
-    <p class="card__title">Suggested prompts</p>
-    <ul class="list">
-      <li>Best gaming PC under $1000</li>
-      <li>Compatible RAM for my motherboard</li>
-      <li>Latest game releases</li>
-      <li>Optimize my GPU settings</li>
-      <li>Warranty details for a product</li>
-    </ul>
+<section class="assistant-page">
+  <div class="assistant-shell">
+    <!-- ========== SECCIÓN HERO ========== -->
+    <header class="assistant-hero" role="banner">
+      <!-- Contenido principal -->
+      <div class="assistant-hero__content">
+        <p class="label-accent">NeoGaming Assistant</p>
+        <h1 class="hero-title">Tu asistente de compra y soporte personalizado.</h1>
+        <p class="hero-description">
+          Resuelve dudas sobre catálogo, compatibilidad, pedidos y cuenta desde una interfaz alineada con NeoGaming.
+        </p>
+
+        <nav class="hero-actions" aria-label="Enlaces rápidos">
+          @for (link of chat.suggestedLinks; track link.route) {
+            <a class="action-link" [routerLink]="link.route">{{ link.label }}</a>
+          }
+        </nav>
+      </div>
+
+      <!-- Panel de estado -->
+      <aside class="status-panel" aria-label="Estado del asistente">
+        <div class="status-card">
+          <span class="status-card__label">Estado</span>
+          <strong class="status-card__value">@if (chat.typing()) { Respondiendo } @else { En línea }</strong>
+        </div>
+        <div class="status-card">
+          <span class="status-card__label">Mensajes</span>
+          <strong class="status-card__value">{{ chat.messageCount() }}</strong>
+        </div>
+        <div class="status-card">
+          <span class="status-card__label">Cobertura</span>
+          <strong class="status-card__value">Completa</strong>
+        </div>
+      </aside>
+    </header>
+
+    <!-- ========== ÁREA DE TRABAJO ========== -->
+    <section class="workspace" role="main">
+      <!-- Barra lateral de contexto -->
+      <aside class="context-rail" role="complementary" aria-label="Contexto y sugerencias">
+        <!-- Tarjeta de contexto activo -->
+        <div class="context-card context-card--primary">
+          <p class="card-eyebrow">Contexto activo</p>
+          <strong class="card-title">NeoGaming listo para ayudarte</strong>
+          <p class="card-description">La conversación se sincroniza con el widget flotante.</p>
+        </div>
+
+        <!-- Tarjeta de focos rápidos -->
+        <div class="context-card">
+          <p class="card-eyebrow">Focos rápidos</p>
+          <div class="focus-buttons">
+            @for (card of chat.focusCards; track card.id) {
+              <button
+                type="button"
+                class="focus-btn"
+                [class.is-active]="chat.selectedFocus() === card.id"
+                (click)="chat.setFocus(card.id)"
+                [attr.aria-pressed]="chat.selectedFocus() === card.id"
+              >
+                <strong>{{ card.title }}</strong>
+                <span>{{ card.text }}</span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Tarjeta de prompts útiles -->
+        <div class="context-card">
+          <p class="card-eyebrow">Prompts útiles</p>
+          <div class="prompt-buttons">
+            @for (item of chat.quickPrompts; track item.label) {
+              <button type="button" class="prompt-btn" (click)="chat.useQuickPrompt(item.prompt)">
+                {{ item.label }}
+              </button>
+            }
+          </div>
+        </div>
+      </aside>
+
+      <!-- ========== ZONA DE CHAT ========== -->
+      <main class="chat-container">
+        <!-- Header del chat -->
+        <header class="chat-header">
+          <div class="chat-header__info">
+            <p class="label-accent">Chat en vivo</p>
+            <h2 class="chat-title">Asistente contextual</h2>
+          </div>
+
+          <div class="chat-toolbar">
+            <span class="status-indicator" [class.is-typing]="chat.typing()" role="status">
+              @if (chat.typing()) {
+                Respondiendo...
+              } @else {
+                Listo para ayudarte
+              }
+            </span>
+          </div>
+        </header>
+
+        <!-- Hilo de mensajes -->
+        <div class="message-thread" #assistantThread aria-live="polite" role="log" aria-label="Conversación">
+          @for (message of chat.messages(); track message.id) {
+            <article
+              class="message-bubble"
+              [class.is-user]="message.role === 'user'"
+              [class.is-info]="message.tone === 'info'"
+              [class.is-success]="message.tone === 'success'"
+            >
+              <span class="message-bubble__sender">
+                @if (message.role === 'assistant') {
+                  NG
+                } @else {
+                  Tú
+                }
+              </span>
+              <p class="message-bubble__text">{{ message.text }}</p>
+            </article>
+          }
+
+          @if (chat.typing()) {
+            <article class="message-bubble is-info">
+              <span class="message-bubble__sender">NG</span>
+              <div class="typing-indicator" aria-label="Escribiendo">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </article>
+          }
+        </div>
+
+        <!-- Composer de mensajes -->
+        <form class="message-composer" (submit)="$event.preventDefault(); chat.sendDraft();">
+          <label class="composer-label" for="assistant-message">Pregunta lo que necesites sobre NeoGaming</label>
+
+          <div class="composer-input-group">
+            <textarea
+              id="assistant-message"
+              class="composer-textarea"
+              rows="4"
+              [value]="chat.draft()"
+              (input)="chat.setDraft($any($event.target).value)"
+              placeholder="Ejemplo: recomiéndame un setup competitivo con teclado, mouse y monitor para PC"
+              aria-label="Campo de mensaje"
+            ></textarea>
+
+            <button 
+              type="submit" 
+              class="send-button" 
+              [disabled]="chat.typing() || !chat.draft().trim()"
+              aria-label="Enviar mensaje"
+            >
+              Enviar
+            </button>
+          </div>
+        </form>
+      </main>
+    </section>
   </div>
 </section>
