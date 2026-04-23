@@ -114,17 +114,6 @@ export class ProfileComponent {
   }
 
   private categoryLabel(category: WishlistItem['category']): string {
-    switch (category) {
-      case 'hardware':
-        return 'Hardware';
-      case 'games':
-        return 'Videojuegos';
-      case 'peripherals':
-        return 'Perifericos';
-      case 'gear':
-        return 'Accesorios';
-      default:
-        return 'Favorito';
-    }
+    return category || 'Favorito';
   }
 }

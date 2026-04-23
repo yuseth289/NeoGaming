@@ -6,6 +6,7 @@ import { CartUiService } from '../../../cart/data-access/cart-ui.service';
 import { CheckoutApi } from '../../data-access/checkout.api';
 import { CheckoutStateService, PaymentMethod } from '../../data-access/checkout-state.service';
 import { CopPricePipe } from '../../../../shared/pipes/cop-price.pipe';
+import { parseApiError } from '../../../../core/http/api-error.utils';
 import {
   Check,
   ChevronRight,
@@ -146,8 +147,8 @@ export class CheckoutPaymentComponent {
           this.checkoutState.setDraft(null);
           void this.router.navigate(['/checkout/confirmation', normalized.orderId]);
         },
-        error: () => {
-          this.error.set('No fue posible procesar el pago. Verifica los datos e intenta de nuevo.');
+        error: (error) => {
+          this.error.set(parseApiError(error).message);
         }
       });
   }

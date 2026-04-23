@@ -59,6 +59,12 @@
         </div>
       }
 
+      @if (error()) {
+        <div class="alert">
+          {{ error() }}
+        </div>
+      }
+
       <div class="grid">
         <label>
           <span>Nombre completo</span>

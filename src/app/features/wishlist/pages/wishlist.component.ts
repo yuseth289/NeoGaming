@@ -19,10 +19,10 @@ export class WishlistComponent {
 
   protected readonly categories = [
     { id: 'all', label: 'Todos' },
-    { id: 'hardware', label: 'Hardware' },
-    { id: 'games', label: 'Videojuegos' },
-    { id: 'peripherals', label: 'Perifericos' },
-    { id: 'gear', label: 'Accesorios' }
+    { id: 'Hardware', label: 'Hardware' },
+    { id: 'Videojuegos', label: 'Videojuegos' },
+    { id: 'Perifericos', label: 'Perifericos' },
+    { id: 'Accesorios', label: 'Accesorios' }
   ] as const;
 
   protected readonly sortOptions = [
@@ -70,8 +70,8 @@ export class WishlistComponent {
     }
   }
 
-  protected removeItem(itemId: string): void {
-    this.wishlistUi.remove(itemId);
+  protected removeItem(productId: number): void {
+    this.wishlistUi.remove(productId);
   }
 
   protected addToCart(item: WishlistItem): void {
@@ -101,18 +101,6 @@ export class WishlistComponent {
           this.feedback.set('No se pudo agregar al carrito. Intenta de nuevo.');
         }
       });
-  }
-
-  protected ratingLabel(rating: number): string {
-    const rounded = Math.round(rating * 10) / 10;
-    return `${rounded} / 5`;
-  }
-
-  protected ratingStars(rating: number): string {
-    const value = Math.max(0, Math.min(5, Math.round(rating)));
-    const full = String.fromCharCode(0x2605).repeat(value);
-    const empty = String.fromCharCode(0x2606).repeat(5 - value);
-    return `${full}${empty}`;
   }
 
 }

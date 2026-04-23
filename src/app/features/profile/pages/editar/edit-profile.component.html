@@ -18,7 +18,7 @@
     </div>
   </header>
 
-  <div class="edit-grid">
+  <form [formGroup]="form" (ngSubmit)="save()" class="edit-grid">
     <section class="panel">
       <input #avatarInput class="sr-only" type="file" accept="image/*" (change)="onAvatarSelected($event)" />
 
@@ -36,7 +36,7 @@
         </button>
 
         <div class="avatar-meta">
-          <h3>{{ form.controls.name.value }}</h3>
+          <h3>{{ form.controls.nombre.value }}</h3>
           <p>{{ form.controls.email.value }}</p>
           <div class="avatar-actions">
             <button type="button" class="btn-outline avatar-upload" (click)="openFilePicker(avatarInput)">
@@ -62,19 +62,27 @@
       </div>
 
       <h2>Informacion personal</h2>
-      <form [formGroup]="form" (ngSubmit)="save()">
+      @if (loading()) {
+        <p>Cargando perfil...</p>
+      }
+
+      @if (error()) {
+        <p class="status error">{{ error() }}</p>
+      }
+
+      <div>
         <div class="field-grid">
           <label class="field">
             <span>Nombre completo</span>
-            <input type="text" formControlName="name" placeholder="Tu nombre" />
-            @if (showError('name')) {
+            <input type="text" formControlName="nombre" placeholder="Tu nombre" />
+            @if (showError('nombre')) {
               <small>Ingresa un nombre valido.</small>
             }
           </label>
 
           <label class="field">
             <span>Correo electronico</span>
-            <input type="email" formControlName="email" placeholder="correo@ejemplo.com" />
+            <input type="email" formControlName="email" placeholder="correo@ejemplo.com" readonly />
             @if (showError('email')) {
               <small>Ingresa un correo valido.</small>
             }
@@ -82,18 +90,13 @@
 
           <label class="field">
             <span>Telefono</span>
-            <input type="text" formControlName="phone" placeholder="Numero de contacto" />
-          </label>
-
-          <label class="field">
-            <span>Pais</span>
-            <input type="text" formControlName="country" placeholder="Pais" />
+            <input type="text" formControlName="telefono" placeholder="Numero de contacto" />
           </label>
         </div>
 
         <label class="field about-field">
           <span>Sobre mi</span>
-          <textarea rows="4" formControlName="about" placeholder="Describe tus gustos gamer"></textarea>
+          <textarea rows="4" formControlName="sobreMi" placeholder="Describe tus gustos gamer"></textarea>
         </label>
 
         <div class="form-actions">
@@ -107,7 +110,7 @@
             }
           </button>
         </div>
-      </form>
+      </div>
     </section>
 
     <section class="panel tone">
@@ -116,7 +119,7 @@
       <div class="prefs-content">
         <div class="toggle-list">
           <label class="toggle">
-            <input type="checkbox" formControlName="notifyNews" />
+            <input type="checkbox" formControlName="prefiereNoticias" />
             <span class="check-ui" aria-hidden="true"></span>
             <span>
               <strong>Noticias y lanzamientos</strong>
@@ -124,7 +127,7 @@
             </span>
           </label>
           <label class="toggle">
-            <input type="checkbox" formControlName="notifyOffers" />
+            <input type="checkbox" formControlName="prefiereOfertas" />
             <span class="check-ui" aria-hidden="true"></span>
             <span>
               <strong>Ofertas y descuentos</strong>
@@ -147,5 +150,5 @@
         <small>Tu configuracion se guarda automaticamente en NeoGaming.</small>
       </div>
     </section>
-  </div>
+  </form>
 </section>
