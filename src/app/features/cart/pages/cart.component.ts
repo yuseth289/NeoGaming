@@ -4,6 +4,8 @@ import { Observable, finalize } from 'rxjs';
 import { CartApi } from '../data-access/cart.api';
 import { CartItem, CartUiService } from '../data-access/cart-ui.service';
 import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
+import { parseApiError } from '../../../core/http/api-error.utils';
+import { CarritoResponse } from '../../../core/models/api.models';
 
 type CouponMessageType = 'success' | 'error' | null;
 
@@ -30,6 +32,7 @@ export class CartComponent {
   protected readonly summaryCollapsed = signal(false);
   protected readonly isMobile = signal(false);
   protected readonly mutatingNames = signal<Set<string>>(new Set());
+  protected readonly requestError = signal<string | null>(null);
 
   private quantityPulseTimeout?: ReturnType<typeof setTimeout>;
   private summaryPulseTimeout?: ReturnType<typeof setTimeout>;
@@ -96,7 +99,7 @@ export class CartComponent {
       return;
     }
 
-    this.runItemMutation(name, this.cartApi.updateItem(item.id, { quantity: item.quantity + 1 }), () =>
+    this.runItemMutation(name, this.cartApi.updateItem(item.id, { cantidad: item.quantity + 1 }), () =>
       this.pulseQuantity(name)
     );
   }
@@ -114,13 +117,14 @@ export class CartComponent {
       return;
     }
 
-    this.runItemMutation(name, this.cartApi.updateItem(item.id, { quantity: item.quantity - 1 }), () =>
+    this.runItemMutation(name, this.cartApi.updateItem(item.id, { cantidad: item.quantity - 1 }), () =>
       this.pulseQuantity(name)
     );
   }
 
   protected remove(item: CartItem): void {
     this.lastRemoved.set(item);
+    this.requestError.set(null);
     this.removingItems.update((current) => new Set(current).add(item.name));
 
     if (this.removeTimeout) {
@@ -142,8 +146,19 @@ export class CartComponent {
     if (!last) {
       return;
     }
+    this.requestError.set(null);
 
-    this.runItemMutation(last.name, this.cartApi.addItem({ productName: last.name, quantity: last.quantity }), () => {
+    if (typeof last.productId !== 'number') {
+      this.cartUi.addItem(last.name, last.price, {
+        image: last.image,
+        stockLabel: last.stockLabel,
+        oldPrice: last.oldPrice
+      });
+      this.lastRemoved.set(null);
+      return;
+    }
+
+    this.runItemMutation(last.name, this.cartApi.addItem({ productoId: last.productId, cantidad: last.quantity }), () => {
       this.cartUi.decorateItem(last.name, {
         image: last.image,
         stockLabel: last.stockLabel,
@@ -191,12 +206,8 @@ export class CartComponent {
   }
 
   protected addRecommendation(product: { name: string; price: number; image: string }): void {
-    this.runItemMutation(product.name, this.cartApi.addItem({ productName: product.name, quantity: 1 }), () => {
-      this.cartUi.decorateItem(product.name, {
-        image: product.image,
-        stockLabel: 'En stock'
-      });
-    });
+    this.couponMessage.set('Las recomendaciones de esta seccion aun no estan integradas al catalogo real.');
+    this.couponMessageType.set('error');
   }
 
   protected isRemoving(name: string): boolean {
@@ -229,8 +240,9 @@ export class CartComponent {
     this.quantityPulseTimeout = setTimeout(() => this.quantityPulseName.set(null), 220);
   }
 
-  private runItemMutation(name: string, request: Observable<unknown>, onSuccess?: () => void): void {
+  private runItemMutation(name: string, request: Observable<CarritoResponse>, onSuccess?: () => void): void {
     this.mutatingNames.update((current) => new Set(current).add(name));
+    this.requestError.set(null);
 
     request
       .pipe(finalize(() => this.mutatingNames.update((current) => this.withoutName(current, name))))
@@ -239,7 +251,9 @@ export class CartComponent {
           this.cartUi.hydrateFromApi(response);
           onSuccess?.();
         },
-        error: () => {}
+        error: (error) => {
+          this.requestError.set(parseApiError(error).message);
+        }
       });
   }
 

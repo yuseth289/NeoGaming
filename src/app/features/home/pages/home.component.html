@@ -17,7 +17,10 @@
   <div class="hero-overlay"></div>
 
   <div class="hero-content">
-    <h1>Libera Tu Potencial de Juego</h1>
+    <h1>
+      <span class="typewriter-line typewriter-line--first">Libera Tu Potencial</span>
+      <span class="typewriter-line typewriter-line--second">de Juego</span>
+    </h1>
     <p>Todo lo que necesitas para subir de nivel en un solo lugar.</p>
 
     <div class="hero-actions">
@@ -44,11 +47,15 @@
   </div>
 </section>
 
-<section class="products" aria-labelledby="featured-title">
+<section class="products" aria-labelledby="featured-title" #productsSection [class.revealed]="revealProducts()">
   <h2 id="featured-title">Productos destacados</h2>
 
+  @if (cartMessage()) {
+    <p class="home-cart-message">{{ cartMessage() }}</p>
+  }
+
   <div class="products-grid">
-    @if (loadingProducts()) {
+    @if (!revealProducts() || loadingProducts()) {
       @for (_item of skeletonCards; track $index) {
         <article class="product-card skeleton">
           <div class="sk-image"></div>
@@ -58,42 +65,46 @@
         </article>
       }
     } @else {
-      @for (product of products(); track product.name) {
+      @for (product of products(); track product.idProducto) {
         <article class="product-card">
-          <span class="badge">{{ product.badge }}</span>
-
           <img
-            [src]="product.image"
-            [alt]="product.name"
+            [src]="product.urlImagenPrincipal || ''"
+            [alt]="product.nombre"
             width="460"
             height="220"
             loading="lazy"
             decoding="async"
           />
 
-          <h3>{{ product.name }}</h3>
+          <h3>{{ product.nombre }}</h3>
 
-          <p class="support-info">{{ product.supportInfo }}</p>
-          <p class="rating">
-  @for (star of productStars(product.rating); track $index) {
-    <span class="star" [class.filled]="star">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6z" fill="currentColor" />
-      </svg>
-    </span>
-  }
-  <span class="count">({{ product.ratingCount }})</span>
-</p>
+          <p class="support-info">{{ product.nombreVendedor }}</p>
+          <p class="support-info">{{ stockLabel(product) }}</p>
 
           <div class="price-line">
-            <strong>{{ product.price | copPrice }}</strong>
+            <strong>{{ product.precioVigente | copPrice }}</strong>
+            @if (oldPrice(product)) {
+              <small>{{ oldPrice(product) | copPrice }}</small>
+            }
           </div>
 
           <div class="card-actions">
-            <a class="btn-primary" href="#">Agregar al carrito</a>
+            <button
+              type="button"
+              class="btn-primary"
+              [class.loading]="addingProductId() === product.idProducto"
+              [disabled]="addingProductId() === product.idProducto"
+              (click)="addToCart(product)"
+            >
+              @if (addingProductId() === product.idProducto) {
+                Agregando...
+              } @else {
+                Agregar al carrito
+              }
+            </button>
             <a
               class="btn-secondary"
-              [routerLink]="['/product', toSlug(product.name)]"
+              [routerLink]="['/product', product.slug || product.idProducto]"
             >
               Ver detalles
             </a>
@@ -163,4 +174,3 @@
     }
   </div>
 </section>
-

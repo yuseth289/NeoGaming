@@ -1,0 +1,89 @@
+@if (!isOpen()) {
+  <button type="button" class="chatbot-fab" aria-label="Abrir chatbot de NeoGaming" (click)="openCompact()">
+    <span class="chatbot-fab__pulse"></span>
+    <span class="chatbot-fab__badge">NG</span>
+    <span class="chatbot-fab__copy">
+      <strong>Asistente</strong>
+      <small>@if (chat.typing()) { Respondiendo... } @else { En linea }</small>
+    </span>
+  </button>
+} @else {
+  <section class="chatbot-panel">
+    <header class="chatbot-header">
+      <div class="chatbot-brand">
+        <span class="chatbot-brand__badge">NG</span>
+        <div>
+          <p class="chatbot-brand__eyebrow">NeoGaming Assistant</p>
+          <strong>Ayuda rapida</strong>
+        </div>
+      </div>
+
+      <div class="chatbot-actions">
+        <button type="button" class="icon-btn" aria-label="Abrir asistente completo" (click)="openAssistantPage()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M4 9l6-6M20 9l-6-6M4 15l6 6M20 15l-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+        <button type="button" class="icon-btn" aria-label="Cerrar chatbot" (click)="close()">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="chatbot-body">
+      <section class="chatbot-summary">
+        <div class="summary-card">
+          <span>Estado</span>
+          <strong>@if (chat.typing()) { Respondiendo } @else { Disponible }</strong>
+        </div>
+        <div class="summary-card">
+          <span>Mensajes</span>
+          <strong>{{ chat.messageCount() }}</strong>
+        </div>
+      </section>
+
+      <p class="chatbot-intro">
+        Compra, compatibilidad, checkout y cuenta desde un chat rapido sin salir de donde estas.
+      </p>
+
+      <div class="prompt-row">
+        @for (item of chat.quickPrompts.slice(0, 3); track item.label) {
+          <button type="button" class="prompt-chip" (click)="chat.useQuickPrompt(item.prompt)">{{ item.label }}</button>
+        }
+      </div>
+
+      <div class="chat-thread" #compactThread aria-live="polite">
+        @for (message of chat.messages(); track message.id) {
+          <article class="bubble" [class.bubble--user]="message.role === 'user'">
+            <span class="bubble__role">{{ message.role === 'assistant' ? 'NG' : 'Tu' }}</span>
+            <p>{{ message.text }}</p>
+          </article>
+        }
+
+        @if (chat.typing()) {
+          <article class="bubble">
+            <span class="bubble__role">NG</span>
+            <div class="typing-dots" aria-label="Escribiendo">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </article>
+        }
+      </div>
+
+      <form class="composer" (submit)="$event.preventDefault(); chat.sendDraft();">
+        <textarea
+          rows="3"
+          [value]="chat.draft()"
+          (input)="chat.setDraft($any($event.target).value)"
+          placeholder="Preguntame algo de NeoGaming"
+        ></textarea>
+        <button type="submit" class="send-btn" [disabled]="chat.typing() || !chat.draft().trim()">Enviar</button>
+      </form>
+    </div>
+  </section>
+}

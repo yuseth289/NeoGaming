@@ -1,135 +1,267 @@
 <section class="page">
   <header class="page__header">
-    <p class="eyebrow">Checkout</p>
-    <h1>Detalles de envio</h1>
-    <p class="subtext">Paso 1 de 2. Dinos donde debemos entregar tu pedido.</p>
-    <a class="back-link" routerLink="/cart">← Volver al carrito</a>
+    <div>
+      <p class="eyebrow">CHECKOUT</p>
+      <h1>Detalles de envío</h1>
+      <p class="subtext">Paso 1 de 2. Dinos dónde debemos entregar tu pedido.</p>
+    </div>
+    <a class="back-link" routerLink="/cart">Volver al carrito</a>
   </header>
+
+  <section class="stepper card">
+    <article class="step is-active">
+      <span class="step__icon">
+        <lucide-angular [img]="icons.shipping" [size]="18" [strokeWidth]="2"></lucide-angular>
+      </span>
+      <div>
+        <strong>Envío</strong>
+        <small>Dirección y contacto</small>
+      </div>
+    </article>
+    <span class="step__line" aria-hidden="true"></span>
+    <article class="step">
+      <span class="step__icon">
+        <lucide-angular [img]="icons.payment" [size]="18" [strokeWidth]="2"></lucide-angular>
+      </span>
+      <div>
+        <strong>Pago</strong>
+        <small>Método y confirmación</small>
+      </div>
+    </article>
+    <span class="step__line" aria-hidden="true"></span>
+    <article class="step">
+      <span class="step__icon">
+        <lucide-angular [img]="icons.confirmation" [size]="18" [strokeWidth]="2"></lucide-angular>
+      </span>
+      <div>
+        <strong>Confirmación</strong>
+        <small>Resumen final</small>
+      </div>
+    </article>
+  </section>
 
   <div class="layout">
     <form class="card form" [formGroup]="form" (ngSubmit)="submit()">
       <div class="card-head">
-        <h2>Detalles de envio</h2>
-        <span class="chip">Entrega rapida</span>
+        <div>
+          <p class="section-label">Dirección de entrega</p>
+          <h2>Completa los datos del envío</h2>
+        </div>
+        <span class="chip">
+          <lucide-angular [img]="icons.truck" [size]="14" [strokeWidth]="2"></lucide-angular>
+          Envío nacional
+        </span>
       </div>
 
       @if (submitAttempted() && form.invalid) {
         <div class="alert">
-          Completa los campos obligatorios para continuar.
+          Completa los campos obligatorios para continuar al pago.
+        </div>
+      }
+
+      @if (error()) {
+        <div class="alert">
+          {{ error() }}
         </div>
       }
 
       <div class="grid">
         <label>
-          Nombre completo
-          <input type="text" formControlName="fullName" placeholder="Alex Neo" />
+          <span>Nombre completo</span>
+          <div class="input-shell">
+            <input type="text" formControlName="fullName" placeholder="Alejandro Moreno" autocomplete="name" />
+          </div>
           @if (fieldInvalid('fullName')) {
-            <span class="error">El nombre completo es obligatorio.</span>
+            <span class="error">Ingresa el nombre completo del destinatario.</span>
           }
         </label>
 
         <label>
-          Correo electronico
-          <input type="email" formControlName="email" placeholder="alex.neo@example.com" />
+          <span>Correo electrónico</span>
+          <div class="input-shell">
+            <span class="input-icon" aria-hidden="true">
+              <lucide-angular [img]="icons.emailField" [size]="16" [strokeWidth]="2"></lucide-angular>
+            </span>
+            <input type="email" formControlName="email" placeholder="nombre@correo.com" autocomplete="email" />
+          </div>
           @if (fieldInvalid('email')) {
-            <span class="error">Ingresa un correo valido.</span>
+            <span class="error">Ingresa un correo válido para el seguimiento.</span>
           }
         </label>
 
         <label>
-          Telefono
-          <input type="tel" formControlName="phone" placeholder="+57 300 000 0000" />
+          <span>Teléfono</span>
+          <div class="input-shell">
+            <span class="input-icon" aria-hidden="true">
+              <lucide-angular [img]="icons.phoneField" [size]="16" [strokeWidth]="2"></lucide-angular>
+            </span>
+            <input type="tel" formControlName="phone" placeholder="+57 300 123 4567" autocomplete="tel" (input)="formatPhone($event)" />
+          </div>
           @if (fieldInvalid('phone')) {
-            <span class="error">El telefono es obligatorio.</span>
+            <span class="error">Ingresa un número de contacto válido.</span>
           }
         </label>
 
-        <label>
-          Direccion
-          <input type="text" formControlName="address" placeholder="123 Cyberpunk Blvd" />
+        <label class="field-wide">
+          <span>Dirección</span>
+          <div class="input-shell">
+            <span class="input-icon" aria-hidden="true">
+              <lucide-angular [img]="icons.addressField" [size]="16" [strokeWidth]="2"></lucide-angular>
+            </span>
+            <input type="text" formControlName="address" placeholder="Calle 123 #45-67" autocomplete="street-address" />
+          </div>
           @if (fieldInvalid('address')) {
-            <span class="error">La direccion es obligatoria.</span>
+            <span class="error">La dirección principal es obligatoria.</span>
           }
         </label>
 
         <label>
-          Ciudad
-          <input type="text" formControlName="city" placeholder="Bogota" />
+          <span>Apartamento / Interior</span>
+          <div class="input-shell">
+            <span class="input-icon" aria-hidden="true">
+              <lucide-angular [img]="icons.apartmentField" [size]="16" [strokeWidth]="2"></lucide-angular>
+            </span>
+            <input type="text" formControlName="apartment" placeholder="Apto 502, Torre 3" autocomplete="address-line2" />
+          </div>
+        </label>
+
+        <label>
+          <span>Ciudad</span>
+          <div class="input-shell">
+            <span class="input-icon" aria-hidden="true">
+              <lucide-angular [img]="icons.cityField" [size]="16" [strokeWidth]="2"></lucide-angular>
+            </span>
+            <input type="text" formControlName="city" placeholder="Bogotá" autocomplete="address-level2" />
+          </div>
           @if (fieldInvalid('city')) {
-            <span class="error">La ciudad es obligatoria.</span>
+            <span class="error">Ingresa la ciudad de entrega.</span>
           }
         </label>
 
         <label>
-          Estado / Region
-          <input type="text" formControlName="state" placeholder="Cundinamarca" />
+          <span>Estado / Región</span>
+          <div class="input-shell">
+            <input type="text" formControlName="state" placeholder="Cundinamarca" autocomplete="address-level1" />
+          </div>
           @if (fieldInvalid('state')) {
-            <span class="error">El estado o region es obligatorio.</span>
+            <span class="error">Ingresa el departamento o región.</span>
           }
         </label>
 
         <label>
-          Codigo postal
-          <input type="text" formControlName="postalCode" placeholder="110111" />
+          <span>Código postal</span>
+          <div class="input-shell">
+            <input type="text" formControlName="postalCode" placeholder="110111" autocomplete="postal-code" />
+          </div>
           @if (fieldInvalid('postalCode')) {
-            <span class="error">El codigo postal es obligatorio.</span>
+            <span class="error">Ingresa un código postal válido.</span>
           }
         </label>
 
         <label>
-          Pais
-          <input type="text" formControlName="country" placeholder="Colombia" />
+          <span>País</span>
+          <div class="input-shell">
+            <input type="text" formControlName="country" placeholder="Colombia" autocomplete="country-name" />
+          </div>
           @if (fieldInvalid('country')) {
-            <span class="error">El pais es obligatorio.</span>
+            <span class="error">El país es obligatorio.</span>
           }
+        </label>
+
+        <label class="field-wide">
+          <span>Referencia de entrega</span>
+          <div class="input-shell input-shell--textarea">
+            <span class="input-icon" aria-hidden="true">
+              <lucide-angular [img]="icons.referenceField" [size]="16" [strokeWidth]="2"></lucide-angular>
+            </span>
+            <textarea
+              formControlName="reference"
+              rows="3"
+              placeholder="Casa esquinera, portón negro, entregar después de las 3 p. m."
+            ></textarea>
+          </div>
         </label>
       </div>
 
       <div class="actions">
-        <a class="btn ghost" routerLink="/cart">Volver al carrito</a>
-        <button class="btn" type="submit" [disabled]="submitting()">Continuar al pago</button>
+        <a class="btn ghost" routerLink="/cart">
+          <lucide-angular [img]="icons.home" [size]="16" [strokeWidth]="2"></lucide-angular>
+          Volver al carrito
+        </a>
+        <button class="btn" type="submit" [disabled]="submitting()">
+          Continuar al pago
+          <lucide-angular [img]="icons.next" [size]="16" [strokeWidth]="2"></lucide-angular>
+        </button>
       </div>
     </form>
 
     <aside class="card summary">
-      <h2>Resumen del pedido</h2>
-      <p class="summary-note">Pago seguro</p>
-      <div class="summary-items">
-        @for (item of cartUi.cartItems(); track item.name) {
-          <div class="summary-item">
-            <span>{{ item.name }} × {{ item.quantity }}</span>
-            <strong>{{ item.price * item.quantity | copPrice }}</strong>
-          </div>
-        }
+      <div class="summary-head">
+        <div>
+          <p class="section-label">Resumen</p>
+          <h2>Resumen del pedido</h2>
+        </div>
+        <span class="chip chip--soft">Pago seguro</span>
       </div>
 
-      <div class="summary-row">
-        <span>Subtotal</span>
-        <strong>{{ subtotal() | copPrice }}</strong>
-      </div>
-      <div class="summary-row">
-        <span>Envio</span>
-        <strong>{{ shippingCost() | copPrice }}</strong>
-      </div>
-      <div class="summary-row">
-        <span>Impuestos</span>
-        <strong>{{ tax() | copPrice }}</strong>
-      </div>
-      <div class="summary-total">
-        <span>Total</span>
-        <strong>{{ total() | copPrice }}</strong>
-      </div>
-      <div class="summary-cta">
-        <span class="ssl">
-          <svg class="ssl__icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M7 10V8a5 5 0 0110 0v2h1a1 1 0 011 1v8a3 3 0 01-3 3H8a3 3 0 01-3-3v-8a1 1 0 011-1h1zm2 0h6V8a3 3 0 00-6 0v2zm3 4a1.5 1.5 0 00-.75 2.8V18a.75.75 0 001.5 0v-1.2A1.5 1.5 0 0012 14z"
-              fill="currentColor"
-            />
-          </svg>
-          SSL encriptado
-        </span>
-      </div>
+      @if (hasItems()) {
+        <div class="summary-items">
+          @for (item of cartUi.cartItems(); track item.name) {
+            <article class="summary-item">
+              <img [src]="imageForItem(item)" [alt]="item.name" width="64" height="64" loading="lazy" decoding="async" />
+              <div class="summary-item__copy">
+                <strong>{{ item.name }}</strong>
+                <span>Cantidad: {{ item.quantity }}</span>
+              </div>
+              <strong class="summary-item__price">{{ item.price * item.quantity | copPrice }}</strong>
+            </article>
+          }
+        </div>
+
+        <div class="summary-totals">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <strong>{{ subtotal() | copPrice }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Envío</span>
+            <strong>{{ shippingCost() | copPrice }}</strong>
+          </div>
+          <div class="summary-row">
+            <span>Impuestos</span>
+            <strong>{{ tax() | copPrice }}</strong>
+          </div>
+          <div class="summary-total">
+            <span>Total</span>
+            <div class="summary-total__value">
+              <small>Total protegido</small>
+              <strong>{{ total() | copPrice }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="trust-block">
+          <div class="trust-item">
+            <lucide-angular [img]="icons.payment" [size]="16" [strokeWidth]="2"></lucide-angular>
+            <span>Pago seguro</span>
+          </div>
+          <div class="trust-item">
+            <lucide-angular [img]="icons.lock" [size]="16" [strokeWidth]="2"></lucide-angular>
+            <span>SSL cifrado</span>
+          </div>
+          <div class="trust-item">
+            <lucide-angular [img]="icons.confirmation" [size]="16" [strokeWidth]="2"></lucide-angular>
+            <span>Tus datos están protegidos</span>
+          </div>
+        </div>
+      } @else {
+        <div class="summary-empty">
+          <lucide-angular [img]="icons.confirmation" [size]="22" [strokeWidth]="2"></lucide-angular>
+          <strong>Tu carrito está vacío</strong>
+          <p>Agrega productos antes de continuar con el checkout.</p>
+          <a class="btn ghost" routerLink="/cart">Volver al carrito</a>
+        </div>
+      }
     </aside>
   </div>
 </section>

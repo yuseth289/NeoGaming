@@ -13,12 +13,112 @@
         [attr.aria-expanded]="mobileMenuOpen()"
         aria-label="Abrir menu"
       >
-        ?
+        <span></span>
+        <span></span>
+        <span></span>
       </button>
 
       <nav class="nav" [class.open]="mobileMenuOpen()">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
-        <a routerLink="/catalog" routerLinkActive="active">Categorias</a>
+        <div
+          class="nav-categories"
+          [class.open]="categoriesMenuOpen()"
+          (mouseenter)="openCategoriesMenu()"
+          (mouseleave)="closeCategoriesMenu()"
+        >
+          <button
+            type="button"
+            class="nav-categories-trigger"
+            [class.active]="categoriesMenuOpen()"
+            [attr.aria-expanded]="categoriesMenuOpen()"
+            (focus)="openCategoriesMenu()"
+            (click)="toggleCategoriesMenu()"
+          >
+            Categorias
+          </button>
+
+          @if (categoriesMenuEnabled()) {
+            <div
+              class="nav-mega-menu"
+              [class.open]="categoriesMenuOpen()"
+              (mouseenter)="cancelCloseCategoriesMenu()"
+              (mouseleave)="closeCategoriesMenu()"
+            >
+              <aside class="nav-mega-sidebar" aria-label="Categorias principales">
+                <button type="button" class="nav-mega-category nav-mega-category--all" (click)="openAllCatalogProducts()">
+                  <span>Ver todos los productos</span>
+                  <small>Explora el catalogo completo</small>
+                </button>
+
+                @for (item of megaMenuCategories; track item.id) {
+                  <button
+                    type="button"
+                    class="nav-mega-category"
+                    [class.active]="activeMegaCategory().id === item.id"
+                    (mouseenter)="setActiveMegaCategory(item.id)"
+                    (focus)="setActiveMegaCategory(item.id)"
+                    (click)="setActiveMegaCategory(item.id)"
+                  >
+                    <span>{{ item.label }}</span>
+                    <small>{{ item.eyebrow }}</small>
+                  </button>
+                }
+              </aside>
+
+              <div class="nav-mega-content">
+                <div class="nav-mega-header">
+                  <div>
+                    <p class="nav-mega-eyebrow">Recomendado</p>
+                    <h3>{{ activeMegaCategory().label }}</h3>
+                    <p>{{ activeMegaCategory().description }}</p>
+                  </div>
+                </div>
+
+                <div class="nav-mega-featured">
+                  @for (item of activeMegaCategory().featured; track item.label) {
+                    <button type="button" class="nav-featured-card" (click)="openCatalogCategory(activeMegaCategory().id, item.search)">
+                      <span class="nav-featured-art" aria-hidden="true">
+                        <span class="nav-featured-icon">
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3.5 14.6 8l5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L5.2 8.7l5-.7Z" fill="currentColor" />
+                          </svg>
+                        </span>
+                        <span class="nav-featured-code">{{ item.art }}</span>
+                      </span>
+                      <span class="nav-featured-label">{{ item.label }}</span>
+                      <span class="nav-featured-subtitle">{{ item.subtitle }}</span>
+                    </button>
+                  }
+                </div>
+
+                <div class="nav-mega-columns">
+                  @for (column of activeMegaCategory().columns; track column.title) {
+                    <section class="nav-mega-column">
+                      <h4>{{ column.title }}</h4>
+                      <div class="nav-mega-links">
+                        @for (link of column.links; track link.label) {
+                          <button type="button" class="nav-mega-link" (click)="openCatalogCategory(activeMegaCategory().id, link.search)">
+                            {{ link.label }}
+                          </button>
+                        }
+                      </div>
+                    </section>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="nav-mobile-account">
+          @if (!authSession.loggedIn()) {
+            <button type="button" class="btn btn-ghost nav-mobile-auth-btn" (click)="openLoginModal()">Iniciar sesion</button>
+            <button type="button" class="btn btn-dark nav-mobile-auth-btn" (click)="openRegisterModal()">Registro</button>
+          } @else {
+            <a routerLink="/perfil" (click)="closeProfileMenu(); mobileMenuOpen.set(false)">Mi perfil</a>
+            <a routerLink="/pedidos" (click)="closeProfileMenu(); mobileMenuOpen.set(false)">Pedidos</a>
+          }
+        </div>
       </nav>
 
       <form class="search" [class.open]="mobileSearchOpen()" (submit)="submitSearch($event)">
@@ -49,7 +149,7 @@
         }
       </form>
 
-      <div class="header-actions">
+        <div class="header-actions">
         <button
           type="button"
           class="icon-btn search-toggle"
@@ -58,7 +158,10 @@
           aria-controls="site-search"
           aria-label="Abrir busqueda"
         >
-          
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2" />
+            <path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
         </button>
 
         <div class="cart-box">

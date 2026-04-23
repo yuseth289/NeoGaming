@@ -19,10 +19,10 @@ export class WishlistComponent {
 
   protected readonly categories = [
     { id: 'all', label: 'Todos' },
-    { id: 'hardware', label: 'Hardware' },
-    { id: 'games', label: 'Videojuegos' },
-    { id: 'peripherals', label: 'Perifericos' },
-    { id: 'gear', label: 'Accesorios' }
+    { id: 'Hardware', label: 'Hardware' },
+    { id: 'Videojuegos', label: 'Videojuegos' },
+    { id: 'Perifericos', label: 'Perifericos' },
+    { id: 'Accesorios', label: 'Accesorios' }
   ] as const;
 
   protected readonly sortOptions = [
@@ -70,20 +70,27 @@ export class WishlistComponent {
     }
   }
 
-  protected removeItem(itemId: string): void {
-    this.wishlistUi.remove(itemId);
+  protected removeItem(productId: number): void {
+    this.wishlistUi.remove(productId);
   }
 
   protected addToCart(item: WishlistItem): void {
     this.feedback.set(null);
     this.addingItem.set(item.id);
 
+    if (typeof item.productId !== 'number') {
+      this.feedback.set('Este favorito no tiene un producto asociado para agregarlo al carrito.');
+      this.addingItem.set(null);
+      return;
+    }
+
     this.cartApi
-      .addItem({ productName: item.name, quantity: 1 })
+      .addItem({ productoId: item.productId, cantidad: 1 })
       .pipe(finalize(() => this.addingItem.set(null)))
       .subscribe({
-        next: () => {
-          this.cartUi.addItem(item.name, item.price, {
+        next: (response) => {
+          this.cartUi.hydrateFromApi(response);
+          this.cartUi.decorateItem(item.name, {
             image: item.image,
             stockLabel: item.stockLabel,
             oldPrice: item.oldPrice
@@ -94,18 +101,6 @@ export class WishlistComponent {
           this.feedback.set('No se pudo agregar al carrito. Intenta de nuevo.');
         }
       });
-  }
-
-  protected ratingLabel(rating: number): string {
-    const rounded = Math.round(rating * 10) / 10;
-    return `${rounded} / 5`;
-  }
-
-  protected ratingStars(rating: number): string {
-    const value = Math.max(0, Math.min(5, Math.round(rating)));
-    const full = String.fromCharCode(0x2605).repeat(value);
-    const empty = String.fromCharCode(0x2606).repeat(5 - value);
-    return `${full}${empty}`;
   }
 
 }

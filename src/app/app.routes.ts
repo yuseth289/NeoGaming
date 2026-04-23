@@ -19,6 +19,8 @@ import { AiAssistantComponent } from './features/ai/pages/assistant/ai-assistant
 import { AiSearchComponent } from './features/ai/pages/search/ai-search.component';
 import { SellerDashboardComponent } from './features/seller/pages/dashboard/seller-dashboard.component';
 import { SellerStoreComponent } from './features/seller/pages/store/seller-store.component';
+import { ForbiddenComponent } from './features/security/pages/forbidden.component';
+import { authGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   {
@@ -31,31 +33,32 @@ export const routes: Routes = [
       { path: 'ia/asistente', component: AiAssistantComponent },
       { path: 'ai/search', component: AiSearchComponent },
       { path: 'ia/busqueda', component: AiSearchComponent },
-      { path: 'cart', component: CartComponent },
-      { path: 'carrito', component: CartComponent },
-      { path: 'checkout/shipping', component: CheckoutShippingComponent },
-      { path: 'checkout/envio', component: CheckoutShippingComponent },
-      { path: 'checkout/payment', component: CheckoutPaymentComponent },
-      { path: 'checkout/pago', component: CheckoutPaymentComponent },
-      { path: 'checkout/confirmation/:orderId', component: CheckoutConfirmationComponent },
-      { path: 'checkout/confirmacion/:orderId', component: CheckoutConfirmationComponent },
+      { path: 'cart', component: CartComponent, canActivate: [authGuard] },
+      { path: 'carrito', component: CartComponent, canActivate: [authGuard] },
+      { path: 'checkout/shipping', component: CheckoutShippingComponent, canActivate: [authGuard] },
+      { path: 'checkout/envio', component: CheckoutShippingComponent, canActivate: [authGuard] },
+      { path: 'checkout/payment', component: CheckoutPaymentComponent, canActivate: [authGuard] },
+      { path: 'checkout/pago', component: CheckoutPaymentComponent, canActivate: [authGuard] },
+      { path: 'checkout/confirmation/:orderId', component: CheckoutConfirmationComponent, canActivate: [authGuard] },
+      { path: 'checkout/confirmacion/:orderId', component: CheckoutConfirmationComponent, canActivate: [authGuard] },
       { path: 'favoritos', component: WishlistComponent },
       { path: 'wishlist', redirectTo: 'favoritos', pathMatch: 'full' },
-      { path: 'perfil', component: ProfileComponent },
-      { path: 'profile', component: ProfileComponent },
-      { path: 'perfil/editar', component: EditProfileComponent },
-      { path: 'profile/edit', component: EditProfileComponent },
-      { path: 'pedidos', component: OrdersHistoryComponent },
-      { path: 'orders', component: OrdersHistoryComponent },
-      { path: 'seguridad', component: SecurityComponent },
-      { path: 'metodos-pago', component: PaymentsComponent },
-      { path: 'seller/dashboard', component: SellerDashboardComponent },
-      { path: 'vendedor/panel', component: SellerDashboardComponent },
-      { path: 'seller/store', component: SellerStoreComponent },
-      { path: 'vendedor/tienda', component: SellerStoreComponent },
+      { path: 'perfil', component: ProfileComponent, canActivate: [authGuard] },
+      { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+      { path: 'perfil/editar', component: EditProfileComponent, canActivate: [authGuard] },
+      { path: 'profile/edit', component: EditProfileComponent, canActivate: [authGuard] },
+      { path: 'pedidos', component: OrdersHistoryComponent, canActivate: [authGuard] },
+      { path: 'orders', component: OrdersHistoryComponent, canActivate: [authGuard] },
+      { path: 'seguridad', component: SecurityComponent, canActivate: [authGuard] },
+      { path: 'metodos-pago', component: PaymentsComponent, canActivate: [authGuard] },
+      { path: 'seller/dashboard', component: SellerDashboardComponent, canActivate: [authGuard] },
+      { path: 'vendedor/panel', component: SellerDashboardComponent, canActivate: [authGuard] },
+      { path: 'seller/store', component: SellerStoreComponent, canActivate: [authGuard] },
+      { path: 'vendedor/tienda', component: SellerStoreComponent, canActivate: [authGuard] },
       { path: 'product/:slug', component: ProductDetailComponent },
       { path: 'login', component: LoginComponent },
-      { path: 'register', component: RegisterComponent }
+      { path: 'register', component: RegisterComponent },
+      { path: 'forbidden', component: ForbiddenComponent }
     ]
   },
   { path: '**', redirectTo: '' }

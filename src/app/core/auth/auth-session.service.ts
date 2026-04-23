@@ -1,56 +1,64 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject } from '@angular/core';
 import { AuthApi } from './data-access/auth.api';
-
-interface SessionUser {
-  name: string;
-  email: string;
-}
+import { AuthStateService, SessionUser } from './auth-state.service';
+import { LoginResponse, UsuarioResponse } from '../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthSessionService {
   private readonly authApi = inject(AuthApi);
-  private readonly user = signal<SessionUser | null>(null);
+  private readonly authState = inject(AuthStateService);
 
-  readonly currentUser = computed(() => this.user());
-  readonly loggedIn = computed(() => !!this.user());
+  readonly currentUser = computed(() => this.authState.currentUser());
+  readonly loggedIn = computed(() => this.authState.loggedIn());
 
   constructor() {
+    if (this.authState.hasToken()) {
+      this.restoreSession();
+    }
+  }
+
+  login(user: SessionUser): void {
+    this.authState.setUser(user);
+  }
+
+  logout(): void {
+    this.authState.clearSession();
+  }
+
+  handleLoginResponse(response: LoginResponse): SessionUser | null {
+    const user: SessionUser = {
+      id: response.usuarioId,
+      name: response.nombre,
+      email: response.email,
+      role: response.rol
+    };
+
+    this.authState.setSession(response.token, user);
+    return user;
+  }
+
+  restoreSession(): void {
     this.authApi.me().subscribe({
       next: (response) => {
-        this.user.set(this.extractUser(response));
+        const user = this.extractUser(response);
+        if (!user) {
+          this.authState.clearSession();
+          return;
+        }
+        this.authState.setUser(user);
       },
       error: () => {
-        this.user.set(null);
+        this.authState.clearSession();
       }
     });
   }
 
-  login(user: SessionUser): void {
-    this.user.set(user);
-  }
-
-  logout(): void {
-    this.user.set(null);
-  }
-
-  private extractUser(response: unknown): SessionUser | null {
-    if (!response || typeof response !== 'object') {
-      return null;
-    }
-
-    const source = (response as { user?: unknown }).user;
-    if (!source || typeof source !== 'object') {
-      return null;
-    }
-
-    const maybeUser = source as Partial<SessionUser>;
-    if (typeof maybeUser.name !== 'string' || typeof maybeUser.email !== 'string') {
-      return null;
-    }
-
+  private extractUser(response: UsuarioResponse): SessionUser | null {
     return {
-      name: maybeUser.name,
-      email: maybeUser.email
+      id: response.id,
+      name: response.nombre,
+      email: response.email,
+      role: response.rol
     };
   }
 }

@@ -1,6 +1,12 @@
 <div class="layout-shell">
   <app-header (authRequested)="openAuthModal($event)" />
 
+  @if (!isOnline()) {
+    <aside class="offline-alert" role="alert" aria-live="assertive">
+      <strong>Sin conexion.</strong> Por favor conectate a internet para poder seguir.
+    </aside>
+  }
+
   <main class="layout-content">
     <router-outlet />
   </main>
@@ -30,4 +36,5 @@
   }
 
   <app-footer />
+  <app-chatbot-widget />
 </div>

@@ -1,45 +1,292 @@
 <section class="page">
-  <header class="page__header">
-    <p class="eyebrow">Checkout</p>
-    <h1>Gracias por tu compra</h1>
-    <p class="subtext">Tu pedido ha sido confirmado y se preparara en breve.</p>
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Checkout completado</p>
+      <h1>¡Gracias por tu compra!</h1>
+      <p class="subtext">Tu pedido fue recibido correctamente y ya estamos preparandolo.</p>
+    </div>
+
+    <div class="success-badge" aria-label="Pedido confirmado">
+      <span class="success-icon" aria-hidden="true">
+        <lucide-angular [img]="icons.success" [size]="20" [strokeWidth]="1.9"></lucide-angular>
+      </span>
+      <div>
+        <strong>Pedido confirmado</strong>
+        <small>Enviaremos actualizaciones a tu correo en cada etapa</small>
+      </div>
+    </div>
   </header>
 
-  <div class="card">
-    <div class="summary-row">
-      <span>ID del pedido</span>
-      <strong>{{ orderId ?? 'Pending' }}</strong>
+  @if (!missingOrder() && order()) {
+    <section class="card order-overview">
+      <div class="card-header">
+        <div>
+          <p class="section-label">Resumen principal</p>
+          <h2>{{ order()?.orderId }}</h2>
+        </div>
+        <span class="status-pill">{{ paymentStatus() }}</span>
+      </div>
+
+      <div class="overview-grid">
+        <article class="metric">
+          <span class="metric-icon" aria-hidden="true">
+            <lucide-angular [img]="icons.calendar" [size]="18" [strokeWidth]="1.85"></lucide-angular>
+          </span>
+          <span>Fecha del pedido</span>
+          <strong>{{ orderDate() }}</strong>
+        </article>
+        <article class="metric">
+          <span class="metric-icon" aria-hidden="true">
+            <lucide-angular [img]="icons.total" [size]="18" [strokeWidth]="1.85"></lucide-angular>
+          </span>
+          <span>Total pagado</span>
+          <strong>{{ order()?.total | copPrice }}</strong>
+        </article>
+        <article class="metric">
+          <span class="metric-icon" aria-hidden="true">
+            <lucide-angular [img]="icons.payment" [size]="18" [strokeWidth]="1.85"></lucide-angular>
+          </span>
+          <span>Metodo de pago</span>
+          <strong>{{ paymentLabel() }}</strong>
+        </article>
+        <article class="metric">
+          <span class="metric-icon" aria-hidden="true">
+            <lucide-angular [img]="icons.items" [size]="18" [strokeWidth]="1.85"></lucide-angular>
+          </span>
+          <span>Cantidad de items</span>
+          <strong>{{ itemsCount() }}</strong>
+        </article>
+      </div>
+    </section>
+
+    <div class="content-grid">
+      <div class="main-stack">
+        <section class="card items-card">
+          <div class="card-header">
+            <div>
+              <p class="section-label">Pedido</p>
+              <h2>Resumen del pedido</h2>
+            </div>
+          </div>
+
+          <div class="items-list">
+            @for (item of order()?.items; track item.name) {
+              <article class="item-row">
+                <img [src]="imageForItem(item)" [alt]="item.name" width="92" height="92" loading="lazy" decoding="async" />
+                <div class="item-copy">
+                  <strong>{{ item.name }}</strong>
+                  <div class="item-meta">
+                    <span>Cantidad: {{ item.quantity }}</span>
+                    @if (item.stockLabel) {
+                      <small class="item-badge">{{ item.stockLabel }}</small>
+                    }
+                  </div>
+                </div>
+                <div class="item-side">
+                  <span class="item-unit">{{ item.price | copPrice }} c/u</span>
+                  <strong class="item-price">{{ item.price * item.quantity | copPrice }}</strong>
+                </div>
+              </article>
+            }
+          </div>
+
+          <div class="totals">
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <strong>{{ subtotal() | copPrice }}</strong>
+            </div>
+            <div class="summary-row">
+              <span>Envio</span>
+              <strong>{{ shippingCost() | copPrice }}</strong>
+            </div>
+            <div class="summary-row">
+              <span>Impuestos</span>
+              <strong>{{ taxes() | copPrice }}</strong>
+            </div>
+            <div class="summary-total">
+              <span>Total pagado</span>
+              <strong>{{ order()?.total | copPrice }}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="card actions-card">
+          <div class="card-header compact">
+            <div class="header-title">
+              <span class="section-icon" aria-hidden="true">
+                <lucide-angular [img]="icons.actions" [size]="18" [strokeWidth]="1.85"></lucide-angular>
+              </span>
+              <p class="section-label">Siguientes pasos</p>
+              <h3>Acciones utiles</h3>
+            </div>
+          </div>
+          <div class="actions">
+            <div class="actions-main">
+              <a class="btn primary" routerLink="/pedidos">
+                <span class="btn-icon" aria-hidden="true">
+                  <lucide-angular [img]="icons.orderAction" [size]="16" [strokeWidth]="2"></lucide-angular>
+                </span>
+                Ver pedido
+              </a>
+              <button type="button" class="btn secondary" (click)="downloadReceipt()">
+                <span class="btn-icon" aria-hidden="true">
+                  <lucide-angular [img]="icons.receiptAction" [size]="16" [strokeWidth]="2"></lucide-angular>
+                </span>
+                Descargar comprobante
+              </button>
+              @if (invoiceAvailable()) {
+                <button type="button" class="btn secondary" (click)="downloadInvoice()">
+                  <span class="btn-icon" aria-hidden="true">
+                    <lucide-angular [img]="icons.invoiceAction" [size]="16" [strokeWidth]="2"></lucide-angular>
+                  </span>
+                  Ver factura
+                </button>
+              }
+            </div>
+            <div class="actions-secondary">
+              <a class="btn tertiary" routerLink="/">
+                <span class="btn-icon" aria-hidden="true">
+                  <lucide-angular [img]="icons.homeAction" [size]="16" [strokeWidth]="2"></lucide-angular>
+                </span>
+                Volver al inicio
+              </a>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side-stack">
+        <section class="double-grid">
+          <article class="card info-card">
+            <div class="card-header compact">
+              <div class="header-title">
+                <span class="section-icon" aria-hidden="true">
+                  <lucide-angular [img]="icons.shipping" [size]="18" [strokeWidth]="1.85"></lucide-angular>
+                </span>
+                <p class="section-label">Envio</p>
+                <h3>Direccion de envio</h3>
+              </div>
+            </div>
+            @if (shippingAddress(); as shipping) {
+              <div class="address-block">
+                <strong>{{ shipping.name }}</strong>
+                <span>{{ shipping.line1 }}</span>
+                <span>{{ shipping.line2 }}</span>
+                <span>{{ shipping.line3 }}</span>
+                <small>{{ shipping.contact }}</small>
+              </div>
+            }
+          </article>
+
+          <article class="card info-card">
+            <div class="card-header compact">
+              <div class="header-title">
+                <span class="section-icon" aria-hidden="true">
+                  <lucide-angular [img]="icons.billing" [size]="18" [strokeWidth]="1.85"></lucide-angular>
+                </span>
+                <p class="section-label">Facturacion</p>
+                <h3>Direccion de facturacion</h3>
+              </div>
+            </div>
+            @if (billingAddress(); as billing) {
+              <div class="address-block">
+                <strong>{{ billing.name }}</strong>
+                <span>{{ billing.line1 }}</span>
+                <span>{{ billing.line2 }}</span>
+                <span>{{ billing.line3 }}</span>
+                <small>{{ billing.contact }}</small>
+              </div>
+            }
+          </article>
+        </section>
+
+        <section class="double-grid">
+          <article class="card info-card">
+            <div class="card-header compact">
+              <div class="header-title">
+                <span class="section-icon" aria-hidden="true">
+                  <lucide-angular [img]="icons.delivery" [size]="18" [strokeWidth]="1.85"></lucide-angular>
+                </span>
+                <p class="section-label">Entrega</p>
+                <h3>Entrega estimada</h3>
+              </div>
+            </div>
+            <div class="detail-stack">
+              <strong>{{ estimatedDelivery() }}</strong>
+              <span>Preparacion premium y despacho asegurado.</span>
+            </div>
+          </article>
+
+          <article class="card info-card">
+            <div class="card-header compact">
+              <div class="header-title">
+                <span class="section-icon" aria-hidden="true">
+                  <lucide-angular [img]="icons.paymentStatus" [size]="18" [strokeWidth]="1.85"></lucide-angular>
+                </span>
+                <p class="section-label">Pago</p>
+                <h3>Estado del pago</h3>
+              </div>
+            </div>
+            <div class="detail-stack">
+              <strong>{{ paymentStatus() }}</strong>
+              <span>{{ paymentLabel() }}</span>
+            </div>
+          </article>
+        </section>
+      </aside>
+
+      <section class="card support-card">
+        <div class="card-header compact">
+          <div class="header-title">
+            <span class="section-icon" aria-hidden="true">
+              <lucide-angular [img]="icons.support" [size]="18" [strokeWidth]="1.85"></lucide-angular>
+            </span>
+            <p class="section-label">Soporte</p>
+            <h3>¿Necesitas ayuda?</h3>
+          </div>
+        </div>
+        <p class="support-copy">
+          Nuestro equipo puede ayudarte con el seguimiento del pedido, comprobantes o cualquier ajuste posterior a la compra.
+        </p>
+        <div class="support-grid">
+          <a href="mailto:soporte@neogaming.com">
+            <span class="support-icon" aria-hidden="true">
+              <lucide-angular [img]="icons.mail" [size]="16" [strokeWidth]="2"></lucide-angular>
+            </span>
+            soporte@neogaming.com
+          </a>
+          <a href="tel:+5716019000">
+            <span class="support-icon" aria-hidden="true">
+              <lucide-angular [img]="icons.phone" [size]="16" [strokeWidth]="2"></lucide-angular>
+            </span>
+            +57 1 601 9000
+          </a>
+        </div>
+      </section>
     </div>
-    @if (!missingOrder() && order()) {
-      <div class="summary-row">
-        <span>Total pagado</span>
-        <strong>{{ order()?.total | copPrice }}</strong>
+  } @else {
+    <section class="card missing-card">
+      <div class="card-header compact">
+        <div>
+          <p class="section-label">Pedido</p>
+          <h2>No encontramos el resumen</h2>
+        </div>
       </div>
-      <div class="summary-row">
-        <span>Metodo de pago</span>
-        <strong>{{ order()?.paymentMethod }}</strong>
+      <p class="subtext">Tu orden puede estar procesandose. Revisa la seccion de pedidos o vuelve al inicio.</p>
+      <div class="actions">
+        <a class="btn primary" routerLink="/pedidos">
+          <span class="btn-icon" aria-hidden="true">
+            <lucide-angular [img]="icons.orderAction" [size]="16" [strokeWidth]="2"></lucide-angular>
+          </span>
+          Ver pedido
+        </a>
+        <a class="btn tertiary" routerLink="/">
+          <span class="btn-icon" aria-hidden="true">
+            <lucide-angular [img]="icons.homeAction" [size]="16" [strokeWidth]="2"></lucide-angular>
+          </span>
+          Volver al inicio
+        </a>
       </div>
-      <div class="summary-row">
-        <span>Items</span>
-        <strong>{{ order()?.items?.length }}</strong>
-      </div>
-      <div class="summary-row">
-        <span>Entrega estimada</span>
-        <strong>3-5 dias habiles</strong>
-      </div>
-    } @else {
-      <div class="summary-row">
-        <span>Estado</span>
-        <strong>Resumen no disponible</strong>
-      </div>
-      <div class="summary-row">
-        <span>Entrega estimada</span>
-        <strong>3-5 dias habiles</strong>
-      </div>
-    }
-    <div class="actions">
-      <a class="btn ghost" routerLink="/">Volver al inicio</a>
-      <a class="btn" routerLink="/orders">Ver pedidos</a>
-    </div>
-  </div>
+    </section>
+  }
 </section>

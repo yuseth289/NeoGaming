@@ -1,192 +1,172 @@
-<section class="catalog-page">
-  @if (mobileFiltersOpen()) {
+<section class="catalog-page" [class.no-sidebar]="!showResultsLayout()">
+  @if (showResultsLayout() && mobileFiltersOpen()) {
     <button type="button" class="filters-backdrop" (click)="closeMobileFilters()" aria-label="Cerrar filtros"></button>
   }
 
-  <aside class="filters-panel" [class.open-mobile]="mobileFiltersOpen()">
-    <div class="filters-header">
-      <h2>Filtros</h2>
-      <div class="filters-header-actions">
-        @if (activeFiltersCount() > 0) {
-          <span class="active-count">{{ activeFiltersCount() }}</span>
-        }
-        <button type="button" class="clear-btn" (click)="clearFilters()">Limpiar</button>
-      </div>
-    </div>
-
-    <section class="filter-group">
-      <h3>Categoria</h3>
-      @for (item of categoryOptions; track item) {
-        <label>
-          <input
-            type="checkbox"
-            [checked]="selectedCategories().has(item)"
-            (change)="toggleCategory(item, $any($event.target).checked)"
-          />
-          <span>{{ labelFromSlug(item) }}</span>
-        </label>
-      }
-    </section>
-
-    <section class="filter-group">
-      <h3>Rango de precio</h3>
-      <div class="price-row">
-        <span>{{ 0 | copPrice }}</span>
-        <span>{{ maxPrice() | copPrice }}</span>
-      </div>
-      <input type="range" min="0" max="1000" step="10" [value]="maxPrice()" (input)="updatePrice($any($event.target).value)" />
-    </section>
-
-    <section class="filter-group">
-      <h3>Marca</h3>
-      @for (item of brandOptions; track item) {
-        <label>
-          <input
-            type="checkbox"
-            [checked]="selectedBrands().has(item)"
-            (change)="toggleBrand(item, $any($event.target).checked)"
-          />
-          <span>{{ item }}</span>
-        </label>
-      }
-    </section>
-
-    <section class="filter-group">
-      <h3>Compatibilidad</h3>
-      @for (item of platformOptions; track item) {
-        <label>
-          <input
-            type="checkbox"
-            [checked]="selectedPlatforms().has(item)"
-            (change)="togglePlatform(item, $any($event.target).checked)"
-          />
-          <span>{{ labelFromSlug(item) }}</span>
-        </label>
-      }
-    </section>
-  </aside>
-
-  <section class="catalog-content" aria-labelledby="catalog-title">
-    <div class="content-head">
-      <div>
-        <h1 id="catalog-title">Catalogo de productos</h1>
-        <p class="results">{{ filteredProducts().length }} resultados</p>
-        @if (cartMessage()) {
-          <p class="cart-message">{{ cartMessage() }}</p>
-        }
+  @if (showResultsLayout()) {
+    <aside class="filters-panel" [class.open-mobile]="mobileFiltersOpen()">
+      <div class="filters-header">
+        <h2>Filtros</h2>
+        <div class="filters-header-actions">
+          @if (activeFiltersCount() > 0) {
+            <span class="active-count">{{ activeFiltersCount() }}</span>
+          }
+          <button type="button" class="clear-btn" (click)="clearFilters()">Limpiar</button>
+        </div>
       </div>
 
-      <button type="button" class="open-filters-btn" (click)="openMobileFilters()">
-        Filtros
-        @if (activeFiltersCount() > 0) {
-          <span>{{ activeFiltersCount() }}</span>
+      <section class="filter-group">
+        <h3>Categoria</h3>
+        @for (item of categoryOptions(); track item) {
+          <label>
+            <input
+              type="checkbox"
+              [checked]="selectedCategories().has(item)"
+              (change)="toggleCategory(item, eventChecked($event))"
+            />
+            <span>{{ labelFromSlug(item) }}</span>
+          </label>
         }
-      </button>
+      </section>
 
-      <div class="chips">
-        @if (search()) {
-          <span>Busqueda: {{ search() }}</span>
+      <section class="filter-group">
+        <h3>Rango de precio</h3>
+        <div class="price-row">
+          <span>{{ 0 | copPrice }}</span>
+          <span>{{ maxPrice() | copPrice }}</span>
+        </div>
+        <input type="range" min="0" [max]="priceLimitMax()" step="10" [value]="maxPrice()" (input)="updatePrice(eventValue($event))" />
+      </section>
+
+      <section class="filter-group">
+        <h3>Vendedor</h3>
+        @for (item of vendorOptions(); track item) {
+          <label>
+            <input
+              type="checkbox"
+              [checked]="selectedVendors().has(item)"
+              (change)="toggleVendor(item, eventChecked($event))"
+            />
+            <span>{{ item }}</span>
+          </label>
         }
-        @if (category()) {
-          <span>Categoria: {{ labelFromSlug(category()!) }}</span>
-        }
-        @if (discount()) {
-          <span>Solo descuentos</span>
-        }
+      </section>
+    </aside>
+  }
+
+  @if (showResultsLayout()) {
+    <section class="catalog-content" aria-labelledby="catalog-title">
+      <div class="content-head">
+        <div>
+          <h1 id="catalog-title">Catalogo de productos</h1>
+          <p class="results">{{ filteredProducts().length }} resultados</p>
+          @if (cartMessage()) {
+            <p class="cart-message">{{ cartMessage() }}</p>
+          }
+          @if (error()) {
+            <p class="cart-message">{{ error() }}</p>
+          }
+        </div>
+
+        <button type="button" class="open-filters-btn" (click)="openMobileFilters()">
+          Filtros
+          @if (activeFiltersCount() > 0) {
+            <span>{{ activeFiltersCount() }}</span>
+          }
+        </button>
+
+        <div class="chips">
+          @if (search()) {
+            <span>Busqueda: {{ search() }}</span>
+          }
+          @if (category()) {
+            <span>Categoria: {{ labelFromSlug(category()!) }}</span>
+          }
+          @if (discount()) {
+            <span>Solo descuentos</span>
+          }
+          @if (hasSearch()) {
+            <button type="button" class="chip-clear" (click)="clearCatalogState()">Volver a categorias</button>
+          }
+        </div>
       </div>
-    </div>
 
-    <div class="products-grid" [class.filtering]="filtering()">
-      @if (filtering()) {
-        @for (_item of skeletonCards; track $index) {
-          <article class="product-card skeleton">
-            <div class="sk-image"></div>
-            <div class="sk-title"></div>
-            <div class="sk-meta"></div>
-            <div class="sk-actions"></div>
-          </article>
-        }
-      } @else {
-        @for (product of pagedProducts(); track product.name) {
-          <article class="product-card">
-            @if (product.badge) {
-              <span class="badge">{{ product.badge }}</span>
-            }
+      <div class="products-grid" [class.filtering]="filtering()">
+        @if (filtering()) {
+          @for (_item of skeletonCards; track $index) {
+            <article class="product-card skeleton">
+              <div class="sk-image"></div>
+              <div class="sk-title"></div>
+              <div class="sk-meta"></div>
+              <div class="sk-actions"></div>
+            </article>
+          }
+        } @else {
+          @for (product of pagedProducts(); track product.idProducto) {
+            <article class="product-card">
+              <button
+                type="button"
+                class="wish-btn"
+                [class.active]="isFavorite(product)"
+                aria-label="Agregar a favoritos"
+                (click)="toggleFavorite(product)"
+              >
+                &#9829;
+              </button>
 
-            <button
-              type="button"
-              class="wish-btn"
-              [class.active]="isFavorite(product)"
-              aria-label="Agregar a favoritos"
-              (click)="toggleFavorite(product)"
-            >
-              &#9829;
-            </button>
+              <img [src]="product.urlImagenPrincipal || ''" [alt]="product.nombre" width="420" height="240" loading="lazy" decoding="async" />
 
-            <img [src]="product.image" [alt]="product.name" width="420" height="240" loading="lazy" decoding="async" />
+              <div class="card-body">
+                <h3>{{ product.nombre }}</h3>
+                <p class="shipping">{{ product.nombreVendedor }}</p>
 
-            <div class="card-body">
-              <h3>{{ product.name }}</h3>
-
-              <div class="price-row-card">
-                <strong>{{ product.price | copPrice }}</strong>
-                @if (product.oldPrice) {
-                  <small>{{ product.oldPrice | copPrice }}</small>
-                }
-              </div>
-
-              <p class="rating">
-                @for (star of ratingStars(product.rating); track $index) {
-                  <span class="star" [class.filled]="star">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </span>
-                }
-                <span class="count">({{ product.reviews }})</span>
-              </p>
-              <p class="shipping">{{ product.shipping }}</p>
-
-              <div class="card-actions">
-                <button
-                  type="button"
-                  class="add-btn"
-                  [class.loading]="addingProductName() === product.name"
-                  [disabled]="addingProductName() === product.name"
-                  (click)="addToCart(product)"
-                >
-                  @if (addingProductName() === product.name) {
-                    <span class="btn-spinner" aria-hidden="true"></span>
-                    Agregando...
-                  } @else {
-                    Agregar al carrito
+                <div class="price-row-card">
+                  <strong>{{ product.precioVigente | copPrice }}</strong>
+                  @if (oldPrice(product)) {
+                    <small>{{ oldPrice(product) | copPrice }}</small>
                   }
-                </button>
-                <button type="button" class="details-link" (click)="openProductDetail(product)">Ver detalles</button>
+                </div>
+
+                <p class="shipping">{{ stockLabel(product) }}</p>
+
+                <div class="card-actions">
+                  <button
+                    type="button"
+                    class="add-btn"
+                    [class.loading]="addingProductId() === product.idProducto"
+                    [disabled]="addingProductId() === product.idProducto"
+                    (click)="addToCart(product)"
+                  >
+                    @if (addingProductId() === product.idProducto) {
+                      <span class="btn-spinner" aria-hidden="true"></span>
+                      Agregando...
+                    } @else {
+                      Agregar al carrito
+                    }
+                  </button>
+                  <button type="button" class="details-link" (click)="openProductDetail(product)">Ver detalles</button>
+                </div>
               </div>
-            </div>
-          </article>
+            </article>
+          }
         }
-      }
-    </div>
-
-    @if (pagedProducts().length === 0) {
-      <div class="empty-state">
-        <h3>No encontramos productos</h3>
-        <p>Prueba ajustando filtros o cambiando la busqueda.</p>
-        <button type="button" class="clear-btn" (click)="clearFilters()">Reiniciar filtros</button>
       </div>
-    }
 
-    <div class="pagination" aria-label="Paginacion">
-      <button type="button" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">Anterior</button>
-      @for (page of pages(); track page) {
-        <button type="button" [class.active]="page === currentPage()" (click)="goToPage(page)">{{ page }}</button>
+      @if (pagedProducts().length === 0) {
+        <div class="empty-state">
+          <h3>No encontramos productos</h3>
+          <p>Prueba ajustando filtros o cambiando la busqueda.</p>
+          <button type="button" class="clear-btn" (click)="clearCatalogState()">Reiniciar vista</button>
+        </div>
       }
-      <button type="button" (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()">Siguiente</button>
-    </div>
-  </section>
+
+      <div class="pagination" aria-label="Paginacion">
+        <button type="button" (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">Anterior</button>
+        @for (page of pages(); track page) {
+          <button type="button" [class.active]="page === currentPage()" (click)="goToPage(page)">{{ page }}</button>
+        }
+        <button type="button" (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()">Siguiente</button>
+      </div>
+    </section>
+  }
 </section>

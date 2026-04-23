@@ -10,7 +10,30 @@ import { join } from 'node:path';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+
+function resolveAllowedHosts(): string[] {
+  const configuredHosts = process.env['NG_ALLOWED_HOSTS']
+    ?.split(',')
+    .map((host) => host.trim())
+    .filter(Boolean);
+
+  const railwayDomain = process.env['RAILWAY_PUBLIC_DOMAIN']?.trim();
+
+  return Array.from(
+    new Set([
+      'localhost',
+      '127.0.0.1',
+      '::1',
+      '*.up.railway.app',
+      ...(configuredHosts ?? []),
+      ...(railwayDomain ? [railwayDomain] : []),
+    ]),
+  );
+}
+
+const angularApp = new AngularNodeAppEngine({
+  allowedHosts: resolveAllowedHosts(),
+});
 
 /**
  * Example Express Rest API endpoints can be defined here.

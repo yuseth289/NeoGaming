@@ -1,11 +1,14 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { OrdersApi } from '../data-access/orders.api';
+import { parseApiError } from '../../../core/http/api-error.utils';
+import { PedidoListadoResponse, PedidoResponse } from '../../../core/models/api.models';
 
 interface OrderItem {
   id: string;
-  product: string;
-  image: string;
+  products: string[];
   itemCount: number;
   date: string;
   total: number;
@@ -19,56 +22,29 @@ interface OrderItem {
   styleUrl: './orders-history.component.css'
 })
 export class OrdersHistoryComponent {
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  protected readonly statusFilter = signal<'Todos' | OrderItem['status']>('Todos');
+  private readonly ordersApi = inject(OrdersApi);
+  private readonly queryParams = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap
+  });
 
-  protected readonly orders = signal<OrderItem[]>([
-    {
-      id: 'NG987654321',
-      product: 'NVIDIA GeForce RTX 4080 Super',
-      image: 'https://images.unsplash.com/photo-1591489378430-ef2f4c626b35?auto=format&fit=crop&w=220&q=80',
-      itemCount: 2,
-      date: '2026-03-10',
-      total: 5250000,
-      status: 'Entregado'
-    },
-    {
-      id: 'NG123456789',
-      product: 'Razer BlackWidow V4 Pro',
-      image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=220&q=80',
-      itemCount: 1,
-      date: '2026-03-05',
-      total: 1290000,
-      status: 'En proceso'
-    },
-    {
-      id: 'NG000000001',
-      product: 'SteelSeries Arctis Nova Pro',
-      image: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=220&q=80',
-      itemCount: 3,
-      date: '2026-02-20',
-      total: 1690000,
-      status: 'Enviado'
-    },
-    {
-      id: 'NG20231201',
-      product: 'Corsair Vengeance RGB 32GB',
-      image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=220&q=80',
-      itemCount: 1,
-      date: '2026-02-11',
-      total: 689000,
-      status: 'En proceso'
-    },
-    {
-      id: 'NG20230901',
-      product: 'Logitech G Pro X Superlight',
-      image: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=220&q=80',
-      itemCount: 1,
-      date: '2026-01-08',
-      total: 479000,
-      status: 'Cancelado'
-    }
-  ]);
+  protected readonly statusFilter = signal<'Todos' | OrderItem['status']>('Todos');
+  protected readonly orders = signal<OrderItem[]>([]);
+  protected readonly selectedOrder = signal<PedidoResponse | null>(null);
+  protected readonly error = signal<string | null>(null);
+
+  constructor() {
+    this.loadOrders();
+    effect(() => {
+      const orderId = this.queryParams().get('order');
+      if (orderId) {
+        this.loadOrderDetail(orderId);
+      } else {
+        this.selectedOrder.set(null);
+      }
+    });
+  }
 
   protected readonly filteredOrders = computed(() => {
     const filter = this.statusFilter();
@@ -84,7 +60,19 @@ export class OrdersHistoryComponent {
 
   protected openOrderDetails(orderId: string, event?: Event): void {
     event?.stopPropagation();
-    void this.router.navigate(['/pedidos'], { queryParams: { order: orderId } });
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { order: orderId },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  protected closeOrderDetails(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { order: null },
+      queryParamsHandling: 'merge'
+    });
   }
 
   protected reorder(orderId: string, event: Event): void {
@@ -112,6 +100,57 @@ export class OrdersHistoryComponent {
         return 'Cancelado';
       default:
         return 'Pedido';
+    }
+  }
+
+  private loadOrders(): void {
+    this.ordersApi.getOrders({ size: 20 }).subscribe({
+      next: (response) => {
+        this.error.set(null);
+        this.orders.set(response.content.map((entry) => this.normalizeOrder(entry)));
+      },
+      error: (error) => {
+        this.orders.set([]);
+        this.error.set(parseApiError(error).message);
+      }
+    });
+  }
+
+  private loadOrderDetail(orderId: string): void {
+    this.ordersApi.getById(orderId).subscribe({
+      next: (response) => {
+        this.error.set(null);
+        this.selectedOrder.set(response);
+      },
+      error: (error) => {
+        this.selectedOrder.set(null);
+        this.error.set(parseApiError(error).message);
+      }
+    });
+  }
+
+  private normalizeOrder(source: PedidoListadoResponse): OrderItem {
+    return {
+      id: `${source.idPedido}`,
+      products: source.productos.map((item) => item.nombre),
+      itemCount: source.cantidadItems,
+      date: source.fechaCreacion,
+      total: source.total,
+      status: this.mapStatus(source.estado)
+    };
+  }
+
+  private mapStatus(value: string): OrderItem['status'] {
+    switch (value.toUpperCase()) {
+      case 'ENTREGADO':
+        return 'Entregado';
+      case 'ENVIADO':
+        return 'Enviado';
+      case 'CANCELADO':
+      case 'ANULADO':
+        return 'Cancelado';
+      default:
+        return 'En proceso';
     }
   }
 }

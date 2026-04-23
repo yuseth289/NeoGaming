@@ -54,12 +54,9 @@
     <section class="wishlist-grid">
       @for (item of visibleItems(); track item.id) {
         <article class="wishlist-card">
-          @if (item.badge) {
-            <span class="badge">{{ item.badge }}</span>
-          }
           <div class="media">
             <img [src]="item.image" [alt]="item.name" width="360" height="220" loading="lazy" decoding="async" />
-            <button type="button" class="remove" (click)="removeItem(item.id)">Quitar</button>
+            <button type="button" class="remove" (click)="removeItem(item.productId)">Quitar</button>
           </div>
 
           <div class="card-body">
@@ -73,10 +70,6 @@
                 <small>{{ item.oldPrice | copPrice }}</small>
               }
             </div>
-
-            <div class="rating-stars" aria-label="Calificacion {{ ratingLabel(item.rating) }}">{{ ratingStars(item.rating) }}</div>
-
-
             <p class="stock">{{ item.stockLabel }}</p>
 
             <div class="card-actions">

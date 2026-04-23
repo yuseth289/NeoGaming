@@ -1,28 +1,29 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { ApiClient } from '../../http/api-client/api-client.service';
+import { LoginResponse, UsuarioResponse } from '../../models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthApi {
   private readonly api = inject(ApiClient);
 
-  login(payload: unknown): Observable<unknown> {
-    return this.api.post('/auth/login', payload);
+  login(payload: { email: string; password: string }): Observable<LoginResponse> {
+    return this.api.post<LoginResponse>('/auth/login', payload);
   }
 
-  register(payload: unknown): Observable<unknown> {
-    return this.api.post('/auth/register', payload);
+  register(payload: unknown): Observable<UsuarioResponse> {
+    return this.api.post<UsuarioResponse>('/auth/registro', payload);
   }
 
-  me(): Observable<unknown> {
-    return this.api.get('/auth/me');
+  me(): Observable<UsuarioResponse> {
+    return this.api.get<UsuarioResponse>('/usuarios/me');
   }
 
-  refresh(payload: unknown): Observable<unknown> {
-    return this.api.post('/auth/refresh', payload);
-  }
-
-  logout(): Observable<unknown> {
-    return this.api.post('/auth/logout', {});
+  logout(): Observable<void> {
+    return this.api.post<void>('/auth/logout', {}).pipe(
+      map(() => undefined),
+      catchError(() => of(undefined))
+    );
   }
 }
