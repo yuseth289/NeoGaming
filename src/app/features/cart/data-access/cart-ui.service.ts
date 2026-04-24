@@ -4,7 +4,7 @@ import { parseApiError } from '../../../core/http/api-error.utils';
 import { CarritoItemResponse, CarritoResponse } from '../../../core/models/api.models';
 
 export interface CartItem {
-  id?: string;
+  id?: number;
   productId?: number;
   slug?: string;
   name: string;
@@ -113,7 +113,7 @@ export class CartUiService {
     const existing = currentItems.get(name);
 
     return {
-      id: `${item.idItem}`,
+      id: item.idItem,
       productId: item.idProducto ?? existing?.productId,
       slug: item.slug || existing?.slug,
       name,

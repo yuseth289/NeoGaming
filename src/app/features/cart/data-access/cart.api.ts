@@ -24,11 +24,11 @@ export class CartApi {
     return this.api.post<CarritoResponse>('/carrito/items', payload);
   }
 
-  updateItem(itemId: string, payload: ActualizarCantidadCarritoRequest): Observable<CarritoResponse> {
+  updateItem(itemId: number, payload: ActualizarCantidadCarritoRequest): Observable<CarritoResponse> {
     return this.api.patch<CarritoResponse>(`/carrito/items/${itemId}`, payload);
   }
 
-  removeItem(itemId: string): Observable<CarritoResponse> {
+  removeItem(itemId: number): Observable<CarritoResponse> {
     return this.api.delete<CarritoResponse>(`/carrito/items/${itemId}`);
   }
 

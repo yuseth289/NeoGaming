@@ -6,6 +6,7 @@ import { API_BASE_URL } from './core/http/api-client/api-client.service';
 import { mockApiInterceptor } from './core/http/mocks/mock-api.interceptor';
 import { CartApi } from './features/cart/data-access/cart.api';
 import { CheckoutStateService } from './features/checkout/data-access/checkout-state.service';
+import { CarritoResponse } from './core/models/api.models';
 
 describe('Flujo demo con mocks', () => {
   let authApi: AuthApi;
@@ -53,7 +54,7 @@ describe('Flujo demo con mocks', () => {
 
   it('debe permitir agregar, actualizar y vaciar el carrito mock', async () => {
     const addResponse = await firstValueFrom(
-      cartApi.addItem({ productoId: 'p-001', cantidad: 1 })
+      cartApi.addItem({ productoId: 1, cantidad: 1 })
     );
 
     expect(addResponse).toMatchObject({
@@ -66,7 +67,7 @@ describe('Flujo demo con mocks', () => {
       ]
     });
 
-    const addedItems = (addResponse as { items: Array<{ idItem: string }> }).items;
+    const addedItems = (addResponse as CarritoResponse).items;
     expect(addedItems[0]?.idItem).toBeTruthy();
 
     const updateResponse = await firstValueFrom(
@@ -109,7 +110,7 @@ describe('Flujo demo con mocks', () => {
       shipping: checkoutState.shipping()!,
       items: [
         {
-          id: 'ci-demo',
+          id: 1,
           name: 'AetherGlow Pro Gaming Headset',
           price: 249.99,
           quantity: 1
