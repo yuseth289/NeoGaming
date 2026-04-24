@@ -36,19 +36,7 @@ const angularApp = new AngularNodeAppEngine({
 });
 
 /**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- *
- * Example:
- * ```ts
- * app.get('/api/{*splat}', (req, res) => {
- *   // Handle API request
- * });
- * ```
- */
-
-/**
- * Serve static files from /browser
+ * Servir archivos estáticos
  */
 app.use(
   express.static(browserDistFolder, {
@@ -59,7 +47,7 @@ app.use(
 );
 
 /**
- * Handle all other requests by rendering the Angular application.
+ * Render SSR Angular
  */
 app.use((req, res, next) => {
   angularApp
@@ -71,24 +59,26 @@ app.use((req, res, next) => {
 });
 
 /**
- * Only start a standalone Node server when explicitly requested.
- * This avoids opening a port during build-time module execution on platforms like Vercel.
+ * 🚨 IMPORTANTE PARA RAILWAY
+ * Escuchar en 0.0.0.0 y usar el PORT del entorno
  */
 if (
   process.env['START_SERVER'] === 'true' &&
   (isMainModule(import.meta.url) || process.env['pm_id'])
 ) {
-  const port = Number(process.env['PORT'] ?? 4000);
-  app.listen(port, (error) => {
+  const port = Number(process.env['PORT'] ?? 8080);
+  const host = process.env['HOST'] ?? '0.0.0.0';
+
+  app.listen(port, host, (error) => {
     if (error) {
       throw error;
     }
 
-    console.log(`Node Express server listening on http://localhost:${port}`);
+    console.log(`✅ Server corriendo en http://${host}:${port}`);
   });
 }
 
 /**
- * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
+ * Handler requerido por Angular SSR
  */
 export const reqHandler = createNodeRequestHandler(app);
