@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize, switchMap } from 'rxjs';
 import { AuthApi } from '../../../../core/auth/data-access/auth.api';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
+import { parseApiError } from '../../../../core/http/api-error.utils';
 
 @Component({
   selector: 'app-register-page',
@@ -81,8 +82,8 @@ export class RegisterComponent {
 
           void this.router.navigate(['/']);
         },
-        error: () => {
-          this.error.set('No se pudo crear la cuenta. Intenta de nuevo.');
+        error: (error) => {
+          this.error.set(parseApiError(error).message || 'No se pudo crear la cuenta. Intenta de nuevo.');
         }
       });
   }
