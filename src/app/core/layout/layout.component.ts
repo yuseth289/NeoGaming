@@ -5,10 +5,11 @@ import { HeaderComponent } from '../../shared/header/header.component';
 import { FooterComponent } from '../../shared/footer/footer.component';
 import { LoginComponent } from '../../features/auth/pages/login/login.component';
 import { RegisterComponent } from '../../features/auth/pages/register/register.component';
+import { ChatbotWidgetComponent } from '../../shared/chatbot-widget/chatbot-widget.component';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, HeaderComponent, FooterComponent, LoginComponent, RegisterComponent],
+  imports: [RouterOutlet, HeaderComponent, FooterComponent, LoginComponent, RegisterComponent, ChatbotWidgetComponent],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css'
 })

@@ -1,7 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { finalize, switchMap } from 'rxjs';
 import { CartUiService } from '../../../cart/data-access/cart-ui.service';
+import { CheckoutApi } from '../../data-access/checkout.api';
 import { CheckoutStateService } from '../../data-access/checkout-state.service';
 import { CopPricePipe } from '../../../../shared/pipes/cop-price.pipe';
 import {
@@ -28,6 +30,7 @@ export class CheckoutShippingComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   protected readonly cartUi = inject(CartUiService);
+  private readonly checkoutApi = inject(CheckoutApi);
   private readonly checkoutState = inject(CheckoutStateService);
   protected readonly icons = {
     shipping: MapPinned,
@@ -48,6 +51,7 @@ export class CheckoutShippingComponent {
 
   protected readonly submitting = signal(false);
   protected readonly submitAttempted = signal(false);
+  protected readonly error = signal<string | null>(null);
   protected readonly hasItems = () => this.cartUi.cartItems().length > 0;
 
   protected readonly form = this.fb.nonNullable.group({
@@ -63,10 +67,10 @@ export class CheckoutShippingComponent {
     reference: ['']
   });
 
-  protected readonly subtotal = () => this.cartUi.totalPrice();
-  protected readonly shippingCost = () => (this.subtotal() > 0 ? 15 : 0);
-  protected readonly tax = () => this.subtotal() * 0.08;
-  protected readonly total = () => Math.max(0, this.subtotal() + this.shippingCost() + this.tax());
+  protected readonly subtotal = () => this.checkoutState.draft()?.resumen?.subtotal ?? this.cartUi.totalPrice();
+  protected readonly shippingCost = () => this.checkoutState.draft()?.resumen?.costoEnvio ?? 0;
+  protected readonly tax = () => this.checkoutState.draft()?.resumen?.impuesto ?? 0;
+  protected readonly total = () => this.checkoutState.draft()?.resumen?.total ?? Math.max(0, this.subtotal() + this.shippingCost() + this.tax());
 
   constructor() {
     const saved = this.checkoutState.shipping();
@@ -96,9 +100,51 @@ export class CheckoutShippingComponent {
 
     this.submitAttempted.set(false);
     this.submitting.set(true);
-    this.checkoutState.setShipping(this.form.getRawValue());
-    this.submitting.set(false);
-    void this.router.navigate(['/checkout/payment']);
+    this.error.set(null);
+    const shipping = this.form.getRawValue();
+    this.checkoutState.setShipping(shipping);
+
+    this.checkoutApi
+      .start()
+      .pipe(
+        switchMap((response) => {
+          const draft = this.extractDraft(response);
+          if (!draft) {
+            throw new Error('No fue posible iniciar el checkout');
+          }
+
+          this.checkoutState.setDraft(draft);
+          return this.checkoutApi.saveShipping({
+            pedidoId: draft.pedidoId,
+            direccionEnvio: {
+              nombreCompleto: shipping.fullName,
+              correoElectronico: shipping.email,
+              telefono: shipping.phone,
+              direccion: shipping.address,
+              apartamentoInterior: shipping.apartment || null,
+              ciudad: shipping.city,
+              estadoRegion: shipping.state,
+              codigoPostal: shipping.postalCode,
+              pais: shipping.country,
+              referenciaEntrega: shipping.reference || null
+            },
+            mismaDireccionFacturacion: true
+          });
+        }),
+        finalize(() => this.submitting.set(false))
+      )
+      .subscribe({
+        next: (response) => {
+          const draft = this.extractDraft(response);
+          if (draft) {
+            this.checkoutState.setDraft(draft);
+          }
+          void this.router.navigate(['/checkout/payment']);
+        },
+        error: () => {
+          this.error.set('No fue posible guardar la informacion de envio. Intenta de nuevo.');
+        }
+      });
   }
 
   protected fieldInvalid(controlName: keyof typeof this.form.controls): boolean {
@@ -124,5 +170,72 @@ export class CheckoutShippingComponent {
     }
 
     this.form.controls.phone.setValue(formatted.trim(), { emitEvent: false });
+  }
+
+  private extractDraft(response: unknown): {
+    pedidoId: number;
+    numeroPedido: string;
+    estadoPedido: string;
+    resumen?: {
+      cantidadItems: number;
+      subtotal: number;
+      impuesto: number;
+      costoEnvio: number;
+      total: number;
+      moneda?: string;
+    };
+  } | null {
+    if (!response || typeof response !== 'object') {
+      return null;
+    }
+
+    const source = response as {
+      pedidoId?: unknown;
+      numeroPedido?: unknown;
+      estadoPedido?: unknown;
+      resumen?: {
+        cantidadItems?: unknown;
+        subtotal?: unknown;
+        impuesto?: unknown;
+        costoEnvio?: unknown;
+        total?: unknown;
+        moneda?: unknown;
+      };
+    };
+
+    if (
+      typeof source.pedidoId !== 'number' ||
+      typeof source.numeroPedido !== 'string' ||
+      typeof source.estadoPedido !== 'string'
+    ) {
+      return null;
+    }
+
+    return {
+      pedidoId: source.pedidoId,
+      numeroPedido: source.numeroPedido,
+      estadoPedido: source.estadoPedido,
+      resumen: source.resumen
+        ? {
+            cantidadItems: this.toNumber(source.resumen.cantidadItems),
+            subtotal: this.toNumber(source.resumen.subtotal),
+            impuesto: this.toNumber(source.resumen.impuesto),
+            costoEnvio: this.toNumber(source.resumen.costoEnvio),
+            total: this.toNumber(source.resumen.total),
+            moneda: typeof source.resumen.moneda === 'string' ? source.resumen.moneda : undefined
+          }
+        : undefined
+    };
+  }
+
+  private toNumber(value: unknown): number {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
   }
 }

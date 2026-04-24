@@ -25,3 +25,59 @@ button,
 a {
   transition: all 0.24s ease;
 }
+
+/* ═════════════════════════════════════════════════════════════
+   SCROLLBAR PERSONALIZADO - Minimalista en todo el proyecto
+   ═════════════════════════════════════════════════════════════ */
+
+/* OverlayScrollbars - Invisibilizar fondo/track, solo handle visible */
+:root .os-scrollbar,
+.os-scrollbar {
+  background: transparent !important;
+}
+
+.os-scrollbar-track {
+  background: transparent !important;
+}
+
+.os-scrollbar-handle {
+  width: 0.25rem !important;
+  border-radius: 10rem !important;
+  transition: width 300ms ease-in-out;
+  background: rgba(255, 255, 255, 0.24) !important;
+}
+
+.os-scrollbar-handle:focus,
+.os-scrollbar-handle:focus-within,
+.os-scrollbar-handle:hover {
+  width: 0.35rem !important;
+  background: rgba(255, 255, 255, 0.34) !important;
+}
+
+/* WebKit Scrollbar (Chrome, Safari, Edge) - Solo handle visible */
+::-webkit-scrollbar {
+  width: 0.25rem;
+  height: 0.25rem;
+  background: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 10rem;
+  background: rgba(255, 255, 255, 0.24);
+  transition: width 300ms ease-in-out;
+}
+
+::-webkit-scrollbar-thumb:focus,
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.34);
+}
+
+/* Firefox Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
+}

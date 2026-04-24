@@ -2,8 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
-import { CartApi } from '../../../cart/data-access/cart.api';
 import { CartUiService } from '../../../cart/data-access/cart-ui.service';
+import { CheckoutApi } from '../../data-access/checkout.api';
 import { CheckoutStateService, PaymentMethod } from '../../data-access/checkout-state.service';
 import { CopPricePipe } from '../../../../shared/pipes/cop-price.pipe';
 import {
@@ -28,7 +28,7 @@ import {
 export class CheckoutPaymentComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
-  private readonly cartApi = inject(CartApi);
+  private readonly checkoutApi = inject(CheckoutApi);
   protected readonly cartUi = inject(CartUiService);
   private readonly checkoutState = inject(CheckoutStateService);
   protected readonly icons = {
@@ -48,6 +48,7 @@ export class CheckoutPaymentComponent {
 
   protected readonly submitting = signal(false);
   protected readonly submitAttempted = signal(false);
+  protected readonly error = signal<string | null>(null);
   protected readonly selectedMethod = signal<PaymentMethod>(this.checkoutState.method());
   protected readonly hasItems = computed(() => this.cartUi.cartItems().length > 0);
 
@@ -63,10 +64,10 @@ export class CheckoutPaymentComponent {
     nequiHolder: ['', [Validators.required, Validators.minLength(3)]]
   });
 
-  protected readonly subtotal = () => this.cartUi.totalPrice();
-  protected readonly shippingCost = () => (this.subtotal() > 0 ? 15 : 0);
-  protected readonly tax = () => this.subtotal() * 0.08;
-  protected readonly total = () => Math.max(0, this.subtotal() + this.shippingCost() + this.tax());
+  protected readonly subtotal = () => this.checkoutState.draft()?.resumen?.subtotal ?? this.cartUi.totalPrice();
+  protected readonly shippingCost = () => this.checkoutState.draft()?.resumen?.costoEnvio ?? 0;
+  protected readonly tax = () => this.checkoutState.draft()?.resumen?.impuesto ?? 0;
+  protected readonly total = () => this.checkoutState.draft()?.resumen?.total ?? Math.max(0, this.subtotal() + this.shippingCost() + this.tax());
   protected readonly primaryActionLabel = computed(() => {
     if (this.submitting()) {
       return 'Procesando...';
@@ -101,6 +102,11 @@ export class CheckoutPaymentComponent {
       void this.router.navigate(['/checkout/shipping']);
       return;
     }
+    const draft = this.checkoutState.draft();
+    if (!draft) {
+      void this.router.navigate(['/checkout/shipping']);
+      return;
+    }
 
     if (this.currentMethodInvalid()) {
       this.submitAttempted.set(true);
@@ -110,27 +116,38 @@ export class CheckoutPaymentComponent {
 
     this.submitAttempted.set(false);
     this.submitting.set(true);
-    const orderId = `NG${String(Date.now()).slice(-6)}`;
-    this.checkoutState.setOrder({
-      orderId,
-      createdAt: new Date().toISOString(),
-      total: this.total(),
-      paymentMethod: this.selectedMethod(),
-      shipping,
-      items: this.cartUi.cartItems().map((item) => ({ ...item }))
-    });
+    const currentItems = this.cartUi.cartItems().map((item) => ({ ...item }));
 
-    this.cartApi
-      .clear()
+    this.checkoutApi
+      .pay({
+        pedidoId: draft.pedidoId,
+        metodoPago: this.buildPaymentMethodPayload(),
+        simularFallo: false
+      })
       .pipe(finalize(() => this.submitting.set(false)))
       .subscribe({
         next: (response) => {
-          this.cartUi.hydrateFromApi(response);
-          void this.router.navigate(['/checkout/confirmation', orderId]);
+          const normalized = this.normalizePaymentResponse(response);
+          if (!normalized) {
+            this.error.set('El pago se proceso, pero la respuesta del servidor fue invalida.');
+            return;
+          }
+
+          this.checkoutState.setOrder({
+            orderId: normalized.orderId,
+            createdAt: normalized.createdAt,
+            total: normalized.total,
+            paymentMethod: this.selectedMethod(),
+            paymentStatus: normalized.paymentStatus,
+            shipping,
+            items: currentItems
+          });
+          this.cartUi.clear();
+          this.checkoutState.setDraft(null);
+          void this.router.navigate(['/checkout/confirmation', normalized.orderId]);
         },
         error: () => {
-          this.cartUi.clear();
-          void this.router.navigate(['/checkout/confirmation', orderId]);
+          this.error.set('No fue posible procesar el pago. Verifica los datos e intenta de nuevo.');
         }
       });
   }
@@ -209,5 +226,63 @@ export class CheckoutPaymentComponent {
     for (const field of fieldsByMethod[this.selectedMethod()]) {
       this.form.controls[field].markAsTouched();
     }
+  }
+
+  private buildPaymentMethodPayload(): {
+    tipoPago: string;
+    nombreTitular?: string;
+    numeroTarjeta?: string;
+    fechaVencimiento?: string;
+    cvv?: string;
+  } {
+    switch (this.selectedMethod()) {
+      case 'paypal':
+        return { tipoPago: 'PAYPAL' };
+      case 'efecty':
+        return { tipoPago: 'EFECTY' };
+      case 'nequi':
+        return { tipoPago: 'NEQUI' };
+      default:
+        return {
+          tipoPago: 'TARJETA',
+          nombreTitular: this.form.controls.cardholder.value,
+          numeroTarjeta: this.form.controls.cardNumber.value.replace(/\s+/g, ''),
+          fechaVencimiento: this.form.controls.expiry.value,
+          cvv: this.form.controls.cvv.value
+        };
+    }
+  }
+
+  private normalizePaymentResponse(response: unknown): {
+    orderId: string;
+    createdAt: string;
+    total: number;
+    paymentStatus: string;
+  } | null {
+    if (!response || typeof response !== 'object') {
+      return null;
+    }
+
+    const source = response as {
+      numeroPedido?: unknown;
+      fechaPedido?: unknown;
+      total?: unknown;
+      estadoPago?: unknown;
+    };
+
+    if (
+      typeof source.numeroPedido !== 'string' ||
+      typeof source.fechaPedido !== 'string' ||
+      (typeof source.total !== 'number' && typeof source.total !== 'string')
+    ) {
+      return null;
+    }
+
+    return {
+      orderId: source.numeroPedido,
+      createdAt: source.fechaPedido,
+      total: typeof source.total === 'number' ? source.total : Number(source.total),
+      paymentStatus: typeof source.estadoPago === 'string' ? source.estadoPago : 'PENDIENTE'
+    };
   }
 }

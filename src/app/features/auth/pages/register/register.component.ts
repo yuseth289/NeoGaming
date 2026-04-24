@@ -1,7 +1,7 @@
 import { Component, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, switchMap } from 'rxjs';
 import { AuthApi } from '../../../../core/auth/data-access/auth.api';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 
@@ -29,7 +29,7 @@ export class RegisterComponent {
   protected readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
     confirmPassword: ['', [Validators.required]],
     acceptTerms: [false, [Validators.requiredTrue]]
   });
@@ -50,20 +50,29 @@ export class RegisterComponent {
 
     this.loading.set(true);
     const payload = {
-      name: this.form.controls.name.value,
+      nombre: this.form.controls.name.value,
       email: this.form.controls.email.value,
       password: this.form.controls.password.value
     };
 
     this.authApi
       .register(payload)
-      .pipe(finalize(() => this.loading.set(false)))
+      .pipe(
+        switchMap(() =>
+          this.authApi.login({
+            email: this.form.controls.email.value,
+            password: this.form.controls.password.value
+          })
+        ),
+        finalize(() => this.loading.set(false))
+      )
       .subscribe({
-        next: () => {
-          this.authSession.login({
-            name: payload.name,
-            email: payload.email
-          });
+        next: (response) => {
+          const user = this.authSession.handleLoginResponse(response);
+          if (!user) {
+            this.error.set('La cuenta se creo, pero no fue posible iniciar sesion automaticamente.');
+            return;
+          }
           this.success.set('Cuenta creada correctamente.');
           if (this.modalMode()) {
             this.closeModal.emit();

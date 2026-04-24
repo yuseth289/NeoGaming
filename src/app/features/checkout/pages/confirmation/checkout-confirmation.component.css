@@ -248,25 +248,25 @@
   overflow-y: auto;
   padding-right: 0.35rem;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 77, 77, 0.35) rgba(255, 255, 255, 0.04);
+  scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
 }
 
 .items-list::-webkit-scrollbar {
-  width: 8px;
+  width: 0.25rem;
+  background: transparent;
 }
 
 .items-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 999px;
+  background: transparent;
 }
 
 .items-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 77, 77, 0.35);
-  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  border-radius: 10rem;
 }
 
 .items-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 77, 77, 0.5);
+  background: rgba(255, 255, 255, 0.34);
 }
 
 .item-row {

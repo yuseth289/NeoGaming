@@ -549,6 +549,12 @@
   background: rgba(112, 0, 0, 0.2);
 }
 
+.assistant-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .menu-toggle {
   display: none;
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -949,6 +955,10 @@
 
   .auth-actions,
   .profile-box {
+    display: none;
+  }
+
+  .assistant-shortcut {
     display: none;
   }
 

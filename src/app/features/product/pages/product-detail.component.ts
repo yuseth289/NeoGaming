@@ -1,4 +1,4 @@
-import { Component, HostListener, computed, effect, inject, signal } from '@angular/core';
+import { Component, HostListener, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, finalize, of } from 'rxjs';
@@ -24,6 +24,7 @@ interface RelatedProduct {
 }
 
 interface ProductDetail {
+  id?: number;
   slug: string;
   name: string;
   category?: string;
@@ -228,6 +229,120 @@ export class ProductDetailComponent {
           price: 79.99
         }
       ]
+    },
+    {
+      slug: 'quantumgear-mechanical-keyboard',
+      name: 'QuantumGear Mechanical Keyboard',
+      category: 'Perifericos',
+      price: 189.99,
+      stock: 18,
+      subtitle: 'Teclado mecanico RGB enfocado en velocidad, precision y durabilidad.',
+      tags: ['Switches tactiles', 'RGB por tecla', 'Chasis de aluminio'],
+      description:
+        'Teclado diseñado para sesiones competitivas y setups premium. Ofrece pulsaciones consistentes, excelente respuesta y construcción firme para uso intensivo.',
+      images: ['https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=1200&q=80'],
+      specifications: [
+        { title: 'Switches', lines: ['Mecanicos tactiles', 'Durabilidad de 50 millones de pulsaciones'] },
+        { title: 'Construccion', lines: ['Chasis de aluminio', 'Keycaps resistentes al desgaste'] },
+        { title: 'Conectividad', lines: ['USB-C', 'Cable desmontable mallado'] }
+      ],
+      compatibility: 'PC, Mac',
+      rating: 4.7,
+      ratingCount: 890,
+      reviews: [
+        {
+          author: 'KeyRush',
+          score: 5,
+          date: '2026-03-03',
+          title: 'Respuesta excelente',
+          comment: 'Muy firme, rapido y con muy buena sensacion al escribir y jugar.',
+          verifiedPurchase: true
+        }
+      ],
+      related: [
+        {
+          slug: 'aetherblade-gaming-mouse',
+          name: 'AetherBlade Gaming Mouse',
+          image: 'https://images.unsplash.com/photo-1613141412501-9012977f1969?auto=format&fit=crop&w=820&q=80',
+          price: 79.99
+        }
+      ]
+    },
+    {
+      slug: 'aetherblade-gaming-mouse',
+      name: 'AetherBlade Gaming Mouse',
+      category: 'Accesorios',
+      price: 79.99,
+      stock: 32,
+      subtitle: 'Mouse ultraligero para reflejos rapidos y control preciso.',
+      tags: ['Sensor optico premium', 'Peso ultraligero', 'RGB configurable'],
+      description:
+        'Mouse pensado para jugadores competitivos que buscan rapidez, agarre comodo y tracking estable durante largas sesiones.',
+      images: ['https://images.unsplash.com/photo-1613141412501-9012977f1969?auto=format&fit=crop&w=1200&q=80'],
+      specifications: [
+        { title: 'Sensor', lines: ['Hasta 26000 DPI', 'Seguimiento preciso de baja latencia'] },
+        { title: 'Diseño', lines: ['58 g de peso', 'Forma ergonomica para claw y palm grip'] },
+        { title: 'Botones', lines: ['6 botones programables', 'Switches de respuesta rapida'] }
+      ],
+      compatibility: 'PC, Mac',
+      rating: 4.5,
+      ratingCount: 122,
+      reviews: [
+        {
+          author: 'AimShift',
+          score: 5,
+          date: '2026-03-04',
+          title: 'Preciso y comodo',
+          comment: 'Muy ligero y estable. En shooters se siente inmediato.',
+          verifiedPurchase: true
+        }
+      ],
+      related: [
+        {
+          slug: 'quantumgear-mechanical-keyboard',
+          name: 'QuantumGear Mechanical Keyboard',
+          image: 'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=820&q=80',
+          price: 189.99
+        }
+      ]
+    },
+    {
+      slug: 'chronopulse-gaming-monitor',
+      name: 'ChronoPulse Gaming Monitor',
+      category: 'Hardware',
+      price: 499,
+      stock: 11,
+      subtitle: 'Monitor QHD de alto refresco para juego competitivo e inmersion visual.',
+      tags: ['240 Hz', '1 ms GtG', 'Adaptive Sync'],
+      description:
+        'Monitor construido para setups exigentes, con alta fluidez, baja latencia y una imagen clara para shooters, carreras y experiencias cinematograficas.',
+      images: ['https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=1200&q=80'],
+      specifications: [
+        { title: 'Pantalla', lines: ['27 pulgadas', 'Resolucion QHD'] },
+        { title: 'Rendimiento', lines: ['240 Hz', 'Tiempo de respuesta de 1 ms'] },
+        { title: 'Entradas', lines: ['DisplayPort 1.4', 'HDMI 2.1'] }
+      ],
+      compatibility: 'PC, PlayStation 5, Xbox Series X/S',
+      rating: 4.6,
+      ratingCount: 96,
+      reviews: [
+        {
+          author: 'FrameRush',
+          score: 5,
+          date: '2026-03-06',
+          title: 'Fluido de verdad',
+          comment: 'Muy buena nitidez y se nota mucho la fluidez en FPS.',
+          verifiedPurchase: true
+        }
+      ],
+      related: [
+        {
+          slug: 'aetherblade-gaming-mouse',
+          name: 'AetherBlade Gaming Mouse',
+          image: 'https://images.unsplash.com/photo-1613141412501-9012977f1969?auto=format&fit=crop&w=820&q=80',
+          price: 79.99
+        }
+      ]
     }
   ];
 
@@ -307,7 +422,7 @@ export class ProductDetailComponent {
     this.syncViewportState();
     effect(() => {
       const slug = this.params().get('slug') ?? '';
-      const current = this.product();
+      const current = untracked(() => this.product());
       this.selectedImage.set(0);
       this.zoomActive.set(false);
       this.zoomX.set(50);
@@ -322,9 +437,7 @@ export class ProductDetailComponent {
       if (slug) {
         this.loadProductFromApi(slug);
       }
-      if (typeof window !== 'undefined') {
-        window.scrollTo({ top: 0, behavior: 'auto' });
-      }
+      this.resetViewportToTop();
     });
   }
 
@@ -393,8 +506,14 @@ export class ProductDetailComponent {
     this.message.set(null);
 
     const item = this.product();
+    if (typeof item.id !== 'number') {
+      this.adding.set(false);
+      this.message.set('No se pudo identificar el producto para agregarlo al carrito.');
+      return;
+    }
+
     this.cartApi
-      .addItem({ productName: item.name, quantity: this.quantity() })
+      .addItem({ productoId: item.id, cantidad: this.quantity() })
       .pipe(finalize(() => this.adding.set(false)))
       .subscribe({
         next: (response) => {
@@ -512,12 +631,28 @@ export class ProductDetailComponent {
     }
   }
 
+  private resetViewportToTop(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    });
+  }
+
   private loadProductFromApi(slug: string): void {
+    const fallbackById =
+      /^\d+$/.test(slug)
+        ? this.productApi.getById(slug)
+        : of(null);
+
     this.loadingRemote.set(true);
     this.productApi
       .getBySlug(slug)
       .pipe(
-        catchError(() => this.productApi.getById(slug)),
+        catchError(() => fallbackById),
         catchError(() => of(null)),
         finalize(() => this.loadingRemote.set(false))
       )
@@ -536,7 +671,10 @@ export class ProductDetailComponent {
       return null;
     }
     const source = response as any;
-    const name = this.stringOrEmpty(source.name) || this.stringOrEmpty(source.title);
+    const name =
+      this.stringOrEmpty(source.nombre) ||
+      this.stringOrEmpty(source.name) ||
+      this.stringOrEmpty(source.title);
     if (!name) {
       return null;
     }
@@ -552,20 +690,26 @@ export class ProductDetailComponent {
       : [];
 
     return {
+      id: this.numberOrUndefined(source.idProducto),
       slug: this.stringOrEmpty(source.slug) || fallbackSlug,
       name,
-      category: this.stringOrEmpty(source.category) || defaultItem.category,
-      price: this.numberOrZero(source.price) || defaultItem.price,
-      oldPrice: this.numberOrZero(source.oldPrice) || undefined,
-      stock: this.numberOrZero(source.stock) || defaultItem.stock,
+      category: this.stringOrEmpty(source.nombreCategoria) || this.stringOrEmpty(source.category) || defaultItem.category,
+      price: this.numberOrZero(source.precioVigente) || this.numberOrZero(source.price) || defaultItem.price,
+      oldPrice: this.numberOrZero(source.precioLista) || this.numberOrZero(source.oldPrice) || undefined,
+      stock: this.numberOrZero(source.stockDisponible) || this.numberOrZero(source.stock) || defaultItem.stock,
       subtitle: this.stringOrEmpty(source.subtitle) || defaultItem.subtitle,
       tags: this.stringArrayOrEmpty(source.tags).length > 0 ? this.stringArrayOrEmpty(source.tags) : defaultItem.tags,
-      description: this.stringOrEmpty(source.description) || defaultItem.description,
-      images: this.stringArrayOrEmpty(source.images).length > 0 ? this.stringArrayOrEmpty(source.images) : defaultItem.images,
+      description: this.stringOrEmpty(source.descripcion) || this.stringOrEmpty(source.description) || defaultItem.description,
+      images:
+        this.imageArray(source).length > 0
+          ? this.imageArray(source)
+          : this.stringArrayOrEmpty(source.images).length > 0
+            ? this.stringArrayOrEmpty(source.images)
+            : defaultItem.images,
       specifications: specsFromApi.length > 0 ? specsFromApi : defaultItem.specifications,
       compatibility: this.stringOrEmpty(source.compatibility) || defaultItem.compatibility,
-      rating: this.numberOrZero(source.rating) || defaultItem.rating,
-      ratingCount: this.numberOrZero(source.ratingCount) || defaultItem.ratingCount,
+      rating: this.numberOrZero(source.ratingPromedio) || this.numberOrZero(source.rating) || defaultItem.rating,
+      ratingCount: this.numberOrZero(source.totalResenas) || this.numberOrZero(source.ratingCount) || defaultItem.ratingCount,
       reviews: reviewsFromApi.length > 0 ? reviewsFromApi : defaultItem.reviews,
       related: Array.isArray(source.related)
         ? (source.related as unknown[]).map((item) => this.normalizeRelated(item)).filter((item): item is RelatedProduct => item !== null)
@@ -654,5 +798,20 @@ export class ProductDetailComponent {
       return Number.isFinite(parsed) ? parsed : 0;
     }
     return 0;
+  }
+
+  private numberOrUndefined(value: unknown): number | undefined {
+    const parsed = this.numberOrZero(value);
+    return parsed > 0 ? parsed : undefined;
+  }
+
+  private imageArray(source: any): string[] {
+    if (!Array.isArray(source.imagenes)) {
+      return [];
+    }
+
+    return source.imagenes
+      .map((image: any) => this.stringOrEmpty(image?.urlImagen))
+      .filter((value: string) => !!value);
   }
 }

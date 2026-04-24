@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { OrdersApi } from '../data-access/orders.api';
 
 interface OrderItem {
   id: string;
@@ -20,55 +21,13 @@ interface OrderItem {
 })
 export class OrdersHistoryComponent {
   private readonly router = inject(Router);
+  private readonly ordersApi = inject(OrdersApi);
   protected readonly statusFilter = signal<'Todos' | OrderItem['status']>('Todos');
+  protected readonly orders = signal<OrderItem[]>([]);
 
-  protected readonly orders = signal<OrderItem[]>([
-    {
-      id: 'NG987654321',
-      product: 'NVIDIA GeForce RTX 4080 Super',
-      image: 'https://images.unsplash.com/photo-1591489378430-ef2f4c626b35?auto=format&fit=crop&w=220&q=80',
-      itemCount: 2,
-      date: '2026-03-10',
-      total: 5250000,
-      status: 'Entregado'
-    },
-    {
-      id: 'NG123456789',
-      product: 'Razer BlackWidow V4 Pro',
-      image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=220&q=80',
-      itemCount: 1,
-      date: '2026-03-05',
-      total: 1290000,
-      status: 'En proceso'
-    },
-    {
-      id: 'NG000000001',
-      product: 'SteelSeries Arctis Nova Pro',
-      image: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=220&q=80',
-      itemCount: 3,
-      date: '2026-02-20',
-      total: 1690000,
-      status: 'Enviado'
-    },
-    {
-      id: 'NG20231201',
-      product: 'Corsair Vengeance RGB 32GB',
-      image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=220&q=80',
-      itemCount: 1,
-      date: '2026-02-11',
-      total: 689000,
-      status: 'En proceso'
-    },
-    {
-      id: 'NG20230901',
-      product: 'Logitech G Pro X Superlight',
-      image: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=220&q=80',
-      itemCount: 1,
-      date: '2026-01-08',
-      total: 479000,
-      status: 'Cancelado'
-    }
-  ]);
+  constructor() {
+    this.loadOrders();
+  }
 
   protected readonly filteredOrders = computed(() => {
     const filter = this.statusFilter();
@@ -112,6 +71,75 @@ export class OrdersHistoryComponent {
         return 'Cancelado';
       default:
         return 'Pedido';
+    }
+  }
+
+  private loadOrders(): void {
+    this.ordersApi.getOrders({ size: 20 }).subscribe({
+      next: (response) => {
+        this.orders.set(this.normalizeOrders(response));
+      },
+      error: () => {
+        this.orders.set([]);
+      }
+    });
+  }
+
+  private normalizeOrders(response: unknown): OrderItem[] {
+    if (!response || typeof response !== 'object') {
+      return [];
+    }
+
+    const content = Array.isArray((response as { content?: unknown[] }).content)
+      ? ((response as { content: unknown[] }).content ?? [])
+      : [];
+
+    return content
+      .map((entry) => this.normalizeOrder(entry))
+      .filter((entry): entry is OrderItem => entry !== null);
+  }
+
+  private normalizeOrder(value: unknown): OrderItem | null {
+    if (!value || typeof value !== 'object') {
+      return null;
+    }
+
+    const source = value as any;
+    const products = Array.isArray(source.productos) ? source.productos : [];
+    const firstProduct = products[0] ?? {};
+    const id = typeof source.idPedido === 'number' ? `${source.idPedido}` : '';
+    const status = this.mapStatus(source.estado);
+    if (!id || !status) {
+      return null;
+    }
+
+    return {
+      id,
+      product: typeof firstProduct.nombreProducto === 'string' ? firstProduct.nombreProducto : 'Pedido NeoGaming',
+      image: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=220&q=80',
+      itemCount: typeof source.cantidadItems === 'number' ? source.cantidadItems : products.length,
+      date: typeof source.fechaCreacion === 'string' ? source.fechaCreacion : new Date().toISOString(),
+      total: typeof source.total === 'number' ? source.total : Number(source.total ?? 0),
+      status
+    };
+  }
+
+  private mapStatus(value: unknown): OrderItem['status'] | null {
+    const status = typeof value === 'string' ? value.toUpperCase() : '';
+    switch (status) {
+      case 'ENTREGADO':
+        return 'Entregado';
+      case 'PAGADO':
+      case 'PENDIENTE_PAGO':
+      case 'BORRADOR':
+        return 'En proceso';
+      case 'ENVIADO':
+        return 'Enviado';
+      case 'CANCELADO':
+      case 'ANULADO':
+        return 'Cancelado';
+      default:
+        return 'En proceso';
     }
   }
 }
