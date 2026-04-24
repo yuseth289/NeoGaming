@@ -1,5 +1,5 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'https://backend-neogamin.onrender.com/api',
+  apiBaseUrl: 'backend-neogamin-production.up.railway.appapi',
   useMockApi: false
 };
