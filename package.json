@@ -4,10 +4,12 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "start:ssr": "START_SERVER=true node dist/neogaming/server/server.mjs",
     "build": "ng build",
+    "vercel-build": "ng build --configuration vercel",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:neogaming": "node dist/neogaming/server/server.mjs"
+    "serve:ssr:neogaming": "START_SERVER=true node dist/neogaming/server/server.mjs"
   },
   "private": true,
   "packageManager": "npm@10.9.4",

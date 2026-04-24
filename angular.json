@@ -58,6 +58,12 @@
               ],
               "outputHashing": "all"
             },
+            "vercel": {
+              "outputMode": "static",
+              "server": false,
+              "ssr": false,
+              "outputHashing": "all"
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,

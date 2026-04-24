@@ -71,10 +71,13 @@ app.use((req, res, next) => {
 });
 
 /**
- * Start the server if this module is the main entry point, or it is ran via PM2.
- * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
+ * Only start a standalone Node server when explicitly requested.
+ * This avoids opening a port during build-time module execution on platforms like Vercel.
  */
-if (isMainModule(import.meta.url) || process.env['pm_id']) {
+if (
+  process.env['START_SERVER'] === 'true' &&
+  (isMainModule(import.meta.url) || process.env['pm_id'])
+) {
   const port = Number(process.env['PORT'] ?? 4000);
   app.listen(port, (error) => {
     if (error) {
