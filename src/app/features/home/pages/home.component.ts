@@ -1,4 +1,5 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, PLATFORM_ID, ViewChild, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
@@ -28,6 +29,7 @@ interface HeroSlide {
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('productsSection') private readonly productsSection?: ElementRef<HTMLElement>;
 
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly cartApi = inject(CartApi);
   private readonly cartUi = inject(CartUiService);
   private readonly catalogApi = inject(CatalogApi);
@@ -61,11 +63,19 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private cartMessageTimeout?: ReturnType<typeof setTimeout>;
 
   ngOnInit(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     this.heroIntervalId = setInterval(() => this.nextHeroSlide(), 5000);
     this.loadFeaturedProducts();
   }
 
   ngAfterViewInit(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     const section = this.productsSection?.nativeElement;
     if (!section || typeof IntersectionObserver === 'undefined') {
       this.startProductsReveal();
