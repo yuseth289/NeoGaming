@@ -42,6 +42,23 @@ npm run build
 ng build --configuration production
 ```
 
+### Despliegue en Vercel
+
+El proyecto queda listo para Vercel usando el build:
+
+```bash
+npm run vercel-build
+```
+
+Vercel debe publicar `dist/neogaming/browser` y usar fallback SPA hacia `index.html`, lo cual ya está configurado en `vercel.json`.
+
+Si quieres levantar el servidor SSR compilado manualmente en local:
+
+```bash
+npm run build
+npm run start:ssr
+```
+
 ### Linting
 
 ```bash

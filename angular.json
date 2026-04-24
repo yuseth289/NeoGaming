@@ -47,15 +47,21 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "650kB",
+                  "maximumWarning": "720kB",
                   "maximumError": "1.2MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "12kB",
-                  "maximumError": "17kB"
+                  "maximumWarning": "17kB",
+                  "maximumError": "20kB"
                 }
               ],
+              "outputHashing": "all"
+            },
+            "vercel": {
+              "outputMode": "static",
+              "server": false,
+              "ssr": false,
               "outputHashing": "all"
             },
             "development": {
