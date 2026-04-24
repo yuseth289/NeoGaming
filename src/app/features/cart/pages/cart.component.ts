@@ -4,6 +4,8 @@ import { Observable, finalize } from 'rxjs';
 import { CartApi } from '../data-access/cart.api';
 import { CartItem, CartUiService } from '../data-access/cart-ui.service';
 import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
+import { parseApiError } from '../../../core/http/api-error.utils';
+import { CarritoResponse } from '../../../core/models/api.models';
 
 type CouponMessageType = 'success' | 'error' | null;
 
@@ -30,6 +32,7 @@ export class CartComponent {
   protected readonly summaryCollapsed = signal(false);
   protected readonly isMobile = signal(false);
   protected readonly mutatingNames = signal<Set<string>>(new Set());
+  protected readonly requestError = signal<string | null>(null);
 
   private quantityPulseTimeout?: ReturnType<typeof setTimeout>;
   private summaryPulseTimeout?: ReturnType<typeof setTimeout>;
@@ -121,6 +124,7 @@ export class CartComponent {
 
   protected remove(item: CartItem): void {
     this.lastRemoved.set(item);
+    this.requestError.set(null);
     this.removingItems.update((current) => new Set(current).add(item.name));
 
     if (this.removeTimeout) {
@@ -142,6 +146,7 @@ export class CartComponent {
     if (!last) {
       return;
     }
+    this.requestError.set(null);
 
     if (typeof last.productId !== 'number') {
       this.cartUi.addItem(last.name, last.price, {
@@ -235,8 +240,9 @@ export class CartComponent {
     this.quantityPulseTimeout = setTimeout(() => this.quantityPulseName.set(null), 220);
   }
 
-  private runItemMutation(name: string, request: Observable<unknown>, onSuccess?: () => void): void {
+  private runItemMutation(name: string, request: Observable<CarritoResponse>, onSuccess?: () => void): void {
     this.mutatingNames.update((current) => new Set(current).add(name));
+    this.requestError.set(null);
 
     request
       .pipe(finalize(() => this.mutatingNames.update((current) => this.withoutName(current, name))))
@@ -245,7 +251,9 @@ export class CartComponent {
           this.cartUi.hydrateFromApi(response);
           onSuccess?.();
         },
-        error: () => {}
+        error: (error) => {
+          this.requestError.set(parseApiError(error).message);
+        }
       });
   }
 

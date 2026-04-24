@@ -4,6 +4,7 @@ import { finalize } from 'rxjs';
 import { AuthApi } from '../../core/auth/data-access/auth.api';
 import { AuthSessionService } from '../../core/auth/auth-session.service';
 import { CartUiService } from '../../features/cart/data-access/cart-ui.service';
+import { parseApiError } from '../../core/http/api-error.utils';
 
 interface Suggestion {
   label: string;
@@ -56,6 +57,7 @@ export class HeaderComponent {
   protected readonly cartBounce = signal(false);
   protected readonly categoriesMenuOpen = signal(false);
   protected readonly activeMegaCategoryId = signal('peripherals');
+  protected readonly error = signal<string | null>(null);
 
   private previousCartCount = 0;
   private cartBounceTimeout?: ReturnType<typeof setTimeout>;
@@ -377,6 +379,7 @@ export class HeaderComponent {
   }
 
   protected logout(): void {
+    this.error.set(null);
     this.authApi
       .logout()
       .pipe(
@@ -385,7 +388,11 @@ export class HeaderComponent {
           this.profileMenuOpen.set(false);
         })
       )
-      .subscribe({ error: () => {} });
+      .subscribe({
+        error: (error) => {
+          this.error.set(parseApiError(error).message);
+        }
+      });
   }
 
   @HostListener('document:click', ['$event'])

@@ -6,10 +6,13 @@ import { routes } from './app.routes';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { API_BASE_URL } from './core/http/api-client/api-client.service';
 import { authInterceptor } from './core/auth/auth.interceptor';
+import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { mockApiInterceptor } from './core/http/mocks/mock-api.interceptor';
 import { environment } from '../environments/environment';
 
-const httpInterceptors = environment.useMockApi ? [authInterceptor, mockApiInterceptor] : [authInterceptor];
+const httpInterceptors = environment.useMockApi
+  ? [authInterceptor, errorInterceptor, mockApiInterceptor]
+  : [authInterceptor, errorInterceptor];
 
 export const appConfig: ApplicationConfig = {
   providers: [

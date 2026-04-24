@@ -1,28 +1,38 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client/api-client.service';
+import { CarritoResponse } from '../../../core/models/api.models';
+
+export interface AgregarProductoCarritoRequest {
+  productoId: number;
+  cantidad: number;
+}
+
+export interface ActualizarCantidadCarritoRequest {
+  cantidad: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CartApi {
   private readonly api = inject(ApiClient);
 
-  getCart(): Observable<unknown> {
-    return this.api.get('/carrito');
+  getCart(): Observable<CarritoResponse> {
+    return this.api.get<CarritoResponse>('/carrito');
   }
 
-  addItem(payload: unknown): Observable<unknown> {
-    return this.api.post('/carrito/items', payload);
+  addItem(payload: AgregarProductoCarritoRequest): Observable<CarritoResponse> {
+    return this.api.post<CarritoResponse>('/carrito/items', payload);
   }
 
-  updateItem(itemId: string, payload: unknown): Observable<unknown> {
-    return this.api.patch(`/carrito/items/${itemId}`, payload);
+  updateItem(itemId: number, payload: ActualizarCantidadCarritoRequest): Observable<CarritoResponse> {
+    return this.api.patch<CarritoResponse>(`/carrito/items/${itemId}`, payload);
   }
 
-  removeItem(itemId: string): Observable<unknown> {
-    return this.api.delete(`/carrito/items/${itemId}`);
+  removeItem(itemId: number): Observable<CarritoResponse> {
+    return this.api.delete<CarritoResponse>(`/carrito/items/${itemId}`);
   }
 
-  clear(): Observable<unknown> {
-    return this.api.delete('/carrito');
+  clear(): Observable<CarritoResponse> {
+    return this.api.delete<CarritoResponse>('/carrito');
   }
 }

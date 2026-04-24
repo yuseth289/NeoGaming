@@ -45,6 +45,17 @@ type MockCartItem = {
   unitPrice: number;
 };
 
+function toNumericId(value: string | number | null | undefined): number {
+  const normalized = String(value ?? '').trim();
+  const direct = Number(normalized);
+  if (Number.isFinite(direct) && direct > 0) {
+    return direct;
+  }
+
+  const match = normalized.match(/(\d+)/);
+  return match ? Number(match[1]) : 0;
+}
+
 const MOCK_DELAY_MS = 140;
 
 const catalogData: MockCatalogItem[] = [
@@ -367,8 +378,8 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
       idUsuario: 1,
       estado: 'ACTIVO',
       items: cartState.map((item) => ({
-        idItem: item.id,
-        idProducto: catalogData.find((catalogItem) => catalogItem.name === item.productName)?.id ?? item.id,
+        idItem: toNumericId(item.id),
+        idProducto: toNumericId(catalogData.find((catalogItem) => catalogItem.name === item.productName)?.id),
         slug: catalogData.find((catalogItem) => catalogItem.name === item.productName)?.slug,
         nombreProducto: item.productName,
         cantidad: item.quantity,
@@ -394,9 +405,10 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
       cantidad?: number;
     };
     const quantity = Math.max(1, Number(body.cantidad ?? body.quantity ?? 1));
-    const productId = `${body.productoId ?? ''}`;
+    const productId = String(body.productoId ?? '').trim();
     const catalogMatch =
       catalogData.find((item) => item.id === productId) ??
+      catalogData.find((item) => toNumericId(item.id) === Number(productId)) ??
       catalogData.find((item) => item.name === (body.productName ?? ''));
     if (!catalogMatch) {
       return json({ ok: false, message: 'Producto no encontrado' }, 404);
@@ -410,7 +422,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
       cartState = [
         ...cartState,
         {
-          id: `ci-${Math.random().toString(36).slice(2, 9)}`,
+          id: String(cartState.length + 1),
           productName,
           quantity,
           unitPrice: catalogMatch.price

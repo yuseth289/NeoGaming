@@ -6,6 +6,7 @@ import { CartUiService } from '../../../cart/data-access/cart-ui.service';
 import { CheckoutApi } from '../../data-access/checkout.api';
 import { CheckoutStateService } from '../../data-access/checkout-state.service';
 import { CopPricePipe } from '../../../../shared/pipes/cop-price.pipe';
+import { parseApiError } from '../../../../core/http/api-error.utils';
 import {
   Check,
   ChevronRight,
@@ -141,8 +142,8 @@ export class CheckoutShippingComponent {
           }
           void this.router.navigate(['/checkout/payment']);
         },
-        error: () => {
-          this.error.set('No fue posible guardar la informacion de envio. Intenta de nuevo.');
+        error: (error) => {
+          this.error.set(parseApiError(error).message);
         }
       });
   }

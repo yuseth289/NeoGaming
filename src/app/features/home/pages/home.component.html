@@ -65,46 +65,38 @@
         </article>
       }
     } @else {
-      @for (product of products(); track product.name) {
+      @for (product of products(); track product.idProducto) {
         <article class="product-card">
-          <span class="badge">{{ product.badge }}</span>
-
           <img
-            [src]="product.image"
-            [alt]="product.name"
+            [src]="product.urlImagenPrincipal || ''"
+            [alt]="product.nombre"
             width="460"
             height="220"
             loading="lazy"
             decoding="async"
           />
 
-          <h3>{{ product.name }}</h3>
+          <h3>{{ product.nombre }}</h3>
 
-          <p class="support-info">{{ product.supportInfo }}</p>
-          <p class="rating">
-  @for (star of productStars(product.rating); track $index) {
-    <span class="star" [class.filled]="star">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6z" fill="currentColor" />
-      </svg>
-    </span>
-  }
-  <span class="count">({{ product.ratingCount }})</span>
-</p>
+          <p class="support-info">{{ product.nombreVendedor }}</p>
+          <p class="support-info">{{ stockLabel(product) }}</p>
 
           <div class="price-line">
-            <strong>{{ product.price | copPrice }}</strong>
+            <strong>{{ product.precioVigente | copPrice }}</strong>
+            @if (oldPrice(product)) {
+              <small>{{ oldPrice(product) | copPrice }}</small>
+            }
           </div>
 
           <div class="card-actions">
             <button
               type="button"
               class="btn-primary"
-              [class.loading]="addingProductName() === product.name"
-              [disabled]="addingProductName() === product.name"
+              [class.loading]="addingProductId() === product.idProducto"
+              [disabled]="addingProductId() === product.idProducto"
               (click)="addToCart(product)"
             >
-              @if (addingProductName() === product.name) {
+              @if (addingProductId() === product.idProducto) {
                 Agregando...
               } @else {
                 Agregar al carrito
@@ -112,7 +104,7 @@
             </button>
             <a
               class="btn-secondary"
-              [routerLink]="['/product', product.slug]"
+              [routerLink]="['/product', product.slug || product.idProducto]"
             >
               Ver detalles
             </a>

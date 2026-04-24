@@ -17,12 +17,12 @@
 
       <section class="filter-group">
         <h3>Categoria</h3>
-        @for (item of categoryOptions; track item) {
+        @for (item of categoryOptions(); track item) {
           <label>
             <input
               type="checkbox"
               [checked]="selectedCategories().has(item)"
-              (change)="toggleCategory(item, $any($event.target).checked)"
+              (change)="toggleCategory(item, eventChecked($event))"
             />
             <span>{{ labelFromSlug(item) }}</span>
           </label>
@@ -35,33 +35,19 @@
           <span>{{ 0 | copPrice }}</span>
           <span>{{ maxPrice() | copPrice }}</span>
         </div>
-        <input type="range" min="0" max="1000" step="10" [value]="maxPrice()" (input)="updatePrice($any($event.target).value)" />
+        <input type="range" min="0" [max]="priceLimitMax()" step="10" [value]="maxPrice()" (input)="updatePrice(eventValue($event))" />
       </section>
 
       <section class="filter-group">
-        <h3>Marca</h3>
-        @for (item of brandOptions; track item) {
+        <h3>Vendedor</h3>
+        @for (item of vendorOptions(); track item) {
           <label>
             <input
               type="checkbox"
-              [checked]="selectedBrands().has(item)"
-              (change)="toggleBrand(item, $any($event.target).checked)"
+              [checked]="selectedVendors().has(item)"
+              (change)="toggleVendor(item, eventChecked($event))"
             />
             <span>{{ item }}</span>
-          </label>
-        }
-      </section>
-
-      <section class="filter-group">
-        <h3>Compatibilidad</h3>
-        @for (item of platformOptions; track item) {
-          <label>
-            <input
-              type="checkbox"
-              [checked]="selectedPlatforms().has(item)"
-              (change)="togglePlatform(item, $any($event.target).checked)"
-            />
-            <span>{{ labelFromSlug(item) }}</span>
           </label>
         }
       </section>
@@ -76,6 +62,9 @@
           <p class="results">{{ filteredProducts().length }} resultados</p>
           @if (cartMessage()) {
             <p class="cart-message">{{ cartMessage() }}</p>
+          }
+          @if (error()) {
+            <p class="cart-message">{{ error() }}</p>
           }
         </div>
 
@@ -113,12 +102,8 @@
             </article>
           }
         } @else {
-          @for (product of pagedProducts(); track product.name) {
+          @for (product of pagedProducts(); track product.idProducto) {
             <article class="product-card">
-              @if (product.badge) {
-                <span class="badge">{{ product.badge }}</span>
-              }
-
               <button
                 type="button"
                 class="wish-btn"
@@ -129,42 +114,30 @@
                 &#9829;
               </button>
 
-              <img [src]="product.image" [alt]="product.name" width="420" height="240" loading="lazy" decoding="async" />
+              <img [src]="product.urlImagenPrincipal || ''" [alt]="product.nombre" width="420" height="240" loading="lazy" decoding="async" />
 
               <div class="card-body">
-                <h3>{{ product.name }}</h3>
+                <h3>{{ product.nombre }}</h3>
+                <p class="shipping">{{ product.nombreVendedor }}</p>
 
                 <div class="price-row-card">
-                  <strong>{{ product.price | copPrice }}</strong>
-                  @if (product.oldPrice) {
-                    <small>{{ product.oldPrice | copPrice }}</small>
+                  <strong>{{ product.precioVigente | copPrice }}</strong>
+                  @if (oldPrice(product)) {
+                    <small>{{ oldPrice(product) | copPrice }}</small>
                   }
                 </div>
 
-                <p class="rating">
-                  @for (star of ratingStars(product.rating); track $index) {
-                    <span class="star" [class.filled]="star">
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path
-                          d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.8L12 3.6z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                    </span>
-                  }
-                  <span class="count">({{ product.reviews }})</span>
-                </p>
-                <p class="shipping">{{ product.shipping }}</p>
+                <p class="shipping">{{ stockLabel(product) }}</p>
 
                 <div class="card-actions">
                   <button
                     type="button"
                     class="add-btn"
-                    [class.loading]="addingProductName() === product.name"
-                    [disabled]="addingProductName() === product.name"
+                    [class.loading]="addingProductId() === product.idProducto"
+                    [disabled]="addingProductId() === product.idProducto"
                     (click)="addToCart(product)"
                   >
-                    @if (addingProductName() === product.name) {
+                    @if (addingProductId() === product.idProducto) {
                       <span class="btn-spinner" aria-hidden="true"></span>
                       Agregando...
                     } @else {

@@ -5,6 +5,11 @@ import { CheckoutApi } from '../../data-access/checkout.api';
 import { CheckoutStateService } from '../../data-access/checkout-state.service';
 import { CopPricePipe } from '../../../../shared/pipes/cop-price.pipe';
 import {
+  ConfirmacionPedidoResponse,
+  DireccionCheckoutResponse,
+  ItemResumenCheckoutResponse
+} from '../../../../core/models/api.models';
+import {
   ArrowLeft,
   BadgeCheck,
   CalendarDays,
@@ -275,7 +280,7 @@ export class CheckoutConfirmationComponent {
     });
   }
 
-  private normalizeConfirmation(response: unknown): {
+  private normalizeConfirmation(response: ConfirmacionPedidoResponse): {
     orderId: string;
     createdAt: string;
     total: number;
@@ -316,54 +321,45 @@ export class CheckoutConfirmationComponent {
     estimatedDelivery?: string;
     invoiceNumber?: string | null;
   } | null {
-    if (!response || typeof response !== 'object') {
-      return null;
-    }
-
-    const source = response as any;
-    if (typeof source.numeroPedido !== 'string' || typeof source.fechaPedido !== 'string') {
+    if (!response.numeroPedido || !response.fechaPedido) {
       return null;
     }
 
     return {
-      orderId: source.numeroPedido,
-      createdAt: source.fechaPedido,
-      total: typeof source.totalPagado === 'number' ? source.totalPagado : Number(source.totalPagado ?? 0),
-      summary: source.resumen
+      orderId: response.numeroPedido,
+      createdAt: response.fechaPedido,
+      total: response.totalPagado,
+      summary: response.resumen
         ? {
-            subtotal: this.toNumber(source.resumen.subtotal),
-            impuesto: this.toNumber(source.resumen.impuesto),
-            costoEnvio: this.toNumber(source.resumen.costoEnvio),
-            total: this.toNumber(source.resumen.total),
-            cantidadItems: this.toNumber(source.resumen.cantidadItems)
+            subtotal: response.resumen.subtotal,
+            impuesto: response.resumen.impuesto,
+            costoEnvio: response.resumen.costoEnvio,
+            total: response.resumen.total,
+            cantidadItems: response.resumen.cantidadItems
           }
         : undefined,
-      paymentMethod: this.normalizePaymentMethod(source.metodoPago),
-      paymentStatus: typeof source.estadoPago === 'string' ? source.estadoPago : 'PENDIENTE',
-      shipping: this.normalizeAddress(source.direccionEnvio),
-      billing: source.direccionFactura ? this.normalizeAddress(source.direccionFactura) : null,
-      items: this.normalizeItems(source.items),
-      estimatedDelivery: typeof source.fechaEstimadaEntrega === 'string'
-        ? this.formatDate(new Date(source.fechaEstimadaEntrega))
+      paymentMethod: this.normalizePaymentMethod(response.metodoPago),
+      paymentStatus: response.estadoPago,
+      shipping: this.normalizeAddress(response.direccionEnvio),
+      billing: response.direccionFactura ? this.normalizeAddress(response.direccionFactura) : null,
+      items: this.normalizeItems(response.items),
+      estimatedDelivery: typeof response.fechaEstimadaEntrega === 'string'
+        ? this.formatDate(new Date(response.fechaEstimadaEntrega))
         : undefined,
-      invoiceNumber: typeof source.numeroFactura === 'string' ? source.numeroFactura : null
+      invoiceNumber: response.numeroFactura
     };
   }
 
-  private normalizeItems(items: unknown): CartItem[] {
-    if (!Array.isArray(items)) {
-      return [];
-    }
-
-    return items.map((item: any) => ({
-      productId: typeof item.idProducto === 'number' ? item.idProducto : undefined,
-      name: typeof item.nombreProducto === 'string' ? item.nombreProducto : 'Producto',
-      price: typeof item.precioUnitario === 'number' ? item.precioUnitario : Number(item.precioUnitario ?? 0),
-      quantity: typeof item.cantidad === 'number' ? item.cantidad : Number(item.cantidad ?? 1)
+  private normalizeItems(items: ItemResumenCheckoutResponse[]): CartItem[] {
+    return items.map((item) => ({
+      productId: item.idProducto,
+      name: item.nombreProducto,
+      price: item.precioUnitario,
+      quantity: item.cantidad
     }));
   }
 
-  private normalizeAddress(value: any): {
+  private normalizeAddress(value: DireccionCheckoutResponse | null): {
     fullName: string;
     email: string;
     phone: string;
@@ -376,16 +372,16 @@ export class CheckoutConfirmationComponent {
     reference?: string;
   } {
     return {
-      fullName: typeof value?.nombreCompleto === 'string' ? value.nombreCompleto : 'Cliente NeoGaming',
-      email: typeof value?.correoElectronico === 'string' ? value.correoElectronico : '',
-      phone: typeof value?.telefono === 'string' ? value.telefono : '',
-      address: typeof value?.direccion === 'string' ? value.direccion : '',
-      apartment: typeof value?.apartamentoInterior === 'string' ? value.apartamentoInterior : undefined,
-      city: typeof value?.ciudad === 'string' ? value.ciudad : '',
-      state: typeof value?.estadoRegion === 'string' ? value.estadoRegion : '',
-      postalCode: typeof value?.codigoPostal === 'string' ? value.codigoPostal : '',
-      country: typeof value?.pais === 'string' ? value.pais : '',
-      reference: typeof value?.referenciaEntrega === 'string' ? value.referenciaEntrega : undefined
+      fullName: value?.nombreCompleto || 'Cliente NeoGaming',
+      email: value?.correoElectronico || '',
+      phone: value?.telefono || '',
+      address: value?.direccion || '',
+      apartment: value?.apartamentoInterior || undefined,
+      city: value?.ciudad || '',
+      state: value?.estadoRegion || '',
+      postalCode: value?.codigoPostal || '',
+      country: value?.pais || '',
+      reference: value?.referenciaEntrega || undefined
     };
   }
 

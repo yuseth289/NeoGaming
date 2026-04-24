@@ -68,6 +68,12 @@
         </div>
       }
 
+      @if (error()) {
+        <div class="alert">
+          {{ error() }}
+        </div>
+      }
+
       <div class="method-tabs">
         <button type="button" [class.active]="selectedMethod() === 'card'" (click)="setMethod('card')">
           <span class="method-brand method-brand--card" aria-hidden="true">
