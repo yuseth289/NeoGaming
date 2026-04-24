@@ -9,7 +9,7 @@
     "vercel-build": "ng build --configuration vercel",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:neogaming": "START_SERVER=true node dist/neogaming/server/server.mjs"
+    "serve:ssr:neogaming": "START_SERVER=true node --max-old-space-size=1024 dist/neogaming/server/server.mjs"
   },
   "private": true,
   "packageManager": "npm@10.9.4",
