@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthApi } from '../../../../core/auth/data-access/auth.api';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
+import { parseApiError } from '../../../../core/http/api-error.utils';
 
 @Component({
   selector: 'app-login-page',
@@ -42,7 +43,10 @@ export class LoginComponent {
 
     this.loading.set(true);
     this.authApi
-      .login(this.form.getRawValue())
+      .login({
+        email: this.form.controls.email.value,
+        password: this.form.controls.password.value
+      })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (response) => {
@@ -60,8 +64,8 @@ export class LoginComponent {
 
           void this.router.navigate(['/']);
         },
-        error: () => {
-          this.error.set('No se pudo iniciar sesion. Verifica tus datos o intenta de nuevo.');
+        error: (error) => {
+          this.error.set(parseApiError(error).message || 'No se pudo iniciar sesion. Verifica tus datos o intenta de nuevo.');
         }
       });
   }
