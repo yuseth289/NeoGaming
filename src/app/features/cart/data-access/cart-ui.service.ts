@@ -1,5 +1,7 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { CartApi } from './cart.api';
+import { AuthStateService } from '../../../core/auth/auth-state.service';
 import { parseApiError } from '../../../core/http/api-error.utils';
 import { CarritoItemResponse, CarritoResponse } from '../../../core/models/api.models';
 
@@ -17,18 +19,26 @@ export interface CartItem {
 
 @Injectable({ providedIn: 'root' })
 export class CartUiService {
+  private readonly platformId = inject(PLATFORM_ID);
+  private readonly authState = inject(AuthStateService);
   private readonly cartApi = inject(CartApi);
   private readonly items = signal<CartItem[]>([]);
+  private readonly loaded = signal(false);
   readonly error = signal<string | null>(null);
 
   readonly cartItems = computed(() => this.items());
   readonly totalItems = computed(() => this.items().reduce((sum, item) => sum + item.quantity, 0));
   readonly totalPrice = computed(() => this.items().reduce((sum, item) => sum + item.price * item.quantity, 0));
 
-  constructor() {
+  ensureLoaded(): void {
+    if (!this.isBrowser() || !this.authState.hasToken() || this.loaded()) {
+      return;
+    }
+
     this.cartApi.getCart().subscribe({
       next: (response) => {
         this.error.set(null);
+        this.loaded.set(true);
         this.hydrateFromApi(response);
       },
       error: (error) => {
@@ -82,6 +92,7 @@ export class CartUiService {
   }
 
   clear(): void {
+    this.loaded.set(false);
     this.items.set([]);
   }
 
@@ -92,6 +103,7 @@ export class CartUiService {
   }
 
   hydrateFromApi(response: CarritoResponse): void {
+    this.loaded.set(true);
     const currentItems = new Map(this.items().map((item) => [item.name, item]));
     const nextItems = this.extractApiItems(response)
       .map((item) => this.mapApiItem(item, currentItems))
@@ -123,5 +135,9 @@ export class CartUiService {
       oldPrice: existing?.oldPrice,
       stockLabel: existing?.stockLabel
     };
+  }
+
+  private isBrowser(): boolean {
+    return isPlatformBrowser(this.platformId);
   }
 }

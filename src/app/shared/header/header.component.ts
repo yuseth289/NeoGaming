@@ -1,4 +1,5 @@
-import { Component, ElementRef, HostListener, computed, effect, inject, output, signal } from '@angular/core';
+import { Component, ElementRef, HostListener, PLATFORM_ID, computed, effect, inject, output, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthApi } from '../../core/auth/data-access/auth.api';
@@ -40,6 +41,7 @@ interface HeaderMegaCategory {
   styleUrl: './header.component.css'
 })
 export class HeaderComponent {
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly router = inject(Router);
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly authApi = inject(AuthApi);
@@ -218,6 +220,14 @@ export class HeaderComponent {
   });
 
   constructor() {
+    effect(() => {
+      if (!isPlatformBrowser(this.platformId) || !this.authSession.loggedIn()) {
+        return;
+      }
+
+      this.cartUi.ensureLoaded();
+    });
+
     effect(() => {
       const total = this.cartUi.totalItems();
       if (total !== this.previousCartCount) {

@@ -19,7 +19,6 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         void router.navigateByUrl('/login');
       } else if (apiError.status === 403) {
         console.error(apiError.message, apiError.details);
-        void router.navigateByUrl('/forbidden');
       } else {
         console.error(apiError.message, apiError.details);
       }
