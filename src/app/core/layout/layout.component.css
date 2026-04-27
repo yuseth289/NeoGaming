@@ -8,12 +8,12 @@
 
 .layout-content {
   flex: 1;
-  padding-top: 5.2rem;
+  padding-top: 5.8rem;
 }
 
 .offline-alert {
   position: sticky;
-  top: 5.2rem;
+  top: 5.8rem;
   z-index: 1200;
   margin: 0 auto;
   width: min(100%, 980px);
@@ -39,26 +39,26 @@
 
 @media (max-width: 980px) {
   .offline-alert {
-    top: 6.6rem;
+    top: 7rem;
     width: calc(100% - 1.25rem);
     border-radius: 0.9rem;
   }
 
   .layout-content {
-    padding-top: 6.6rem;
+    padding-top: 7rem;
   }
 }
 
 @media (max-width: 640px) {
   .offline-alert {
-    top: 6.9rem;
+    top: 7.3rem;
     width: calc(100% - 1rem);
     padding: 0.85rem 0.95rem;
     font-size: 0.92rem;
   }
 
   .layout-content {
-    padding-top: 6.9rem;
+    padding-top: 7.3rem;
   }
 }
 

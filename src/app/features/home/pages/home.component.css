@@ -5,7 +5,7 @@
 .hero {
   position: relative;
   width: min(1200px, 100% - 2rem);
-  margin: 1.1rem auto 2rem;
+  margin: 1.5rem auto 2.2rem;
   border-radius: 1rem;
   overflow: hidden;
   min-height: 420px;
@@ -152,9 +152,11 @@
   width: min(1200px, 100% - 2rem);
   margin-inline: auto;
   margin-bottom: 2.65rem;
+  scroll-margin-top: 7.8rem;
 }
 
 .products {
+  margin-top: 0.45rem;
   opacity: 0;
   transform: translateY(46px);
   transition: opacity 520ms ease, transform 520ms ease;
@@ -274,10 +276,23 @@ h2 {
 
 .price-line {
   margin: 0.5rem 0 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.58rem;
 }
 
 .price-line strong {
   font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+.price-line small {
+  display: inline-block;
+  color: #b8b8b8;
+  text-decoration: line-through;
+  white-space: nowrap;
+  line-height: 1.1;
 }
 
 .card-actions,
@@ -508,7 +523,7 @@ button.btn-secondary {
   .hero {
     width: calc(100% - 1rem);
     min-height: 300px;
-    margin: 0.6rem auto 1.35rem;
+    margin: 0.9rem auto 1.45rem;
     border-radius: 0.85rem;
   }
 

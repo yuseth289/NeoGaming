@@ -4,7 +4,7 @@
 
 .detail-page {
   width: min(1280px, 100% - 2rem);
-  margin: 1rem auto 3rem;
+  margin: 1.45rem auto 3rem;
   display: grid;
   gap: 2.4rem;
 }
@@ -196,8 +196,8 @@
 
 .price-row {
   display: flex;
-  align-items: center;
-  gap: 0.55rem;
+  align-items: baseline;
+  gap: 0.8rem;
   flex-wrap: wrap;
 }
 
@@ -210,6 +210,9 @@
   color: #b7b7b7;
   text-decoration: line-through;
   font-size: 1.03rem;
+  display: inline-block;
+  white-space: nowrap;
+  line-height: 1.15;
 }
 
 .discount-badge {

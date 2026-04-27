@@ -4,7 +4,7 @@
 
 .catalog-page {
   width: min(1280px, 100% - 2rem);
-  margin: 1.2rem auto 2.4rem;
+  margin: 1.55rem auto 2.4rem;
   display: grid;
   grid-template-columns: 270px minmax(0, 1fr);
   gap: 1.25rem;
@@ -337,8 +337,8 @@
   border-radius: 0.82rem;
   padding: 1rem;
   position: sticky;
-  top: 5.7rem;
-  max-height: calc(100dvh - 7rem);
+  top: 6.15rem;
+  max-height: calc(100dvh - 7.45rem);
   overflow: auto;
 }
 
@@ -636,17 +636,21 @@
 .price-row-card {
   margin-top: 0.45rem;
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: baseline;
+  gap: 0.65rem;
+  flex-wrap: wrap;
 }
 
 .price-row-card strong {
   font-size: 1.22rem;
+  line-height: 1.1;
 }
 
 .price-row-card small {
   color: #b3b3b3;
   text-decoration: line-through;
+  white-space: nowrap;
+  line-height: 1.1;
 }
 
 .rating {
