@@ -1,7 +1,5 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-const COP_RATE = 4000;
-
 @Pipe({
   name: 'copPrice',
   standalone: true
@@ -16,6 +14,6 @@ export class CopPricePipe implements PipeTransform {
       style: 'currency',
       currency: 'COP',
       maximumFractionDigits: 0
-    }).format(value * COP_RATE);
+    }).format(value);
   }
 }
