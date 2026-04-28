@@ -1,6 +1,15 @@
-<section class="auth-page" [class.modal-mode]="modalMode()">
-  <div class="auth-card">
-    @if (modalMode()) {
+<section
+  class="auth-page"
+  [class.modal-mode]="effectiveModalMode()"
+  [class.route-modal-mode]="pageModalMode() && !modalMode()"
+  (click)="pageModalMode() && !modalMode() && closePageModal()"
+>
+  <div class="auth-card" (click)="pageModalMode() && !modalMode() && $event.stopPropagation()">
+    @if (pageModalMode() && !modalMode()) {
+      <button type="button" class="page-modal-close" aria-label="Cerrar ventana" (click)="closePageModal()">×</button>
+    }
+
+    @if (effectiveModalMode()) {
       <div class="auth-icon"><svg class="auth-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
   <path d="M7 9h10a4 4 0 0 1 3.7 5.4l-1.2 3a2.5 2.5 0 0 1-4.5.3l-1.2-1.9a3 3 0 0 0-5.1 0l-1.2 1.9a2.5 2.5 0 0 1-4.5-.3l-1.2-3A4 4 0 0 1 7 9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
   <path d="M9 12h-2M8 11v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -25,7 +34,7 @@
               <path d="m4 7 8 6 8-6"></path>
             </svg>
           </span>
-          <input type="email" formControlName="email" [placeholder]="modalMode() ? 'Ingresa tu correo' : 'correo@ejemplo.com'" />
+          <input type="email" formControlName="email" [placeholder]="effectiveModalMode() ? 'Ingresa tu correo' : 'correo@ejemplo.com'" />
         </div>
       </label>
       @if (showFieldError('email')) {
@@ -41,7 +50,7 @@
               <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
             </svg>
           </span>
-          <input [type]="showPassword() ? 'text' : 'password'" formControlName="password" [placeholder]="modalMode() ? 'Ingresa tu contrasena' : '******'" />
+          <input [type]="showPassword() ? 'text' : 'password'" formControlName="password" [placeholder]="effectiveModalMode() ? 'Ingresa tu contrasena' : '******'" />
           <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
             {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
           </button>
@@ -51,7 +60,7 @@
         <small class="error-text">Minimo 6 caracteres.</small>
       }
 
-      @if (modalMode()) {
+      @if (effectiveModalMode()) {
         <button type="button" class="forgot-link">Olvidaste tu contrasena?</button>
       } @else {
         <label class="checkbox">
@@ -77,9 +86,13 @@
       </button>
     </form>
 
-    @if (modalMode()) {
+    @if (effectiveModalMode()) {
       <p class="helper">No tienes una cuenta?</p>
-      <button type="button" class="switch-cta" (click)="switchToRegister.emit()">Registrarse</button>
+      @if (modalMode()) {
+        <button type="button" class="switch-cta" (click)="switchToRegister.emit()">Registrarse</button>
+      } @else {
+        <button type="button" class="switch-cta" (click)="openRegisterRoute()">Registrarse</button>
+      }
     } @else {
       <p class="helper">
         No tienes cuenta?
@@ -88,4 +101,3 @@
     }
   </div>
 </section>
-

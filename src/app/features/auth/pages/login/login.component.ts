@@ -1,6 +1,6 @@
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthApi } from '../../../../core/auth/data-access/auth.api';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
@@ -16,6 +16,7 @@ export class LoginComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authApi = inject(AuthApi);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly authSession = inject(AuthSessionService);
   readonly modalMode = input(false);
   readonly switchToRegister = output<void>();
@@ -25,6 +26,8 @@ export class LoginComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
   protected readonly showPassword = signal(false);
+  protected readonly pageModalMode = computed(() => this.route.snapshot.queryParamMap.get('modal') === '1');
+  protected readonly effectiveModalMode = computed(() => this.modalMode() || this.pageModalMode());
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -62,7 +65,7 @@ export class LoginComponent {
             return;
           }
 
-          void this.router.navigate(['/']);
+          void this.router.navigateByUrl(this.redirectTarget());
         },
         error: (error) => {
           this.error.set(parseApiError(error).message || 'No se pudo iniciar sesion. Verifica tus datos o intenta de nuevo.');
@@ -74,8 +77,38 @@ export class LoginComponent {
     this.showPassword.update((value) => !value);
   }
 
+  protected closePageModal(): void {
+    if (this.modalMode()) {
+      this.closeModal.emit();
+      return;
+    }
+
+    void this.router.navigateByUrl(this.redirectTargetOrHome());
+  }
+
+  protected openRegisterRoute(): void {
+    const queryParams = this.pageModalMode()
+      ? {
+          modal: '1',
+          redirectTo: this.redirectTarget()
+        }
+      : undefined;
+
+    void this.router.navigate(['/register'], { queryParams });
+  }
+
   protected showFieldError(control: 'email' | 'password'): boolean {
     const field = this.form.controls[control];
     return field.invalid && (field.dirty || field.touched);
+  }
+
+  private redirectTarget(): string {
+    const redirectTo = this.route.snapshot.queryParamMap.get('redirectTo');
+    return redirectTo && redirectTo.startsWith('/') ? redirectTo : '/';
+  }
+
+  private redirectTargetOrHome(): string {
+    const redirectTo = this.redirectTarget();
+    return redirectTo === '/cart' ? '/' : redirectTo;
   }
 }
