@@ -1,0 +1,91 @@
+<article
+  class="flex h-full flex-col overflow-hidden rounded-neo-lg border border-transparent bg-neo-surface shadow-neo-card transition-neo duration-neo ease-neo hover:border-neo-border-bright hover:shadow-neo-glow-red"
+>
+  <a [routerLink]="['/producto', product.slug]" class="block flex-1">
+    <div class="relative aspect-square bg-neo-elevated">
+      @if (product.urlImagenPrincipal) {
+        <img
+          class="h-full w-full object-cover"
+          [src]="product.urlImagenPrincipal"
+          [alt]="product.nombre"
+          loading="lazy"
+        />
+      } @else {
+        <div class="flex h-full w-full items-center justify-center text-neo-muted-text">
+          <lucide-angular [img]="icons.imageOff" [size]="42" [strokeWidth]="1.8"></lucide-angular>
+        </div>
+      }
+
+      @if (isNew() || hasOffer()) {
+        <div class="absolute right-3 top-3 flex flex-col items-end gap-2">
+          @if (isNew()) {
+            <app-neo-badge variant="new" size="sm">NUEVO</app-neo-badge>
+          }
+          @if (hasOffer()) {
+            <app-neo-badge variant="danger" size="sm">OFERTA</app-neo-badge>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="flex flex-1 flex-col gap-3 p-4">
+      <div class="space-y-1">
+        <p class="font-mono text-xs uppercase tracking-wider text-neo-muted-text">
+          {{ brandLabel() }}
+        </p>
+        <h3
+          class="min-h-12 overflow-hidden text-h4 text-neo-white line-clamp-2"
+        >
+          {{ product.nombre }}
+        </h3>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span class="flex text-small text-neo-amber" aria-label="Calificacion">
+          @for (star of [0, 1, 2, 3, 4]; track star) {
+            <span [class.opacity-30]="!starFilled(star)">★</span>
+          }
+        </span>
+        <span class="text-xs text-neo-muted-text">({{ reviewCount() }} resenas)</span>
+      </div>
+
+      <div class="space-y-1">
+        @if (hasOffer()) {
+          <div class="flex flex-wrap items-baseline gap-2">
+            <strong class="text-h3 text-neo-red-text">{{ product.precioVigente | copPrice }}</strong>
+            <span class="text-small text-neo-muted-text line-through">{{
+              product.precioLista | copPrice
+            }}</span>
+          </div>
+        } @else {
+          <strong class="text-h3 text-neo-white">{{ product.precioVigente | copPrice }}</strong>
+        }
+      </div>
+
+      <app-neo-badge [variant]="stockVariant()" size="sm">{{ stockLabel() }}</app-neo-badge>
+    </div>
+  </a>
+
+    <div class="flex gap-2 border-t border-neo-border p-4 pt-0">
+      <app-neo-button
+        class="flex-1"
+        variant="primary"
+        size="md"
+        fullWidth
+        [disabled]="product.stockDisponible <= 0"
+        (neoClick)="handleAddClick($event)"
+      >
+        <lucide-angular [img]="icons.cart" [size]="15" [strokeWidth]="2"></lucide-angular>
+        Agregar al carrito
+      </app-neo-button>
+      <button
+        type="button"
+        class="grid min-h-11 min-w-11 place-items-center rounded-neo-md border border-neo-border text-neo-subtle transition-neo duration-neo ease-neo hover:border-neo-border-bright hover:bg-neo-elevated hover:text-neo-white"
+        [class.text-neo-red-text]="wishlistUi.has(product.idProducto)"
+        [attr.aria-label]="wishlistUi.has(product.idProducto) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+        (click)="handleWishlistClick($event)"
+      >
+        <lucide-angular [img]="icons.heart" [size]="17" [strokeWidth]="2"></lucide-angular>
+      </button>
+    </div>
+</article>

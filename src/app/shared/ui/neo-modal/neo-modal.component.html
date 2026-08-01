@@ -1,0 +1,43 @@
+@if (open) {
+  <section
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+    (click)="requestClose()"
+  >
+    <article
+      #modalPanel
+      [class]="panelClasses()"
+      role="dialog"
+      aria-modal="true"
+      tabindex="-1"
+      [attr.aria-labelledby]="modalTitleId"
+      (click)="$event.stopPropagation()"
+      (keydown)="handleKeydown($event)"
+    >
+      <span [id]="modalTitleId" class="sr-only">{{ title || 'Dialogo' }}</span>
+      <header class="flex items-center justify-between gap-4 border-b border-neo-border px-5 py-4">
+        <div class="min-w-0">
+          @if (title) {
+            <h2 class="truncate text-h3 text-neo-white">{{ title }}</h2>
+          }
+          <ng-content select="[neo-modal-header]" />
+        </div>
+
+        <app-neo-button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-label="Cerrar"
+          (neoClick)="requestClose()"
+        >
+          <lucide-angular [img]="closeIcon" [size]="18" [strokeWidth]="2"></lucide-angular>
+        </app-neo-button>
+      </header>
+
+      <div class="max-h-screen overflow-auto px-5 py-5">
+        <ng-content />
+      </div>
+
+      <ng-content select="[neo-modal-footer]" />
+    </article>
+  </section>
+}

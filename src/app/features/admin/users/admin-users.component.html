@@ -1,0 +1,111 @@
+<section class="space-y-6">
+  <div>
+    <p class="font-mono text-xs font-semibold uppercase tracking-widest text-neo-red">Admin</p>
+    <h2 class="mt-1 text-2xl font-bold text-neo-white">Usuarios</h2>
+  </div>
+
+  <neo-card [padding]="'md'">
+    <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label class="relative block w-full sm:w-72">
+          <span class="sr-only">Buscar usuarios</span>
+          <lucide-angular class="absolute left-3 top-1/2 -translate-y-1/2 text-neo-muted" [img]="icons.search" [size]="16" [strokeWidth]="2"></lucide-angular>
+          <input
+            type="search"
+            class="h-11 w-full rounded-neo-md border border-neo-border bg-neo-elevated pl-10 pr-3 text-sm text-neo-white placeholder-neo-muted"
+            placeholder="Buscar por nombre o correo"
+            readonly
+          />
+        </label>
+
+        <select class="h-11 rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white" disabled>
+          <option>Todos los roles</option>
+          <option>ADMIN</option>
+          <option>VENDEDOR</option>
+          <option>CLIENTE</option>
+        </select>
+      </div>
+
+      <div class="inline-flex items-center gap-2 rounded-neo-md border border-neo-border bg-neo-elevated px-3 py-2 text-sm text-neo-muted">
+        <lucide-angular [img]="icons.users" [size]="16" [strokeWidth]="2"></lucide-angular>
+        {{ totalElements() }} usuarios
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[56rem] text-left text-sm">
+        <thead class="border-b border-neo-border text-xs uppercase tracking-wider text-neo-muted">
+          <tr>
+            <th class="py-3 pr-4 font-semibold">Usuario</th>
+            <th class="px-4 py-3 font-semibold">Correo</th>
+            <th class="px-4 py-3 font-semibold">Rol</th>
+            <th class="px-4 py-3 font-semibold">Estado</th>
+            <th class="px-4 py-3 font-semibold">Registro</th>
+            <th class="px-4 py-3 font-semibold">Pedidos</th>
+            <th class="py-3 pl-4 text-right font-semibold">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-neo-border">
+          @if (loading()) {
+          <tr>
+            <td colspan="7" class="py-16 text-center">
+              <lucide-angular [img]="icons.clock" [size]="32" [strokeWidth]="2" class="mx-auto mb-3 text-neo-muted"></lucide-angular>
+              <p class="text-sm text-neo-muted-text">Cargando usuarios</p>
+            </td>
+          </tr>
+          } @else if (error()) {
+          <tr>
+            <td colspan="7" class="py-16 text-center text-sm text-red-300">No fue posible cargar usuarios.</td>
+          </tr>
+          } @else if (users().length) {
+            @for (user of users(); track user.id) {
+              <tr class="text-neo-subtle">
+                <td class="py-3 pr-4">
+                  <p class="font-semibold text-neo-white">{{ user.nombre }}</p>
+                  <p class="text-xs text-neo-muted">#{{ user.id }}</p>
+                </td>
+                <td class="px-4 py-3">{{ user.email }}</td>
+                <td class="px-4 py-3">
+                  <select
+                    class="h-9 rounded-neo-md border border-neo-border bg-neo-elevated px-2 text-xs font-semibold text-neo-white"
+                    [value]="user.rol"
+                    (change)="changeRole(user, $any($event.target).value)"
+                  >
+                    <option value="CLIENTE">CLIENTE</option>
+                    <option value="VENDEDOR">VENDEDOR</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="rounded-neo-sm px-2 py-1 text-xs font-semibold" [class.bg-emerald-950]="user.activo" [class.text-emerald-300]="user.activo" [class.bg-rose-950]="!user.activo" [class.text-rose-300]="!user.activo">
+                    {{ user.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">{{ formatDate(user.fechaRegistro) }}</td>
+                <td class="px-4 py-3">{{ user.totalPedidos ?? 0 }}</td>
+                <td class="py-3 pl-4 text-right">
+                  <div class="flex justify-end gap-2">
+                    <button type="button" class="rounded-neo-md border border-neo-border px-3 py-2 text-xs font-semibold text-neo-subtle hover:text-neo-white" (click)="toggleStatus(user)">
+                      {{ user.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                    <button type="button" class="rounded-neo-md border border-red-900 px-3 py-2 text-xs font-semibold text-red-300 hover:text-red-200" (click)="deleteUser(user)">
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          } @else {
+            <tr>
+              <td colspan="7" class="py-16 text-center text-sm text-neo-muted">No hay usuarios para mostrar.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-5">
+      <app-neo-pagination [currentPage]="currentPage()" [totalPages]="totalPages()" [totalElements]="totalElements()" [pageSize]="pageSize" (pageChange)="loadUsers($event)"></app-neo-pagination>
+    </div>
+  </neo-card>
+</section>

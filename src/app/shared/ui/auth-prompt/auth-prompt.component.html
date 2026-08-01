@@ -1,0 +1,37 @@
+<div class="flex items-center justify-center px-4 py-8">
+  <div class="w-full max-w-md">
+    <neo-card [padding]="'none'">
+      <div class="p-8">
+        <div class="text-center mb-2">
+          <span class="font-mono font-bold text-2xl tracking-tight">
+            <span class="text-neo-red-text">NEO</span><span class="text-neo-white">GAMING</span>
+          </span>
+        </div>
+
+        <h2 class="text-2xl font-bold text-neo-white text-center mb-1">{{ headline }}</h2>
+        <p class="text-sm text-neo-muted-text text-center mb-6">{{ subtext }}</p>
+
+        <div class="space-y-4">
+          <app-neo-button
+            class="block"
+            variant="primary"
+            size="lg"
+            fullWidth
+            [routerLink]="['/login']"
+            [queryParams]="{ returnUrl: currentUrl() }"
+          >
+            Iniciar sesión
+          </app-neo-button>
+
+          <app-neo-button class="block" variant="secondary" size="md" fullWidth [routerLink]="['/registro']">
+            Crear cuenta gratis
+          </app-neo-button>
+        </div>
+
+        <p class="mt-4 text-center text-xs text-neo-muted-text">
+          Al continuar aceptas nuestros términos y condiciones.
+        </p>
+      </div>
+    </neo-card>
+  </div>
+</div>

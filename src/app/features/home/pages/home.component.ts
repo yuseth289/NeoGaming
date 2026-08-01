@@ -1,128 +1,103 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, PLATFORM_ID, ViewChild, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
-import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
+import {
+  Cpu,
+  Gamepad2,
+  Headphones,
+  Keyboard,
+  LucideAngularModule,
+  Mail,
+  Monitor,
+  Mouse,
+  RotateCcw,
+  ShieldCheck,
+  Truck,
+} from 'lucide-angular';
+import { AuthStateService } from '../../../core/auth/auth-state.service';
+import { parseApiError } from '../../../core/http/api-error.utils';
+import { CategoriaArbolResponse, ProductoListadoResponse } from '../../../core/models/api.models';
 import { CartApi } from '../../cart/data-access/cart.api';
 import { CartUiService } from '../../cart/data-access/cart-ui.service';
 import { CatalogApi } from '../../catalog/data-access/catalog.api';
-import { parseApiError } from '../../../core/http/api-error.utils';
-import { ProductoListadoResponse } from '../../../core/models/api.models';
+import {
+  NeoBadgeComponent,
+  NeoButtonComponent,
+  NeoCardComponent,
+  NeoInputComponent,
+  NeoSkeletonComponent,
+  NeoToastService,
+  ProductCardComponent,
+} from '../../../shared/ui';
 
-interface Category {
-  label: string;
-  icon: string;
-  slug: string;
-}
-
-interface HeroSlide {
-  image: string;
-  alt: string;
-}
+const RECENT_PRODUCTS_KEY = 'neo_recent_products';
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, CopPricePipe],
+  imports: [
+    RouterLink,
+    ReactiveFormsModule,
+    LucideAngularModule,
+    NeoBadgeComponent,
+    NeoButtonComponent,
+    NeoCardComponent,
+    NeoInputComponent,
+    NeoSkeletonComponent,
+    ProductCardComponent,
+  ],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.css'
 })
-export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('productsSection') private readonly productsSection?: ElementRef<HTMLElement>;
-
+export class HomeComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly catalogApi = inject(CatalogApi);
   private readonly cartApi = inject(CartApi);
   private readonly cartUi = inject(CartUiService);
-  private readonly catalogApi = inject(CatalogApi);
-  protected readonly loadingProducts = signal(true);
-  protected readonly revealProducts = signal(false);
-  protected readonly currentHeroIndex = signal(0);
+  private readonly authState = inject(AuthStateService);
+  private readonly toast = inject(NeoToastService);
+
+  protected readonly icons = {
+    gamepad: Gamepad2,
+    mail: Mail,
+    shield: ShieldCheck,
+    truck: Truck,
+    returns: RotateCcw,
+  };
+
+  protected readonly categorySkeletons = Array.from({ length: 6 });
+  protected readonly heroCategorySkeletons = Array.from({ length: 4 });
+  protected readonly productSkeletons = Array.from({ length: 8 });
+  protected readonly categories = signal<CategoriaArbolResponse[]>([]);
+  protected readonly bestSellers = signal<ProductoListadoResponse[]>([]);
+  protected readonly recentlyViewed = signal<ProductoListadoResponse[]>([]);
+  protected readonly categoriesLoading = signal(true);
+  protected readonly bestSellersLoading = signal(true);
+  protected readonly categoriesFailed = signal(false);
   protected readonly addingProductId = signal<number | null>(null);
-  protected readonly cartMessage = signal<string | null>(null);
-  protected readonly products = signal<ProductoListadoResponse[]>([]);
+  protected readonly newsletterEmail = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.email],
+  });
 
-  protected readonly heroSlides: HeroSlide[] = [
-    { image: 'https://images.unsplash.com/photo-1598550476439-6847785fcea6?auto=format&fit=crop&w=1900&q=80', alt: 'Setup gamer premium con luces neon' },
-    { image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1900&q=80', alt: 'Jugador usando control en escritorio gamer' },
-    { image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1900&q=80', alt: 'Estacion de juego con monitor y teclado RGB' },
-    { image: 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?auto=format&fit=crop&w=1900&q=80', alt: 'Desktop gamer con ambiente rojo' }
-  ];
-
-  protected readonly categories = signal<Category[]>([
-    { label: 'Consolas', icon: 'console', slug: 'consoles' },
-    { label: 'Videojuegos', icon: 'gamepad', slug: 'video-games' },
-    { label: 'Hardware', icon: 'cpu', slug: 'hardware' },
-    { label: 'Perifericos', icon: 'headset', slug: 'peripherals' },
-    { label: 'Accesorios', icon: 'monitor', slug: 'accessories' }
-  ]);
-
-  protected readonly skeletonCards = Array.from({ length: 6 });
-
-  private heroIntervalId?: ReturnType<typeof setInterval>;
-  private productsObserver?: IntersectionObserver;
-  private loadingTimeoutId?: ReturnType<typeof setTimeout>;
-  private cartMessageTimeout?: ReturnType<typeof setTimeout>;
+  protected readonly showCategories = computed(() => {
+    return !this.categoriesFailed() && (this.categoriesLoading() || this.categories().length > 0);
+  });
+  protected readonly heroCategories = computed(() => this.categories().slice(0, 4));
+  protected readonly showBestSellers = computed(() => {
+    return this.bestSellersLoading() || this.bestSellers().length > 0;
+  });
+  protected readonly showRecentlyViewed = computed(() => {
+    return this.authState.loggedIn() && this.recentlyViewed().length > 0;
+  });
 
   ngOnInit(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-
-    this.heroIntervalId = setInterval(() => this.nextHeroSlide(), 5000);
-    this.loadFeaturedProducts();
-  }
-
-  ngAfterViewInit(): void {
-    if (!isPlatformBrowser(this.platformId)) {
-      return;
-    }
-
-    const section = this.productsSection?.nativeElement;
-    if (!section || typeof IntersectionObserver === 'undefined') {
-      this.startProductsReveal();
-      return;
-    }
-
-    this.productsObserver = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          this.startProductsReveal();
-        }
-      },
-      { threshold: 0.2, rootMargin: '0px 0px -10% 0px' }
-    );
-
-    this.productsObserver.observe(section);
-  }
-
-  ngOnDestroy(): void {
-    if (this.heroIntervalId) {
-      clearInterval(this.heroIntervalId);
-    }
-    if (this.productsObserver) {
-      this.productsObserver.disconnect();
-    }
-    if (this.loadingTimeoutId) {
-      clearTimeout(this.loadingTimeoutId);
-    }
-    if (this.cartMessageTimeout) {
-      clearTimeout(this.cartMessageTimeout);
-    }
-  }
-
-  protected prevHeroSlide(): void {
-    this.currentHeroIndex.update((current) => (current - 1 + this.heroSlides.length) % this.heroSlides.length);
-  }
-
-  protected nextHeroSlide(): void {
-    this.currentHeroIndex.update((current) => (current + 1) % this.heroSlides.length);
-  }
-
-  protected goToHeroSlide(index: number): void {
-    this.currentHeroIndex.set(index);
+    this.loadCategories();
+    this.loadBestSellers();
+    this.loadRecentlyViewed();
   }
 
   protected addToCart(product: ProductoListadoResponse): void {
-    this.cartMessage.set(null);
     this.addingProductId.set(product.idProducto);
 
     this.cartApi
@@ -133,52 +108,105 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
           this.cartUi.hydrateFromApi(response);
           this.cartUi.decorateItem(product.nombre, {
             image: product.urlImagenPrincipal || undefined,
-            stockLabel: this.stockLabel(product),
-            oldPrice: this.oldPrice(product)
+            stockLabel:
+              product.stockDisponible > 0 ? `Existencias: ${product.stockDisponible}` : 'Sin stock',
+            oldPrice: product.precioLista > product.precioVigente ? product.precioLista : undefined,
           });
-          this.cartMessage.set(`${product.nombre} se agrego al carrito.`);
-          this.scheduleCartMessageClear();
+          this.toast.success(`${product.nombre} agregado al carrito.`);
         },
         error: (error) => {
-          this.cartMessage.set(parseApiError(error).message);
-          this.scheduleCartMessageClear();
-        }
+          this.toast.error(parseApiError(error).message);
+        },
       });
   }
 
-  protected stockLabel(product: ProductoListadoResponse): string {
-    return product.stockDisponible > 0 ? `Existencias: ${product.stockDisponible}` : 'Sin stock';
+  protected categoryIcon(index: number) {
+    const icons = [Gamepad2, Keyboard, Mouse, Monitor, Cpu, Headphones];
+    return icons[index % icons.length];
   }
 
-  protected oldPrice(product: ProductoListadoResponse): number | undefined {
-    return product.precioLista > product.precioVigente ? product.precioLista : undefined;
-  }
-
-  private startProductsReveal(): void {
-    if (this.revealProducts()) {
+  protected submitNewsletter(event: Event): void {
+    event.preventDefault();
+    // TODO: conectar newsletter al backend cuando exista el endpoint.
+    if (this.newsletterEmail.invalid) {
+      this.newsletterEmail.markAsTouched();
+      this.toast.warning('Ingresa un email valido.');
       return;
     }
 
-    this.revealProducts.set(true);
-    this.productsObserver?.disconnect();
-    this.loadingTimeoutId = setTimeout(() => this.loadingProducts.set(false), 700);
+    this.toast.success('Te avisaremos sobre el descuento del 10%.');
+    this.newsletterEmail.reset('');
   }
 
-  private scheduleCartMessageClear(): void {
-    if (this.cartMessageTimeout) {
-      clearTimeout(this.cartMessageTimeout);
+  private loadCategories(): void {
+    this.categoriesLoading.set(true);
+    this.categoriesFailed.set(false);
+
+    this.catalogApi
+      .getCategories()
+      .pipe(finalize(() => this.categoriesLoading.set(false)))
+      .subscribe({
+        next: (categories) => {
+          this.categories.set(categories.slice(0, 8));
+        },
+        error: () => {
+          this.categories.set([]);
+          this.categoriesFailed.set(true);
+        },
+      });
+  }
+
+  private loadBestSellers(): void {
+    this.bestSellersLoading.set(true);
+
+    this.catalogApi
+      .getProducts({ sort: 'createdAt,desc', page: 0, size: 8 })
+      .pipe(finalize(() => this.bestSellersLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          this.bestSellers.set((response.content ?? []).slice(0, 8));
+        },
+        error: () => {
+          this.bestSellers.set([]);
+        },
+      });
+  }
+
+  private loadRecentlyViewed(): void {
+    if (!this.authState.loggedIn() || !isPlatformBrowser(this.platformId)) {
+      this.recentlyViewed.set([]);
+      return;
     }
-    this.cartMessageTimeout = setTimeout(() => this.cartMessage.set(null), 2600);
-  }
 
-  private loadFeaturedProducts(): void {
-    this.catalogApi.getCatalog({ size: 4 }).subscribe({
-      next: (response) => {
-        this.products.set((response.content ?? []).slice(0, 4));
-      },
-      error: (error) => {
-        this.cartMessage.set(parseApiError(error).message);
+    const raw = localStorage.getItem(RECENT_PRODUCTS_KEY);
+    if (!raw) {
+      this.recentlyViewed.set([]);
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as Partial<ProductoListadoResponse>[];
+      if (!Array.isArray(parsed)) {
+        this.recentlyViewed.set([]);
+        return;
       }
-    });
+
+      this.recentlyViewed.set(
+        parsed
+          .filter((item): item is ProductoListadoResponse => {
+            return (
+              typeof item.idProducto === 'number' &&
+              typeof item.nombre === 'string' &&
+              typeof item.slug === 'string' &&
+              typeof item.precioVigente === 'number' &&
+              typeof item.precioLista === 'number' &&
+              typeof item.stockDisponible === 'number'
+            );
+          })
+          .slice(0, 6),
+      );
+    } catch {
+      this.recentlyViewed.set([]);
+    }
   }
 }

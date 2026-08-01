@@ -1,91 +1,86 @@
-<section class="auth-page" [class.modal-mode]="modalMode()">
-  <div class="auth-card">
-    @if (modalMode()) {
-      <div class="auth-icon"><svg class="auth-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-  <path d="M7 9h10a4 4 0 0 1 3.7 5.4l-1.2 3a2.5 2.5 0 0 1-4.5.3l-1.2-1.9a3 3 0 0 0-5.1 0l-1.2 1.9a2.5 2.5 0 0 1-4.5-.3l-1.2-3A4 4 0 0 1 7 9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
-  <path d="M9 12h-2M8 11v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-  <circle cx="16" cy="12" r="1" fill="currentColor" />
-  <circle cx="18" cy="10.5" r="1" fill="currentColor" />
-</svg></div>
-      <h1>Inicia sesion en tu cuenta NeoGaming</h1>
-      <p>Bienvenido de nuevo, gamer.</p>
-    } @else {
-      <div class="auth-icon">NG</div>
-      <h1>Iniciar sesion</h1>
-      <p>Accede a tu cuenta para comprar mas rapido.</p>
-    }
-
-    <form [formGroup]="form" (ngSubmit)="submit()">
-      <label>
-        <span>Correo electronico</span>
-        <div class="input-shell" [class.invalid]="showFieldError('email')">
-          <span class="field-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="5" width="18" height="14" rx="2"></rect>
-              <path d="m4 7 8 6 8-6"></path>
-            </svg>
+<div [class]="embeddedMode() ? 'flex items-center justify-center px-0 py-0' : 'min-h-screen flex items-center justify-center px-4 py-12 bg-neo-base'">
+  <div class="w-full max-w-md">
+    <neo-card [padding]="'none'">
+      <div class="p-8">
+        <div class="text-center mb-2">
+          <span class="font-mono font-bold text-2xl tracking-tight">
+            <span class="text-neo-red-text">NEO</span><span class="text-neo-white">GAMING</span>
           </span>
-          <input type="email" formControlName="email" [placeholder]="modalMode() ? 'Ingresa tu correo' : 'correo@ejemplo.com'" />
         </div>
-      </label>
-      @if (showFieldError('email')) {
-        <small class="error-text">Ingresa un correo valido.</small>
-      }
 
-      <label>
-        <span>Contrasena</span>
-        <div class="input-shell" [class.invalid]="showFieldError('password')">
-          <span class="field-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="4" y="11" width="16" height="9" rx="2"></rect>
-              <path d="M8 11V8a4 4 0 0 1 8 0v3"></path>
-            </svg>
-          </span>
-          <input [type]="showPassword() ? 'text' : 'password'" formControlName="password" [placeholder]="modalMode() ? 'Ingresa tu contrasena' : '******'" />
-          <button type="button" class="password-toggle" (click)="togglePasswordVisibility()">
-            {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
+        <h2 class="text-2xl font-bold text-neo-white text-center mb-1">Bienvenido de vuelta</h2>
+        <p class="text-sm text-neo-muted-text text-center mb-6">
+          ¿No tienes cuenta?
+          @if (embeddedMode()) {
+            <button
+              type="button"
+              class="text-neo-cyan font-semibold hover:underline ml-1"
+              (click)="switchToRegister.emit()"
+            >
+              Regístrate
+            </button>
+          } @else {
+            <a routerLink="/registro" class="text-neo-cyan font-semibold hover:underline ml-1">Regístrate</a>
+          }
+        </p>
+
+        <form [formGroup]="form" (ngSubmit)="submit()">
+          <div class="space-y-4">
+            <neo-input
+              label="Email"
+              type="email"
+              placeholder="tu@email.com"
+              icon="mail"
+              formControlName="email"
+              [error]="fieldError('email')"
+            />
+
+            <neo-input
+              label="Contraseña"
+              type="password"
+              placeholder="Mínimo 8 caracteres"
+              icon="lock"
+              formControlName="password"
+              [error]="fieldError('password')"
+            />
+          </div>
+
+          <div class="flex justify-end mt-1 mb-4">
+            <a href="#" class="text-xs text-neo-cyan hover:underline">¿Olvidaste tu contraseña?</a>
+          </div>
+
+          <button
+            type="submit"
+            [disabled]="loading()"
+            class="w-full h-12 rounded-neo-md bg-neo-red hover:bg-neo-red-dim disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-base transition-neo duration-neo flex items-center justify-center gap-2 mt-2"
+          >
+            @if (loading()) {
+              <neo-spinner size="sm" />
+            }
+            {{ submitLabel }}
+          </button>
+        </form>
+
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-neo-border"></div>
+          </div>
+          <div class="relative flex justify-center">
+            <span class="px-3 bg-neo-surface text-xs text-neo-muted-text uppercase tracking-widest">
+              o continúa con
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button type="button" class="min-h-11 rounded-neo-md border border-neo-border text-neo-subtle text-sm font-medium hover:border-neo-border-bright hover:text-neo-white transition-neo duration-neo">
+            Google
+          </button>
+          <button type="button" class="min-h-11 rounded-neo-md border border-neo-border text-neo-subtle text-sm font-medium hover:border-neo-border-bright hover:text-neo-white transition-neo duration-neo">
+            Discord
           </button>
         </div>
-      </label>
-      @if (showFieldError('password')) {
-        <small class="error-text">Minimo 6 caracteres.</small>
-      }
-
-      @if (modalMode()) {
-        <button type="button" class="forgot-link">Olvidaste tu contrasena?</button>
-      } @else {
-        <label class="checkbox">
-          <input type="checkbox" formControlName="remember" />
-          <span>Recordarme en este dispositivo</span>
-        </label>
-      }
-
-      @if (error()) {
-        <p class="status error">{{ error() }}</p>
-      }
-      @if (success()) {
-        <p class="status success">{{ success() }}</p>
-      }
-
-      <button type="submit" [disabled]="loading()">
-        @if (loading()) {
-          <span class="btn-spinner" aria-hidden="true"></span>
-          Entrando...
-        } @else {
-          Iniciar sesion
-        }
-      </button>
-    </form>
-
-    @if (modalMode()) {
-      <p class="helper">No tienes una cuenta?</p>
-      <button type="button" class="switch-cta" (click)="switchToRegister.emit()">Registrarse</button>
-    } @else {
-      <p class="helper">
-        No tienes cuenta?
-        <a routerLink="/register">Crea una aqui</a>
-      </p>
-    }
+      </div>
+    </neo-card>
   </div>
-</section>
-
+</div>

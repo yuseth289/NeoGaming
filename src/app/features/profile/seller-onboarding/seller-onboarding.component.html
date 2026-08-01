@@ -1,0 +1,153 @@
+<div class="max-w-2xl space-y-6">
+  <div>
+    <h2 class="text-h2 font-bold text-neo-white">Conviertete en vendedor</h2>
+    <p class="mt-1 text-sm text-neo-muted-text">
+      Completa tu perfil de vendedor para empezar a publicar productos en NeoGaming.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    @for (benefit of benefits; track benefit.title) {
+      <neo-card [padding]="'sm'">
+        <div class="flex min-h-28 flex-col">
+          <lucide-angular
+            class="mb-3 shrink-0 text-neo-cyan"
+            [img]="benefit.icon"
+            [size]="24"
+            [strokeWidth]="2"
+          ></lucide-angular>
+          <p class="min-h-10 text-sm font-semibold leading-snug text-neo-white">
+            {{ benefit.title }}
+          </p>
+          <p class="mt-1 text-xs text-neo-muted-text">{{ benefit.description }}</p>
+        </div>
+      </neo-card>
+    }
+  </div>
+
+  <neo-card [padding]="'md'">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+      <neo-input
+        label="Nombre completo o razon social"
+        formControlName="nombreCompletoORazonSocial"
+        hint="Debe coincidir con tus datos comerciales o legales."
+        [error]="fieldError('nombreCompletoORazonSocial')"
+      />
+
+      <neo-input
+        label="Nombre comercial"
+        formControlName="nombreComercial"
+        hint="Asi te veran los compradores."
+        [error]="fieldError('nombreComercial')"
+      />
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <app-neo-select
+          label="Tipo de documento"
+          placeholder="Selecciona un tipo"
+          formControlName="tipoDocumento"
+          [options]="documentTypeOptions"
+          [error]="fieldError('tipoDocumento')"
+        />
+
+        <neo-input
+          label="Numero de documento"
+          formControlName="numeroDocumento"
+          [error]="fieldError('numeroDocumento')"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <neo-input label="Pais" formControlName="pais" [error]="fieldError('pais')" />
+
+        <neo-input
+          label="Telefono de contacto"
+          type="tel"
+          icon="phone"
+          formControlName="telefono"
+          hint="Visible para compradores de tus productos."
+          [error]="fieldError('telefono')"
+        />
+      </div>
+
+      <neo-input
+        label="Correo de contacto"
+        type="email"
+        icon="mail"
+        formControlName="correo"
+        [error]="fieldError('correo')"
+      />
+
+      <div class="space-y-4 border-t border-neo-border pt-5" formGroupName="datosPago">
+        <div>
+          <h3 class="text-h4 font-semibold text-neo-white">Datos de pago</h3>
+          <p class="mt-1 text-sm text-neo-muted-text">
+            Usaremos esta cuenta para liquidar tus ventas.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <app-neo-select
+            label="Tipo de cuenta"
+            formControlName="tipoCuenta"
+            [options]="accountTypeOptions"
+            [error]="paymentFieldError('tipoCuenta')"
+          />
+
+          <neo-input
+            label="Numero de cuenta"
+            formControlName="numeroCuenta"
+            [error]="paymentFieldError('numeroCuenta')"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <neo-input
+            label="Banco"
+            formControlName="banco"
+            placeholder="Bancolombia"
+            [error]="paymentFieldError('banco')"
+          />
+
+          <neo-input
+            label="Titular de la cuenta"
+            formControlName="titularCuenta"
+            hint="Debe coincidir con el titular legal o comercial."
+            [error]="paymentFieldError('titularCuenta')"
+          />
+        </div>
+      </div>
+
+      <div class="flex items-start gap-3 pt-2">
+        <input
+          type="checkbox"
+          id="terminos-vendedor"
+          formControlName="aceptaTerminos"
+          class="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-neo-red"
+        />
+        <label for="terminos-vendedor" class="cursor-pointer text-sm text-neo-muted-text">
+          Acepto los
+          <a href="#" class="text-neo-cyan hover:underline">terminos y condiciones para vendedores</a>
+          de NeoGaming. Entiendo que mis productos seran revisados antes de aparecer en el
+          catalogo.
+        </label>
+      </div>
+      @if (termsError()) {
+        <p class="text-sm text-neo-red-text">Debes aceptar los terminos para continuar.</p>
+      }
+
+      <div class="pt-2">
+        <app-neo-button
+          variant="primary"
+          size="lg"
+          fullWidth
+          type="submit"
+          [loading]="submitting()"
+          [disabled]="form.invalid || submitting()"
+        >
+          Activar mi cuenta de vendedor
+        </app-neo-button>
+      </div>
+    </form>
+  </neo-card>
+</div>

@@ -1,141 +1,404 @@
-<section class="detail-page">
-  @if (product(); as productData) {
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a routerLink="/">Inicio</a>
-      <span>></span>
-      <a routerLink="/catalog">Catalogo</a>
-      <span>></span>
-      <span>{{ productData.categoria.nombre }}</span>
-      <span>></span>
-      <strong>{{ productData.nombre }}</strong>
-    </nav>
-
-    <article class="detail-grid">
-      <div class="gallery">
-        <div class="main-image-wrap">
-          <img
-            class="main-image"
-            [src]="activeImage()"
-            [alt]="productData.nombre"
-            width="920"
-            height="680"
-          />
+<section class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+  @if (loading()) {
+    <div class="grid min-h-96 place-items-center">
+      <app-neo-spinner size="lg" />
+    </div>
+  } @else if (!product()) {
+    <app-neo-card padding="lg">
+      <div class="mx-auto max-w-md py-8 text-center">
+        <lucide-angular
+          class="mx-auto text-neo-muted-text"
+          [img]="icons.imageOff"
+          [size]="52"
+          [strokeWidth]="1.8"
+        ></lucide-angular>
+        <h1 class="text-h2 text-neo-white">Producto no encontrado</h1>
+        <p class="text-body text-neo-subtle">
+          {{ error() || 'No pudimos cargar este producto.' }}
+        </p>
+        <div>
+          <app-neo-button variant="primary" [routerLink]="['/catalogo']"
+            >Volver al catalogo</app-neo-button
+          >
         </div>
+      </div>
+    </app-neo-card>
+  } @else {
+    @if (product(); as item) {
+      <div class="space-y-20">
+      <div class="space-y-6">
+        <app-neo-breadcrumb [items]="breadcrumbItems()" />
 
-        <div class="thumbs">
-          @for (image of productData.imagenes; track image.id; let idx = $index) {
-            <button type="button" class="thumb" [class.active]="selectedImage() === idx" (click)="setImage(idx)">
-              <img [src]="image.urlImagen" [alt]="'Vista ' + (idx + 1)" width="120" height="80" />
+      <div class="grid gap-4 sm:gap-6 lg:grid-cols-2">
+        <section class="min-w-0">
+          <div
+            class="aspect-video overflow-hidden rounded-neo-lg border border-neo-border bg-neo-elevated"
+          >
+            @if (activeImage()) {
+              <img class="h-full w-full object-cover" [src]="activeImage()" [alt]="item.nombre" />
+            } @else {
+              <div class="grid h-full place-items-center text-neo-muted-text">
+                <lucide-angular
+                  [img]="icons.imageOff"
+                  [size]="64"
+                  [strokeWidth]="1.7"
+                ></lucide-angular>
+              </div>
+            }
+          </div>
+
+          @if (sortedImages().length > 1) {
+            <div class="flex gap-4 overflow-x-auto sm:gap-6">
+              @for (image of sortedImages(); track image.id; let index = $index) {
+                <button
+                  type="button"
+                  class="h-20 w-24 shrink-0 overflow-hidden rounded-neo-md border bg-neo-elevated transition-neo duration-neo ease-neo"
+                  [class.border-neo-red]="selectedImage() === index"
+                  [class.border-neo-border]="selectedImage() !== index"
+                  (click)="setImage(index)"
+                >
+                  <img
+                    class="h-full w-full object-cover"
+                    [src]="image.urlImagen"
+                    [alt]="image.altText || item.nombre"
+                  />
+                </button>
+              }
+            </div>
+          }
+        </section>
+
+        <aside class="space-y-6">
+          <div class="flex flex-wrap items-center gap-4">
+            <span class="font-mono text-xs uppercase tracking-wider text-neo-muted-text">
+              {{ item.vendedor.nombre }}
+            </span>
+            @if (hasOffer()) {
+              <app-neo-badge variant="danger" size="sm">OFERTA</app-neo-badge>
+            }
+          </div>
+
+          <h1 class="text-h1 text-neo-white">{{ item.nombre }}</h1>
+
+          <a
+            class="flex w-fit items-center gap-3 text-small text-neo-subtle transition-neo duration-neo ease-neo hover:text-neo-white"
+            href="#reviews"
+            (click)="setTab('reviews')"
+          >
+            <span class="text-neo-amber">
+              @for (star of ratingStars(averageRating()); track $index) {
+                <span [class.opacity-30]="!star">★</span>
+              }
+            </span>
+            <span>({{ item.totalResenas || reviews().length }} resenas)</span>
+          </a>
+
+          <div>
+            @if (hasOffer()) {
+              <div class="flex flex-wrap items-baseline gap-4">
+                <strong class="text-display text-neo-red-text">{{
+                  item.precioVigente | copPrice
+                }}</strong>
+                <span class="text-body text-neo-muted-text line-through">{{
+                  item.precioLista | copPrice
+                }}</span>
+              </div>
+            } @else {
+              <strong class="text-display text-neo-white">{{
+                item.precioVigente | copPrice
+              }}</strong>
+            }
+          </div>
+
+          <app-neo-badge [variant]="stockVariant()">{{ stockLabel() }}</app-neo-badge>
+
+          <div class="space-y-4">
+            <p class="text-body text-neo-subtle" [class.line-clamp-3]="!expandedDescription()">
+              {{ item.descripcion }}
+            </p>
+            <button
+              type="button"
+              class="text-small font-semibold text-neo-cyan"
+              (click)="expandedDescription.update((value) => !value)"
+            >
+              {{ expandedDescription() ? 'Leer menos' : 'Leer mas' }}
+            </button>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <span class="text-small text-neo-muted-text">Cantidad</span>
+            <div class="flex items-center rounded-neo-md border border-neo-border bg-neo-elevated">
+              <button
+                type="button"
+                class="min-h-11 min-w-11 text-neo-white disabled:opacity-40"
+                aria-label="Disminuir cantidad"
+                [disabled]="quantity() <= 1"
+                (click)="decreaseQty()"
+              >
+                -
+              </button>
+              <span class="w-12 text-center font-mono text-small text-neo-white">{{
+                quantity()
+              }}</span>
+              <button
+                type="button"
+                class="min-h-11 min-w-11 text-neo-white disabled:opacity-40"
+                aria-label="Aumentar cantidad"
+                [disabled]="quantity() >= item.stockDisponible"
+                (click)="increaseQty()"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <app-neo-button
+              variant="primary"
+              size="lg"
+              fullWidth
+              [loading]="adding()"
+              [disabled]="item.stockDisponible <= 0"
+              (neoClick)="addToCart()"
+            >
+              <lucide-angular [img]="icons.cart" [size]="18" [strokeWidth]="2"></lucide-angular>
+              Agregar al carrito
+            </app-neo-button>
+            <app-neo-button variant="ghost" size="md" fullWidth (neoClick)="toggleFavorite()">
+              <lucide-angular [img]="icons.heart" [size]="17" [strokeWidth]="2"></lucide-angular>
+              Agregar a favoritos
+            </app-neo-button>
+          </div>
+
+          @if (item.vendedor) {
+            <neo-card [padding]="'sm'" class="mt-4">
+              <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neo-elevated">
+                  <lucide-angular
+                    class="text-neo-muted"
+                    [img]="icons.store"
+                    [size]="16"
+                    [strokeWidth]="2"
+                  ></lucide-angular>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-semibold text-neo-white">
+                    {{ item.vendedor.nombre }}
+                  </p>
+                  <p class="text-xs text-neo-muted-text">Vendedor verificado</p>
+                </div>
+                <app-neo-badge variant="success">Activo</app-neo-badge>
+              </div>
+            </neo-card>
+          }
+
+            <div class="grid gap-4 text-small text-neo-subtle sm:grid-cols-3 sm:gap-6">
+            <span class="inline-flex items-center gap-3">
+              <lucide-angular
+                class="text-neo-cyan"
+                [img]="icons.shield"
+                [size]="17"
+                [strokeWidth]="2"
+              ></lucide-angular>
+              Pago seguro
+            </span>
+            <span class="inline-flex items-center gap-3">
+              <lucide-angular
+                class="text-neo-cyan"
+                [img]="icons.truck"
+                [size]="17"
+                [strokeWidth]="2"
+              ></lucide-angular>
+              Envio gratis
+            </span>
+            <span class="inline-flex items-center gap-3">
+              <lucide-angular
+                class="text-neo-cyan"
+                [img]="icons.returns"
+                [size]="17"
+                [strokeWidth]="2"
+              ></lucide-angular>
+              30 dias
+            </span>
+          </div>
+        </aside>
+      </div>
+
+      </div>
+
+      <section id="reviews">
+        <div class="mb-8 flex flex-wrap gap-3 border-b border-neo-border">
+          @for (tab of tabs; track tab.id) {
+            <button
+              type="button"
+              class="border-b-2 p-3 text-small font-semibold transition-neo duration-neo ease-neo"
+              [class.border-neo-red]="activeTab() === tab.id"
+              [class.text-neo-white]="activeTab() === tab.id"
+              [class.border-transparent]="activeTab() !== tab.id"
+              [class.text-neo-muted-text]="activeTab() !== tab.id"
+              (click)="setTab(tab.id)"
+            >
+              {{ tab.label }}
             </button>
           }
         </div>
-      </div>
 
-      <div class="detail-info">
-        <header class="title-row">
-          <div>
-            <h1>{{ productData.nombre }}</h1>
-            <p class="subtitle">{{ productData.vendedor.nombre }}</p>
-            <p class="subtitle">{{ productData.categoria.nombre }}</p>
-          </div>
-          <button
-            type="button"
-            class="favorite-btn"
-            [class.active]="favorite()"
-            [attr.aria-pressed]="favorite()"
-            aria-label="Agregar a favoritos"
-            (click)="toggleFavorite()"
-          >
-            ♥
-          </button>
-        </header>
-
-        <div class="purchase-panel">
-          <div class="price-row">
-            <strong>{{ productData.precioVigente | copPrice }}</strong>
-            @if (hasDiscount()) {
-              <small>{{ productData.precioLista | copPrice }}</small>
-              <span class="discount-badge">-{{ discountPercent() }}%</span>
+        @if (activeTab() === 'description') {
+          <app-neo-card padding="lg">
+            <div
+              class="prose prose-invert max-w-none text-body text-neo-subtle"
+              [innerHTML]="safeDescription()"
+            ></div>
+          </app-neo-card>
+        } @else if (activeTab() === 'specs') {
+          <app-neo-card padding="none">
+            @if (specs().length > 0) {
+              <dl class="divide-y divide-neo-border">
+                @for (spec of specs(); track spec[0]; let odd = $odd) {
+                  <div class="grid gap-3 p-5 sm:grid-cols-2" [class.bg-neo-elevated]="odd">
+                    <dt class="font-semibold text-neo-white">{{ spec[0] }}</dt>
+                    <dd class="text-neo-subtle">{{ spec[1] }}</dd>
+                  </div>
+                }
+              </dl>
+            } @else {
+              <p class="p-5 text-body text-neo-subtle">
+                Este producto aun no tiene especificaciones cargadas.
+              </p>
             }
-          </div>
+          </app-neo-card>
+        } @else {
+          <app-neo-card padding="lg">
+            <div class="grid gap-4 sm:gap-6 lg:grid-cols-4">
+              <aside>
+                <strong class="text-display text-neo-white">{{
+                  averageRating() | number: '1.1-1'
+                }}</strong>
+                <p class="text-small text-neo-muted-text">{{ reviews().length }} resenas</p>
+                  <div class="space-y-4">
+                  @for (rating of [5, 4, 3, 2, 1]; track rating) {
+                    <div
+                      class="grid grid-cols-3 items-center gap-3 text-xs text-neo-muted-text"
+                    >
+                      <span>{{ rating }}★</span>
+                      <span class="h-2 overflow-hidden rounded-full bg-neo-elevated">
+                        <span
+                          class="block h-full bg-neo-amber"
+                          [style.width.%]="reviewDistribution(rating)"
+                        ></span>
+                      </span>
+                      <span>{{ reviewDistribution(rating) }}%</span>
+                    </div>
+                  }
+                </div>
+              </aside>
 
-          <div class="stock-chip" [class.low]="stockTone() === 'low'" [class.out]="stockTone() === 'out'">
-            <i class="stock-dot" aria-hidden="true"></i>
-            <span>Stock</span>
-            <strong>{{ stockLabel() }}</strong>
-          </div>
+              <div class="space-y-6">
+                @if (canReview()) {
+                  <form
+                    class="space-y-4 rounded-neo-lg border border-neo-border bg-neo-surface p-5"
+                    [formGroup]="reviewForm"
+                    (submit)="submitReview()"
+                  >
+                    <div>
+                      <p class="mb-4 text-small font-semibold text-neo-white">Tu calificacion</p>
+                        <div class="flex gap-3 text-h3 text-neo-amber">
+                        @for (star of [1, 2, 3, 4, 5]; track star) {
+                          <button
+                            type="button"
+                            [class.opacity-30]="reviewForm.controls.rating.value < star"
+                            (click)="setReviewRating(star)"
+                          >
+                            ★
+                          </button>
+                        }
+                      </div>
+                    </div>
+                    <app-neo-input
+                      label="Comentario de reseña"
+                      [labelSrOnly]="true"
+                      type="textarea"
+                      placeholder="Cuéntanos cómo te fue con el producto"
+                      formControlName="comment"
+                    />
+                    <app-neo-button type="submit" variant="primary" [loading]="reviewsLoading()"
+                      >Enviar resena</app-neo-button
+                    >
+                  </form>
+                } @else {
+                  <p
+                    class="rounded-neo-md border border-neo-border bg-neo-elevated p-5 text-small text-neo-subtle"
+                  >
+                    Compra este producto para dejar una resena.
+                  </p>
+                }
 
-          <div class="buy-row">
-            <div class="qty">
-              <button type="button" (click)="decreaseQty()">-</button>
-              <span>{{ quantity() }}</span>
-              <button type="button" (click)="increaseQty()">+</button>
-            </div>
+                @if (reviewsLoading()) {
+                  @for (item of [0, 1, 2]; track item) {
+                    <app-neo-skeleton variant="block" height="7rem" />
+                  }
+                } @else if (reviews().length === 0) {
+                  <p class="text-body text-neo-subtle">Aun no hay resenas para este producto.</p>
+                } @else {
+                  <div class="space-y-4">
+                    @for (review of pagedReviews(); track review.id) {
+                      <article class="rounded-neo-lg border border-neo-border bg-neo-surface p-5">
+                        <div class="flex items-start gap-4">
+                          <span
+                            class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-neo-red font-mono text-xs font-bold text-white"
+                          >
+                            {{ review.nombreUsuario.slice(0, 2).toUpperCase() }}
+                          </span>
+                          <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                              <strong class="text-small text-neo-white">{{
+                                review.nombreUsuario
+                              }}</strong>
+                              <time class="text-xs text-neo-muted-text">{{
+                                review.fecha | date: 'mediumDate'
+                              }}</time>
+                            </div>
+                            <p class="text-small text-neo-amber">
+                              @for (star of ratingStars(review.calificacion); track $index) {
+                                <span [class.opacity-30]="!star">★</span>
+                              }
+                            </p>
+                            <p class="text-small text-neo-subtle">
+                              {{ review.comentario || 'Sin comentario.' }}
+                            </p>
+                          </div>
+                        </div>
+                      </article>
+                    }
+                  </div>
 
-            <button type="button" class="add-btn" [class.adding]="adding()" [disabled]="adding() || stockTone() === 'out'" (click)="addToCart()">
-              @if (adding()) {
-                <span class="btn-spinner" aria-hidden="true"></span>
-                Agregando...
-              } @else {
-                Agregar al carrito
-              }
-            </button>
-          </div>
-        </div>
-
-        <section class="description">
-          <h2>Descripcion del producto</h2>
-          <p>{{ productData.descripcion }}</p>
-        </section>
-
-        <section class="description">
-          <h2>Calificacion</h2>
-          <p>{{ productData.ratingPromedio ?? 0 }}</p>
-          <p class="reviews-stars">
-            @for (star of ratingStars(productData.ratingPromedio ?? 0); track $index) {
-              <span class="star" [class.filled]="star">★</span>
-            }
-          </p>
-          <p>{{ productData.totalResenas }} reseñas</p>
-        </section>
-      </div>
-    </article>
-
-    <section class="reviews" aria-labelledby="reviews-title">
-      <div class="reviews-head">
-        <div class="reviews-score">
-          <h2 id="reviews-title">Reseñas de clientes</h2>
-          <p class="reviews-summary">{{ productData.ratingPromedio ?? 0 }}</p>
-          <p class="reviews-total">{{ productData.totalResenas }} reseñas</p>
-        </div>
-      </div>
-
-      <div class="reviews-grid">
-        @for (review of reviews(); track review.id) {
-          <article class="review-card">
-            <header>
-              <div>
-                <strong>{{ review.nombreUsuario }}</strong>
+                  <app-neo-pagination
+                    [currentPage]="reviewPage()"
+                    [totalPages]="reviewTotalPages()"
+                    [totalElements]="reviews().length"
+                    [pageSize]="reviewPageSize"
+                    (pageChange)="reviewPageChanged($event)"
+                  />
+                }
               </div>
-              <small>{{ review.fecha | date: 'mediumDate' }}</small>
-            </header>
-            <p class="score">
-              @for (star of ratingStars(review.calificacion); track $index) {
-                <span>{{ star ? '★' : '☆' }}</span>
-              }
-            </p>
-            <p>{{ review.comentario }}</p>
-          </article>
+            </div>
+          </app-neo-card>
         }
+      </section>
+
+      @if (relatedProducts().length > 0) {
+        <section>
+          <h2 class="mb-8 text-h2 text-neo-white">Tambien te puede interesar</h2>
+          <div class="flex gap-4 overflow-x-auto sm:gap-6">
+            @for (related of relatedProducts(); track related.idProducto) {
+              <div class="w-72 shrink-0">
+                <app-product-card [product]="related" (addToCart)="addRelatedToCart($event)" />
+              </div>
+            }
+          </div>
+        </section>
+      }
       </div>
-    </section>
-  } @else if (loading()) {
-    <p>Cargando producto...</p>
-  } @else {
-    <p>{{ error() || 'No fue posible cargar el producto.' }}</p>
+    }
   }
 </section>
-
-@if (message()) {
-  <div class="cart-toast" role="status">{{ message() }}</div>
-}

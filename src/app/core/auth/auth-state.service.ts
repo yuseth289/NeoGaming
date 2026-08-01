@@ -5,6 +5,7 @@ export interface SessionUser {
   id?: number;
   name: string;
   email: string;
+  rol?: string;
   role?: string;
 }
 
@@ -20,22 +21,24 @@ export class AuthStateService {
   readonly loggedIn = computed(() => !!this.user() && this.hasToken());
 
   setSession(token: string, user: SessionUser): void {
+    const normalizedUser = this.normalizeUser(user);
     if (this.isBrowser()) {
       localStorage.setItem(TOKEN_STORAGE_KEY, token);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUser));
     }
-    this.user.set(user);
+    this.user.set(normalizedUser);
   }
 
   setUser(user: SessionUser | null): void {
+    const normalizedUser = user ? this.normalizeUser(user) : null;
     if (this.isBrowser()) {
-      if (user) {
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      if (normalizedUser) {
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(normalizedUser));
       } else {
         localStorage.removeItem(USER_STORAGE_KEY);
       }
     }
-    this.user.set(user);
+    this.user.set(normalizedUser);
   }
 
   getToken(): string | null {
@@ -77,11 +80,32 @@ export class AuthStateService {
         id: typeof parsed.id === 'number' ? parsed.id : undefined,
         name: parsed.name,
         email: parsed.email,
-        role: typeof parsed.role === 'string' ? parsed.role : undefined
+        rol:
+          typeof parsed.rol === 'string'
+            ? parsed.rol
+            : typeof parsed.role === 'string'
+              ? parsed.role
+              : undefined,
+        role:
+          typeof parsed.role === 'string'
+            ? parsed.role
+            : typeof parsed.rol === 'string'
+              ? parsed.rol
+              : undefined
       };
     } catch {
       return null;
     }
+  }
+
+  private normalizeUser(user: SessionUser): SessionUser {
+    const role = user.role ?? user.rol;
+
+    return {
+      ...user,
+      rol: user.rol ?? role,
+      role: user.role ?? role,
+    };
   }
 
   private isBrowser(): boolean {

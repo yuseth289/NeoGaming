@@ -1,0 +1,45 @@
+<section class="mb-8">
+  <div class="rounded-neo-lg border border-neo-border bg-neo-surface p-5 md:hidden">
+    <p class="text-small font-semibold text-neo-white">Paso {{ currentStep }} de 4</p>
+    <p class="text-xs text-neo-muted-text">{{ steps[currentStep - 1].label }}</p>
+  </div>
+
+  <div class="hidden items-center gap-3 rounded-neo-lg border border-neo-border bg-neo-surface p-5 md:flex">
+    @for (item of steps; track item.step) {
+      <div class="flex min-w-0 items-center gap-4">
+        <span
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-small font-semibold transition-neo duration-neo ease-neo"
+          [class.border-neo-red]="isCurrent(item.step)"
+          [class.text-neo-red-text]="isCurrent(item.step)"
+          [class.shadow-neo-glow-red]="isCurrent(item.step)"
+          [class.border-neo-green]="isComplete(item.step)"
+          [class.bg-neo-green]="isComplete(item.step)"
+          [class.text-neo-base]="isComplete(item.step)"
+          [class.border-neo-border]="!isComplete(item.step) && !isCurrent(item.step)"
+          [class.text-neo-muted-text]="!isComplete(item.step) && !isCurrent(item.step)"
+        >
+          @if (isComplete(item.step)) {
+            <lucide-angular [img]="checkIcon" [size]="17" [strokeWidth]="2.4"></lucide-angular>
+          } @else {
+            {{ item.step }}
+          }
+        </span>
+        <span
+          class="truncate text-small font-semibold"
+          [class.text-neo-white]="isComplete(item.step) || isCurrent(item.step)"
+          [class.text-neo-muted-text]="!isComplete(item.step) && !isCurrent(item.step)"
+        >
+          {{ item.label }}
+        </span>
+      </div>
+      @if (item.step < 4) {
+        <span
+          class="h-px flex-1"
+          [class.bg-neo-red]="item.step < currentStep"
+          [class.bg-neo-border]="item.step >= currentStep"
+          aria-hidden="true"
+        ></span>
+      }
+    }
+  </div>
+</section>

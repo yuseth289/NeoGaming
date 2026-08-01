@@ -1,0 +1,69 @@
+<section class="space-y-6">
+  <div>
+    <p class="font-mono text-xs font-semibold uppercase tracking-widest text-neo-red">Admin</p>
+    <h2 class="mt-1 text-2xl font-bold text-neo-white">Configuracion</h2>
+  </div>
+
+  <neo-card [padding]="'md'">
+    @if (error()) {
+    <div class="mb-6 flex items-center gap-2 rounded-neo-md border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-300">
+      <lucide-angular [img]="icons.construction" [size]="16" [strokeWidth]="2" class="shrink-0 text-amber-400"></lucide-angular>
+      No fue posible cargar o guardar la configuracion.
+    </div>
+    }
+
+    <div [formGroup]="configForm" class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <label class="block">
+        <span class="mb-2 block text-sm font-semibold text-neo-white">Comision vendedor (%)</span>
+        <input
+          type="number"
+          formControlName="comisionVendedor"
+          class="h-11 w-full rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white disabled:opacity-60"
+          [disabled]="loading()"
+        />
+      </label>
+
+      <label class="block">
+        <span class="mb-2 block text-sm font-semibold text-neo-white">Pedido minimo</span>
+        <input
+          type="number"
+          formControlName="pedidoMinimo"
+          class="h-11 w-full rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white disabled:opacity-60"
+          [disabled]="loading()"
+        />
+      </label>
+
+      <label class="block">
+        <span class="mb-2 block text-sm font-semibold text-neo-white">Envio gratis desde</span>
+        <input
+          type="number"
+          formControlName="envioGratisDesde"
+          class="h-11 w-full rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white disabled:opacity-60"
+          [disabled]="loading()"
+        />
+      </label>
+
+      <label class="flex min-h-11 items-center gap-3 rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white">
+        <input type="checkbox" formControlName="mantenimientoActivo" class="h-4 w-4 accent-neo-red" />
+        Modo mantenimiento
+      </label>
+
+      <label class="flex min-h-11 items-center gap-3 rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white">
+        <input type="checkbox" formControlName="registroAbierto" class="h-4 w-4 accent-neo-red" />
+        Registro abierto
+      </label>
+
+      <label class="flex min-h-11 items-center gap-3 rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white">
+        <input type="checkbox" formControlName="vendedoresRequierenAprobacion" class="h-4 w-4 accent-neo-red" />
+        Vendedores requieren aprobacion
+      </label>
+    </div>
+
+    <div class="mt-6 flex justify-end">
+      <app-neo-button variant="primary" size="sm" [loading]="saving()" [disabled]="configForm.invalid || loading()" (neoClick)="save()">
+        <lucide-angular [img]="icons.settings" [size]="16" [strokeWidth]="2"></lucide-angular>
+        Guardar cambios
+      </app-neo-button>
+    </div>
+  </neo-card>
+</section>

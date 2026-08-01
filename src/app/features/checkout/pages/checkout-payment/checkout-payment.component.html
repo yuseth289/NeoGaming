@@ -1,0 +1,159 @@
+<section class="mx-auto w-full max-w-7xl px-4 text-neo-white sm:px-6 lg:px-8">
+  <app-checkout-progress [currentStep]="3"></app-checkout-progress>
+
+  <div class="mb-8">
+    <h1 class="text-h1">Pago</h1>
+    <p class="text-small text-neo-muted-text">Confirma el metodo de pago para finalizar el pedido.</p>
+  </div>
+
+  <div class="grid gap-4 sm:gap-6 lg:grid-cols-2">
+    <app-neo-card class="block" padding="md">
+      <form class="space-y-6" [formGroup]="form">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <article
+            class="cursor-pointer rounded-neo-lg border p-5 transition-neo duration-neo ease-neo"
+            [class.border-neo-red]="selectedMethod() === 'card'"
+            [class.shadow-neo-glow-red]="selectedMethod() === 'card'"
+            [class.border-neo-border]="selectedMethod() !== 'card'"
+            role="radio"
+            tabindex="0"
+            [attr.aria-checked]="selectedMethod() === 'card'"
+            (click)="setMethod('card')"
+            (keydown.enter)="setMethod('card')"
+            (keydown.space)="setMethod('card'); $event.preventDefault()"
+          >
+            <lucide-angular class="mb-4 text-neo-red-text" [img]="icons.card" [size]="22" [strokeWidth]="2"></lucide-angular>
+            <h2 class="text-h4">Tarjeta de credito/debito</h2>
+            <p class="text-xs text-neo-muted-text">Validacion basica de formato.</p>
+          </article>
+
+          <article
+            class="cursor-pointer rounded-neo-lg border p-5 transition-neo duration-neo ease-neo"
+            [class.border-neo-red]="selectedMethod() === 'pse'"
+            [class.shadow-neo-glow-red]="selectedMethod() === 'pse'"
+            [class.border-neo-border]="selectedMethod() !== 'pse'"
+            role="radio"
+            tabindex="0"
+            [attr.aria-checked]="selectedMethod() === 'pse'"
+            (click)="setMethod('pse')"
+            (keydown.enter)="setMethod('pse')"
+            (keydown.space)="setMethod('pse'); $event.preventDefault()"
+          >
+            <lucide-angular class="mb-4 text-neo-cyan" [img]="icons.pse" [size]="22" [strokeWidth]="2"></lucide-angular>
+            <h2 class="text-h4">PSE / Transferencia</h2>
+            <p class="text-xs text-neo-muted-text">Banco y documento para pago pendiente.</p>
+          </article>
+        </div>
+
+        @if (selectedMethod() === 'card') {
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="sm:col-span-2">
+              <app-neo-input
+                label="Numero de tarjeta"
+                icon="credit-card"
+                placeholder="4242 4242 4242 4242"
+                formControlName="cardNumber"
+                [error]="fieldError('cardNumber')"
+              ></app-neo-input>
+            </div>
+            <div class="sm:col-span-2">
+              <app-neo-input
+                label="Nombre en tarjeta"
+                placeholder="Nombre completo"
+                formControlName="cardName"
+                [error]="fieldError('cardName')"
+              ></app-neo-input>
+            </div>
+            <app-neo-input
+              label="Fecha expiracion"
+              placeholder="MM/YY"
+              formControlName="expiry"
+              [error]="fieldError('expiry')"
+            ></app-neo-input>
+            <app-neo-input
+              label="CVV"
+              type="password"
+              placeholder="123"
+              formControlName="cvv"
+              [error]="fieldError('cvv')"
+            ></app-neo-input>
+          </div>
+        } @else {
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="sm:col-span-2">
+              <app-neo-select
+                label="Banco"
+                placeholder="Selecciona banco"
+                [options]="bankOptions"
+                formControlName="bank"
+                [error]="fieldError('bank')"
+              ></app-neo-select>
+            </div>
+            <app-neo-select
+              label="Tipo de documento"
+              placeholder="Selecciona tipo"
+              [options]="documentOptions"
+              formControlName="documentType"
+              [error]="fieldError('documentType')"
+            ></app-neo-select>
+            <app-neo-input
+              label="Numero de documento"
+              placeholder="123456789"
+              formControlName="documentNumber"
+              [error]="fieldError('documentNumber')"
+            ></app-neo-input>
+          </div>
+        }
+
+        <div class="flex items-center gap-3 rounded-neo-md border border-neo-border bg-neo-elevated p-5 text-small text-neo-subtle">
+          <lucide-angular class="text-neo-green" [img]="icons.lock" [size]="16" [strokeWidth]="2"></lucide-angular>
+          Tus datos estan cifrados y protegidos.
+        </div>
+      </form>
+    </app-neo-card>
+
+    <aside class="space-y-4 lg:sticky lg:top-24">
+      <app-neo-card class="block" padding="md">
+        @if (resumen(); as total) {
+          <div class="space-y-4">
+            <h2 class="text-h3">Resumen final</h2>
+            <p class="text-small text-neo-muted-text">{{ total.cantidadItems }} articulos</p>
+            <div class="space-y-4 border-y border-neo-border p-5 text-small">
+              <div class="flex justify-between gap-4">
+                <span class="text-neo-muted-text">Subtotal</span>
+                <strong>{{ total.subtotal | copPrice }}</strong>
+              </div>
+              <div class="flex justify-between gap-4">
+                <span class="text-neo-muted-text">Envio</span>
+                <strong [class.text-neo-green]="total.costoEnvio === 0">
+                  {{ total.costoEnvio === 0 ? 'Gratis' : (total.costoEnvio | copPrice) }}
+                </strong>
+              </div>
+              <div class="flex justify-between gap-4">
+                <span class="text-neo-muted-text">Descuento</span>
+                <strong class="text-neo-green">$ 0</strong>
+              </div>
+            </div>
+            <div class="flex items-end justify-between gap-4">
+              <span class="text-h4">Total</span>
+              <strong class="text-h1 text-neo-red-text">{{ total.total | copPrice }}</strong>
+            </div>
+          </div>
+        } @else {
+          <p class="text-small text-neo-muted-text">Vuelve al resumen para iniciar el checkout.</p>
+        }
+      </app-neo-card>
+
+      <app-neo-button
+        variant="primary"
+        size="lg"
+        fullWidth
+        [loading]="submitting()"
+        (neoClick)="submit()"
+      >
+        Confirmar y pagar
+      </app-neo-button>
+      <app-neo-button routerLink="/checkout/envio" variant="ghost" fullWidth>Volver al envio</app-neo-button>
+    </aside>
+  </div>
+</section>

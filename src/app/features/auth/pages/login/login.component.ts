@@ -1,41 +1,49 @@
 import { Component, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthApi } from '../../../../core/auth/data-access/auth.api';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { parseApiError } from '../../../../core/http/api-error.utils';
+import {
+  NeoCardComponent,
+  NeoInputComponent,
+  NeoSpinnerComponent,
+  NeoToastService,
+} from '../../../../shared/ui';
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    NeoCardComponent,
+    NeoInputComponent,
+    NeoSpinnerComponent,
+  ],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.css'
 })
 export class LoginComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authApi = inject(AuthApi);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly authSession = inject(AuthSessionService);
-  readonly modalMode = input(false);
+  private readonly toast = inject(NeoToastService);
+
+  readonly embeddedMode = input<boolean>(false);
+  readonly authSuccess = output<void>();
   readonly switchToRegister = output<void>();
-  readonly closeModal = output<void>();
 
   protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
-  protected readonly success = signal<string | null>(null);
-  protected readonly showPassword = signal(false);
+  protected readonly submitLabel = 'Iniciar sesión';
 
   protected readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
-    remember: [false]
+    password: ['', [Validators.required, Validators.minLength(8)]],
   });
 
   protected submit(): void {
-    this.error.set(null);
-    this.success.set(null);
-
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -45,37 +53,47 @@ export class LoginComponent {
     this.authApi
       .login({
         email: this.form.controls.email.value,
-        password: this.form.controls.password.value
+        password: this.form.controls.password.value,
       })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (response) => {
           const user = this.authSession.handleLoginResponse(response);
           if (!user) {
-            this.error.set('No se pudo abrir la sesion con la respuesta del servidor.');
+            this.toast.error('No se pudo abrir la sesion con la respuesta del servidor.');
             return;
           }
 
-          this.success.set('Inicio de sesion correcta.');
-          if (this.modalMode()) {
-            this.closeModal.emit();
+          if (this.embeddedMode()) {
+            this.authSuccess.emit();
             return;
           }
 
-          void this.router.navigate(['/']);
+          const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/home';
+          void this.router.navigateByUrl(returnUrl);
         },
         error: (error) => {
-          this.error.set(parseApiError(error).message || 'No se pudo iniciar sesion. Verifica tus datos o intenta de nuevo.');
-        }
+          this.toast.error(parseApiError(error).message || 'No se pudo iniciar sesion.');
+        },
       });
   }
 
-  protected togglePasswordVisibility(): void {
-    this.showPassword.update((value) => !value);
-  }
-
-  protected showFieldError(control: 'email' | 'password'): boolean {
+  protected fieldError(control: 'email' | 'password'): string {
     const field = this.form.controls[control];
-    return field.invalid && (field.dirty || field.touched);
+    if (!(field.invalid && (field.dirty || field.touched))) {
+      return '';
+    }
+
+    if (field.hasError('required')) {
+      return 'Este campo es obligatorio.';
+    }
+    if (field.hasError('email')) {
+      return 'Ingresa un email valido.';
+    }
+    if (field.hasError('minlength')) {
+      return 'La contrasena debe tener minimo 8 caracteres.';
+    }
+
+    return 'Valor invalido.';
   }
 }

@@ -1,0 +1,70 @@
+<label class="block" [attr.for]="inputId">
+  @if (label) {
+    <span
+      [class]="labelSrOnly ? 'sr-only' : 'mb-1 block text-sm font-semibold text-neo-white'"
+    >
+      {{ label }}
+    </span>
+  }
+
+  <span class="relative block">
+    @if (iconData) {
+      <lucide-angular
+        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neo-muted-text"
+        [img]="iconData"
+        [size]="16"
+        [strokeWidth]="2"
+      ></lucide-angular>
+    }
+
+    @if (type === 'textarea') {
+      <textarea
+        [id]="inputId"
+        [value]="value"
+        [placeholder]="placeholder"
+        [disabled]="isDisabled"
+        [rows]="rows"
+        [class]="inputClasses()"
+        [attr.aria-invalid]="!!error"
+        [attr.aria-describedby]="error || hint ? inputId + '-support' : null"
+        (input)="handleInput($event)"
+        (blur)="handleBlur()"
+      ></textarea>
+    } @else {
+      <input
+        [id]="inputId"
+        [type]="resolvedType"
+        [value]="value"
+        [placeholder]="placeholder"
+        [disabled]="isDisabled"
+        [class]="inputClasses()"
+        [attr.aria-invalid]="!!error"
+        [attr.aria-describedby]="error || hint ? inputId + '-support' : null"
+        (input)="handleInput($event)"
+        (blur)="handleBlur()"
+      />
+    }
+
+    @if (type === 'password') {
+      <button
+        type="button"
+        class="absolute right-3 top-1/2 -translate-y-1/2 text-neo-muted-text transition-neo duration-neo ease-neo hover:text-neo-white disabled:cursor-not-allowed disabled:opacity-60"
+        [disabled]="isDisabled"
+        [attr.aria-label]="passwordVisible ? 'Ocultar contrasena' : 'Mostrar contrasena'"
+        (click)="togglePasswordVisibility()"
+      >
+        <lucide-angular
+          [img]="passwordVisible ? icons.eyeOff : icons.eye"
+          [size]="16"
+          [strokeWidth]="2"
+        ></lucide-angular>
+      </button>
+    }
+  </span>
+</label>
+
+@if (error) {
+  <p [id]="inputId + '-support'" class="mt-1 text-xs text-red-400">{{ error }}</p>
+} @else if (hint) {
+  <p [id]="inputId + '-support'" class="text-xs text-neo-muted-text">{{ hint }}</p>
+}

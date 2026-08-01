@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 
@@ -9,6 +9,7 @@ import { authInterceptor } from './core/auth/auth.interceptor';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
 import { mockApiInterceptor } from './core/http/mocks/mock-api.interceptor';
 import { environment } from '../environments/environment';
+import { AuthSessionService } from './core/auth/auth-session.service';
 
 const httpInterceptors = environment.useMockApi
   ? [authInterceptor, errorInterceptor, mockApiInterceptor]
@@ -26,6 +27,7 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(withFetch(), withInterceptors(httpInterceptors)),
     provideClientHydration(withEventReplay()),
-    { provide: API_BASE_URL, useValue: environment.apiBaseUrl }
+    { provide: API_BASE_URL, useValue: environment.apiBaseUrl },
+    provideAppInitializer(() => inject(AuthSessionService).restoreSessionBeforeGuards())
   ]
 };

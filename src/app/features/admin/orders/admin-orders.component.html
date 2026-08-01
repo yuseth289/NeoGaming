@@ -1,0 +1,98 @@
+<section class="space-y-6">
+  <div>
+    <p class="font-mono text-xs font-semibold uppercase tracking-widest text-neo-red">Admin</p>
+    <h2 class="mt-1 text-2xl font-bold text-neo-white">Pedidos</h2>
+  </div>
+
+  <neo-card [padding]="'md'">
+    <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label class="relative block w-full sm:w-72">
+          <span class="sr-only">Buscar pedidos</span>
+          <lucide-angular class="absolute left-3 top-1/2 -translate-y-1/2 text-neo-muted" [img]="icons.search" [size]="16" [strokeWidth]="2"></lucide-angular>
+          <input
+            type="search"
+            class="h-11 w-full rounded-neo-md border border-neo-border bg-neo-elevated pl-10 pr-3 text-sm text-neo-white placeholder-neo-muted"
+            placeholder="Buscar por numero o cliente"
+            readonly
+          />
+        </label>
+
+        <select class="h-11 rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white" disabled>
+          <option>Todos los estados</option>
+          <option>PENDIENTE_PAGO</option>
+          <option>PAGADO</option>
+          <option>PREPARANDO</option>
+          <option>ENVIADO</option>
+          <option>ENTREGADO</option>
+          <option>CANCELADO</option>
+        </select>
+      </div>
+
+      <div class="inline-flex items-center gap-2 rounded-neo-md border border-neo-border bg-neo-elevated px-3 py-2 text-sm text-neo-muted">
+        <lucide-angular [img]="icons.bag" [size]="16" [strokeWidth]="2"></lucide-angular>
+        {{ totalElements() }} pedidos
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[60rem] text-left text-sm">
+        <thead class="border-b border-neo-border text-xs uppercase tracking-wider text-neo-muted">
+          <tr>
+            <th class="py-3 pr-4 font-semibold">Pedido</th>
+            <th class="px-4 py-3 font-semibold">Cliente</th>
+            <th class="px-4 py-3 font-semibold">Fecha</th>
+            <th class="px-4 py-3 font-semibold">Estado</th>
+            <th class="px-4 py-3 font-semibold">Items</th>
+            <th class="px-4 py-3 font-semibold">Total</th>
+            <th class="py-3 pl-4 text-right font-semibold">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-neo-border">
+          @if (loading()) {
+          <tr>
+            <td colspan="7" class="py-16 text-center">
+              <lucide-angular [img]="icons.clock" [size]="32" [strokeWidth]="2" class="mx-auto mb-3 text-neo-muted"></lucide-angular>
+              <p class="text-sm text-neo-muted-text">Cargando pedidos</p>
+            </td>
+          </tr>
+          } @else if (error()) {
+            <tr>
+              <td colspan="7" class="py-16 text-center text-sm text-red-300">No fue posible cargar pedidos.</td>
+            </tr>
+          } @else if (orders().length) {
+            @for (order of orders(); track order.idPedido) {
+              <tr class="text-neo-subtle">
+                <td class="py-3 pr-4 font-semibold text-neo-white">#{{ order.idPedido }}</td>
+                <td class="px-4 py-3">Usuario en detalle</td>
+                <td class="px-4 py-3">{{ formatDate(order.fechaCreacion) }}</td>
+                <td class="px-4 py-3">
+                  <select
+                    class="h-9 rounded-neo-md border border-neo-border bg-neo-elevated px-2 text-xs font-semibold text-neo-white"
+                    [value]="order.estado"
+                    (change)="updateStatus(order, $any($event.target).value)"
+                  >
+                    @for (status of statuses; track status) {
+                      <option [value]="status">{{ status }}</option>
+                    }
+                  </select>
+                </td>
+                <td class="px-4 py-3">{{ order.cantidadItems }}</td>
+                <td class="px-4 py-3">{{ formatMoney(order.total) }}</td>
+                <td class="py-3 pl-4 text-right text-xs text-neo-muted">Global</td>
+              </tr>
+            }
+          } @else {
+            <tr>
+              <td colspan="7" class="py-16 text-center text-sm text-neo-muted">No hay pedidos para mostrar.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-5">
+      <app-neo-pagination [currentPage]="currentPage()" [totalPages]="totalPages()" [totalElements]="totalElements()" [pageSize]="pageSize" (pageChange)="loadOrders($event)"></app-neo-pagination>
+    </div>
+  </neo-card>
+</section>

@@ -10,7 +10,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #a1a1a1;
+  color: var(--color-neo-subtle);
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: 11px;
@@ -22,5 +22,5 @@
 }
 
 .breadcrumb a:hover {
-  color: #ffffff;
+  color: var(--color-neo-white);
 }

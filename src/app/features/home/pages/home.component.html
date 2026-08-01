@@ -1,176 +1,246 @@
-<section class="hero">
-  <div class="hero-media">
-    @for (slide of heroSlides; track slide.image; let idx = $index) {
-      <img
-        class="hero-slide"
-        [class.active]="currentHeroIndex() === idx"
-        [src]="slide.image"
-        [alt]="slide.alt"
-        width="1900"
-        height="760"
-        [attr.fetchpriority]="idx === 0 ? 'high' : 'auto'"
-        [loading]="idx === 0 ? 'eager' : 'lazy'"
-      />
-    }
-  </div>
+<div class="space-y-20 bg-neo-base">
+  <section class="relative isolate overflow-hidden">
+    <div
+      class="absolute inset-0 -z-10 bg-neo-red/10 blur-3xl"
+    ></div>
+    <div
+      class="mx-auto grid min-h-96 max-w-7xl items-center gap-4 px-4 sm:gap-6 sm:px-6 lg:min-h-screen lg:grid-cols-2 lg:px-8"
+    >
+      <div class="max-w-2xl space-y-6">
+        <app-neo-badge variant="new">Lanzamiento exclusivo</app-neo-badge>
+        <div class="space-y-4">
+          <h1 class="text-display text-neo-white">Equipa tu setup. Domina tu juego.</h1>
+          <p class="max-w-xl text-body text-neo-subtle">
+            Los mejores periféricos, componentes y accesorios gaming. Envíos a toda Colombia.
+          </p>
+        </div>
 
-  <div class="hero-overlay"></div>
+        <div class="flex flex-col gap-4 sm:flex-row">
+          <app-neo-button size="lg" variant="primary" [routerLink]="['/catalogo']">
+            Ver catálogo
+          </app-neo-button>
+          <app-neo-button
+            size="lg"
+            variant="outline"
+            [routerLink]="['/catalogo']"
+            [queryParams]="{ oferta: true }"
+          >
+            Ver ofertas
+          </app-neo-button>
+        </div>
 
-  <div class="hero-content">
-    <h1>
-      <span class="typewriter-line typewriter-line--first">Libera Tu Potencial</span>
-      <span class="typewriter-line typewriter-line--second">de Juego</span>
-    </h1>
-    <p>Todo lo que necesitas para subir de nivel en un solo lugar.</p>
+        <div class="flex flex-wrap gap-3 text-small text-neo-subtle">
+          <span class="inline-flex items-center gap-3">
+            <lucide-angular
+              class="text-neo-cyan"
+              [img]="icons.shield"
+              [size]="17"
+              [strokeWidth]="2"
+            ></lucide-angular>
+            Pago seguro
+          </span>
+          <span class="inline-flex items-center gap-3">
+            <lucide-angular
+              class="text-neo-cyan"
+              [img]="icons.truck"
+              [size]="17"
+              [strokeWidth]="2"
+            ></lucide-angular>
+            Envio gratis +$50
+          </span>
+          <span class="inline-flex items-center gap-3">
+            <lucide-angular
+              class="text-neo-cyan"
+              [img]="icons.returns"
+              [size]="17"
+              [strokeWidth]="2"
+            ></lucide-angular>
+            30 dias devolucion
+          </span>
+        </div>
+      </div>
 
-    <div class="hero-actions">
-      <a routerLink="/catalog" class="btn-primary">Comprar ahora</a>
-      <a routerLink="/catalog" [queryParams]="{ discount: 'true' }" class="btn-secondary">Ver ofertas</a>
-    </div>
-  </div>
-
-  <div class="hero-controls">
-    <button type="button" class="hero-nav" aria-label="Imagen anterior" (click)="prevHeroSlide()">‹</button>
-    <div class="hero-dots" role="tablist" aria-label="Carrusel hero">
-      @for (slide of heroSlides; track slide.image; let idx = $index) {
-        <button
-          type="button"
-          class="hero-dot"
-          [class.active]="currentHeroIndex() === idx"
-          [attr.aria-label]="'Ir a imagen ' + (idx + 1)"
-          [attr.aria-current]="currentHeroIndex() === idx"
-          (click)="goToHeroSlide(idx)"
-        ></button>
-      }
-    </div>
-    <button type="button" class="hero-nav" aria-label="Siguiente imagen" (click)="nextHeroSlide()">›</button>
-  </div>
-</section>
-
-<section class="products" aria-labelledby="featured-title" #productsSection [class.revealed]="revealProducts()">
-  <h2 id="featured-title">Productos destacados</h2>
-
-  @if (cartMessage()) {
-    <p class="home-cart-message">{{ cartMessage() }}</p>
-  }
-
-  <div class="products-grid">
-    @if (!revealProducts() || loadingProducts()) {
-      @for (_item of skeletonCards; track $index) {
-        <article class="product-card skeleton">
-          <div class="sk-image"></div>
-          <div class="sk-title"></div>
-          <div class="sk-meta"></div>
-          <div class="sk-actions"></div>
-        </article>
-      }
-    } @else {
-      @for (product of products(); track product.idProducto) {
-        <article class="product-card">
-          <img
-            [src]="product.urlImagenPrincipal || ''"
-            [alt]="product.nombre"
-            width="460"
-            height="220"
-            loading="lazy"
-            decoding="async"
-          />
-
-          <h3>{{ product.nombre }}</h3>
-
-          <p class="support-info">{{ product.nombreVendedor }}</p>
-          <p class="support-info">{{ stockLabel(product) }}</p>
-
-          <div class="price-line">
-            <strong>{{ product.precioVigente | copPrice }}</strong>
-            @if (oldPrice(product)) {
-              <small>{{ oldPrice(product) | copPrice }}</small>
+      @if (!categoriesFailed() && (categoriesLoading() || heroCategories().length > 0)) {
+        <div class="grid grid-cols-2 gap-4">
+          @if (categoriesLoading()) {
+            @for (item of heroCategorySkeletons; track $index) {
+              <app-neo-skeleton variant="block" height="9rem" />
             }
-          </div>
-
-          <div class="card-actions">
-            <button
-              type="button"
-              class="btn-primary"
-              [class.loading]="addingProductId() === product.idProducto"
-              [disabled]="addingProductId() === product.idProducto"
-              (click)="addToCart(product)"
-            >
-              @if (addingProductId() === product.idProducto) {
-                Agregando...
-              } @else {
-                Agregar al carrito
-              }
-            </button>
-            <a
-              class="btn-secondary"
-              [routerLink]="['/product', product.slug || product.idProducto]"
-            >
-              Ver detalles
-            </a>
-          </div>
-        </article>
-      }
-    }
-  </div>
-</section>
-
-<section class="categories" aria-labelledby="categories-title">
-  <h2 id="categories-title">Explorar categorías</h2>
-
-  <div class="categories-grid">
-    @for (category of categories(); track category.slug) {
-      <a
-        class="category-card"
-        routerLink="/catalog"
-        [queryParams]="{ category: category.slug }"
-      >
-        <span class="category-icon" aria-hidden="true">
-          @switch (category.icon) {
-            @case ('console') {
-              <svg viewBox="0 0 24 24">
-                <rect x="3" y="8" width="18" height="8" rx="3" fill="none" stroke="currentColor" stroke-width="2" />
-                <circle cx="8" cy="12" r="1.4" fill="currentColor" />
-                <circle cx="16" cy="12" r="1.4" fill="currentColor" />
-              </svg>
-            }
-            @case ('gamepad') {
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M7 9h10a4 4 0 0 1 3.7 5.4l-1.2 3a2.5 2.5 0 0 1-4.5.3l-1.2-1.9a3 3 0 0 0-5.1 0l-1.2 1.9a2.5 2.5 0 0 1-4.5-.3l-1.2-3A4 4 0 0 1 7 9z"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linejoin="round"
-                />
-                <path d="M9 12h-2M8 11v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                <circle cx="16" cy="12" r="1" fill="currentColor" />
-                <circle cx="18" cy="10.5" r="1" fill="currentColor" />
-              </svg>
-            }
-            @case ('cpu') {
-              <svg viewBox="0 0 24 24">
-                <rect x="7" y="7" width="10" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
-                <path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-              </svg>
-            }
-            @case ('headset') {
-              <svg viewBox="0 0 24 24">
-                <path d="M4 12a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2" />
-                <rect x="3" y="12" width="4" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
-                <rect x="17" y="12" width="4" height="6" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
-              </svg>
-            }
-            @case ('monitor') {
-              <svg viewBox="0 0 24 24">
-                <rect x="3" y="5" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
-                <path d="M9 19h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-              </svg>
+          } @else {
+            @for (category of heroCategories(); track category.idCategoria; let index = $index) {
+              <a
+                class="group min-h-36 rounded-neo-lg border border-neo-border bg-neo-elevated p-5 shadow-neo-card transition-neo duration-neo ease-neo hover:border-neo-border-bright hover:bg-neo-surface"
+                [routerLink]="['/catalogo']"
+                [queryParams]="{ category: category.slug }"
+              >
+                <span
+                  class="mb-5 grid h-12 w-12 place-items-center rounded-neo-md bg-neo-red/10 text-neo-red-text transition-neo duration-neo ease-neo group-hover:bg-neo-red group-hover:text-white"
+                >
+                  <lucide-angular
+                    [img]="categoryIcon(index)"
+                    [size]="24"
+                    [strokeWidth]="2"
+                  ></lucide-angular>
+                </span>
+                <span class="text-h4 text-neo-white">{{ category.nombre }}</span>
+              </a>
             }
           }
-        </span>
-        <span>{{ category.label }}</span>
-      </a>
-    }
-  </div>
-</section>
+        </div>
+      }
+    </div>
+  </section>
+
+  @if (showCategories()) {
+    <section class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="mb-8 flex items-center justify-between">
+        <h2 class="text-h2 text-neo-white">Categorias destacadas</h2>
+      </div>
+
+      <div class="flex snap-x snap-mandatory gap-4 overflow-x-auto sm:gap-6">
+        @if (categoriesLoading()) {
+          @for (item of categorySkeletons; track $index) {
+            <div class="w-32 shrink-0">
+              <app-neo-skeleton variant="block" width="8rem" height="8rem" />
+            </div>
+          }
+        } @else {
+          @for (category of categories(); track category.idCategoria) {
+            <app-neo-card
+              class="block w-32 shrink-0 snap-start"
+              hoverable
+              padding="sm"
+              [routerLink]="['/catalogo']"
+              [queryParams]="{ category: category.slug }"
+            >
+              <div class="grid gap-4 text-center">
+                <div
+                  class="mx-auto grid h-12 w-12 place-items-center rounded-full bg-neo-elevated text-neo-red-text"
+                >
+                  <lucide-angular
+                    [img]="icons.gamepad"
+                    [size]="24"
+                    [strokeWidth]="2"
+                  ></lucide-angular>
+                </div>
+                <span class="text-small font-semibold text-neo-white">{{ category.nombre }}</span>
+              </div>
+            </app-neo-card>
+          }
+        }
+      </div>
+    </section>
+  }
+
+  @if (showBestSellers()) {
+    <section class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="mb-8 flex items-center justify-between gap-3">
+        <h2 class="text-h2 text-neo-white">Mas vendidos</h2>
+        <a
+          class="text-small font-semibold text-neo-red-text transition-neo duration-neo ease-neo hover:text-neo-white"
+          routerLink="/catalogo"
+        >
+          Ver todos
+        </a>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+        @if (bestSellersLoading()) {
+          @for (item of productSkeletons; track $index) {
+            <app-neo-skeleton variant="card" height="25rem" />
+          }
+        } @else {
+          @for (product of bestSellers(); track product.idProducto) {
+            <app-product-card [product]="product" (addToCart)="addToCart($event)" />
+          }
+        }
+      </div>
+    </section>
+  }
+
+  <section class="border-y border-neo-border bg-neo-surface">
+    <div class="mx-auto grid max-w-7xl gap-4 px-4 sm:gap-6 sm:px-6 lg:grid-cols-2 lg:px-8">
+      <app-neo-card padding="lg">
+        <div class="space-y-4 border-l-4 border-neo-red p-5">
+          <app-neo-badge variant="new" size="sm">Drop semanal</app-neo-badge>
+          <h2 class="text-h2 text-neo-white">Arma tu setup con combos premium</h2>
+          <p class="text-body text-neo-subtle">
+            Bundles seleccionados para rendimiento, streaming y perifericos competitivos.
+          </p>
+          <div>
+            <!-- TODO: wire promotions to backend when endpoint exists. -->
+            <app-neo-button
+              variant="primary"
+              [routerLink]="['/catalogo']"
+              [queryParams]="{ bundle: true }"
+            >
+              Ver combos
+            </app-neo-button>
+          </div>
+        </div>
+      </app-neo-card>
+
+      <app-neo-card padding="lg">
+        <div class="space-y-4 border-l-4 border-neo-cyan p-5">
+          <app-neo-badge variant="info" size="sm">Envio express</app-neo-badge>
+          <h2 class="text-h2 text-neo-white">Recibe tus upgrades antes del finde</h2>
+          <p class="text-body text-neo-subtle">
+            Despacho rapido en productos seleccionados y pagos verificados.
+          </p>
+          <div>
+            <!-- TODO: wire promotions to backend when endpoint exists. -->
+            <app-neo-button
+              variant="secondary"
+              [routerLink]="['/catalogo']"
+              [queryParams]="{ envio: 'express' }"
+            >
+              Explorar
+            </app-neo-button>
+          </div>
+        </div>
+      </app-neo-card>
+    </div>
+  </section>
+
+  @if (showRecentlyViewed()) {
+    <section class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <h2 class="mb-8 text-h2 text-neo-white">Vistos recientemente</h2>
+      <div class="flex gap-4 overflow-x-auto sm:gap-6">
+        @for (product of recentlyViewed(); track product.idProducto) {
+          <div class="w-72 shrink-0">
+            <app-product-card [product]="product" (addToCart)="addToCart($event)" />
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+    <div
+      class="mx-auto mb-8 grid h-14 w-14 place-items-center rounded-full border border-neo-border bg-neo-elevated text-neo-cyan"
+    >
+      <lucide-angular [img]="icons.mail" [size]="26" [strokeWidth]="2"></lucide-angular>
+    </div>
+    <h2 class="text-h2 text-neo-white">Suscribete y obten 10% de descuento</h2>
+    <p class="mx-auto max-w-xl text-body text-neo-subtle">
+      Recibe lanzamientos, ofertas y drops sin salirte del carril competitivo.
+    </p>
+
+    <form
+      class="mx-auto flex max-w-xl flex-col gap-4 sm:flex-row sm:gap-6"
+      (submit)="submitNewsletter($event)"
+    >
+      <div class="flex-1">
+        <app-neo-input
+          label="Tu correo electrónico"
+          [labelSrOnly]="true"
+          placeholder="tu@email.com"
+          icon="mail"
+          type="email"
+          [formControl]="newsletterEmail"
+        />
+      </div>
+      <app-neo-button type="submit" variant="primary">Suscribirse</app-neo-button>
+    </form>
+  </section>
+</div>

@@ -1,0 +1,19 @@
+<button
+  [type]="type"
+  [disabled]="disabled || loading"
+  [class]="buttonClasses()"
+  [attr.aria-label]="ariaLabel || null"
+  [attr.aria-busy]="loading"
+  (click)="handleClick($event)"
+>
+  @if (loading) {
+    <lucide-angular
+      class="animate-spin"
+      [img]="icons.loader"
+      [size]="16"
+      [strokeWidth]="2"
+    ></lucide-angular>
+  } @else {
+    <ng-content />
+  }
+</button>

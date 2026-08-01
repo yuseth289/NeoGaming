@@ -1,0 +1,91 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h2 class="text-h3 font-semibold text-neo-white">Mis direcciones</h2>
+    <app-neo-button variant="secondary" size="sm" (neoClick)="openCreate()">
+      <lucide-angular [img]="icons.plus" [size]="14" [strokeWidth]="2" class="mr-1"></lucide-angular>
+      Anadir direccion
+    </app-neo-button>
+  </div>
+
+  @if (loading()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      @for (i of [1, 2]; track i) {
+        <app-neo-skeleton variant="block" height="140px"></app-neo-skeleton>
+      }
+    </div>
+  } @else if (addresses().length > 0) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      @for (address of addresses(); track address.id) {
+        <app-neo-card padding="md">
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <lucide-angular class="text-neo-muted shrink-0" [img]="icons.mapPin" [size]="16" [strokeWidth]="2"></lucide-angular>
+              <span class="text-sm font-semibold text-neo-white">{{ title(address) }}</span>
+            </div>
+            @if (address.esPrincipal) {
+              <app-neo-badge variant="success">Predeterminada</app-neo-badge>
+            }
+          </div>
+          <p class="text-sm text-neo-muted-text leading-relaxed mb-4">
+            {{ addressLine(address) }}, {{ region(address) }}
+          </p>
+          <div class="flex gap-2">
+            <app-neo-button variant="ghost" size="sm" (neoClick)="openEdit(address)">
+              <lucide-angular [img]="icons.edit" [size]="13" [strokeWidth]="2"></lucide-angular>
+              Editar
+            </app-neo-button>
+            <app-neo-button variant="ghost" size="sm" (neoClick)="deleteTarget.set(address)">
+              <lucide-angular class="text-red-400" [img]="icons.trash" [size]="13" [strokeWidth]="2"></lucide-angular>
+              Eliminar
+            </app-neo-button>
+          </div>
+        </app-neo-card>
+      }
+    </div>
+  } @else {
+    <app-neo-card padding="md">
+      <div class="flex flex-col items-center py-10 gap-3">
+        <lucide-angular class="text-neo-muted" [img]="icons.mapPin" [size]="36" [strokeWidth]="2"></lucide-angular>
+        <p class="text-sm text-neo-muted-text">No tienes direcciones guardadas</p>
+        <app-neo-button variant="secondary" size="sm" (neoClick)="openCreate()">
+          Anadir primera direccion
+        </app-neo-button>
+      </div>
+    </app-neo-card>
+  }
+</div>
+
+<ng-template #addressForm>
+  <form class="grid gap-4" [formGroup]="form">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <app-neo-select label="Alias" [options]="addressTypeOptions" formControlName="tipo" [error]="fieldError('tipo')"></app-neo-select>
+      <app-neo-input label="Calle" formControlName="calle" [error]="fieldError('calle')"></app-neo-input>
+      <app-neo-input label="Numero" formControlName="numero" [error]="fieldError('numero')"></app-neo-input>
+      <app-neo-input label="Ciudad" formControlName="ciudad" [error]="fieldError('ciudad')"></app-neo-input>
+      <app-neo-input label="Estado / Departamento" formControlName="departamento" [error]="fieldError('departamento')"></app-neo-input>
+      <app-neo-input label="Codigo postal" formControlName="codigoPostal" [error]="fieldError('codigoPostal')"></app-neo-input>
+      <app-neo-input label="Pais" formControlName="pais" [error]="fieldError('pais')"></app-neo-input>
+    </div>
+    <app-neo-input label="Referencia" type="textarea" formControlName="referencia" [error]="fieldError('referencia')"></app-neo-input>
+    <label class="flex items-center gap-3 text-small text-neo-subtle">
+      <input class="h-4 w-4 accent-neo-red" type="checkbox" formControlName="esPrincipal" />
+      Marcar como predeterminada
+    </label>
+  </form>
+</ng-template>
+
+<app-neo-modal [open]="modalOpen()" [title]="editingAddress() ? 'Editar direccion' : 'Anadir direccion'" size="md" (close)="closeModal()">
+  <ng-container [ngTemplateOutlet]="addressForm"></ng-container>
+  <div neo-modal-footer class="flex justify-end gap-3 border-t border-neo-border p-5">
+    <app-neo-button variant="ghost" [disabled]="saving()" (neoClick)="closeModal()">Cancelar</app-neo-button>
+    <app-neo-button variant="primary" [loading]="saving()" (neoClick)="saveAddress()">Guardar</app-neo-button>
+  </div>
+</app-neo-modal>
+
+<app-neo-modal [open]="!!deleteTarget()" title="Eliminar direccion" size="sm" (close)="deleteTarget.set(null)">
+  <p class="text-small text-neo-subtle">¿Eliminar esta direccion?</p>
+  <div neo-modal-footer class="flex justify-end gap-3 border-t border-neo-border p-5">
+    <app-neo-button variant="ghost" [disabled]="deleting()" (neoClick)="deleteTarget.set(null)">Cancelar</app-neo-button>
+    <app-neo-button variant="danger" [loading]="deleting()" (neoClick)="confirmDelete()">Eliminar</app-neo-button>
+  </div>
+</app-neo-modal>

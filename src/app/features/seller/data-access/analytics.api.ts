@@ -1,18 +1,22 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client/api-client.service';
+import {
+  ResumenAdminResponse,
+  ResumenVendedorResponse
+} from '../../../core/models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsApi {
   private readonly api = inject(ApiClient);
 
-  // TODO: integrar con GET /api/analitica/admin/* (pendiente de implementación)
-  getAdminSummary(): Observable<object> {
-    return this.api.get<object>('/analitica/admin/resumen');
+  // TYPED: was Observable<object>, now ResumenAdminResponse per Phase 0 audit
+  getAdminSummary(): Observable<ResumenAdminResponse> {
+    return this.api.get<ResumenAdminResponse>('/analitica/admin/resumen');
   }
 
-  // TODO: integrar con GET /api/analitica/vendedor/* (pendiente de implementación)
-  getSellerSummary(): Observable<object> {
-    return this.api.get<object>('/analitica/vendedor/resumen');
+  // TYPED: was Observable<object>, now ResumenVendedorResponse per Phase 0 audit
+  getSellerSummary(): Observable<ResumenVendedorResponse> {
+    return this.api.get<ResumenVendedorResponse>('/analitica/vendedor/resumen');
   }
 }

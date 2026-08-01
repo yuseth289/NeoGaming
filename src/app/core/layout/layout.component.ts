@@ -1,21 +1,31 @@
 import { Component, HostListener, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
-import { HeaderComponent } from '../../shared/header/header.component';
-import { FooterComponent } from '../../shared/footer/footer.component';
+import { HeaderComponent } from './header/header.component';
+import { FooterComponent } from './footer/footer.component';
 import { LoginComponent } from '../../features/auth/pages/login/login.component';
 import { RegisterComponent } from '../../features/auth/pages/register/register.component';
 import { ChatbotWidgetComponent } from '../../shared/chatbot-widget/chatbot-widget.component';
+import { NeoModalComponent, PageWrapperComponent } from '../../shared/ui';
 
 @Component({
   selector: 'app-layout',
-  imports: [RouterOutlet, HeaderComponent, FooterComponent, LoginComponent, RegisterComponent, ChatbotWidgetComponent],
+  imports: [
+    RouterOutlet,
+    HeaderComponent,
+    FooterComponent,
+    LoginComponent,
+    RegisterComponent,
+    ChatbotWidgetComponent,
+    NeoModalComponent,
+    PageWrapperComponent,
+  ],
   templateUrl: './layout.component.html',
-  styleUrl: './layout.component.css'
 })
 export class LayoutComponent implements OnInit {
   private readonly platformId = inject(PLATFORM_ID);
-  protected readonly authModalView = signal<'login' | 'register' | null>(null);
+  protected readonly authModalOpen = signal(false);
+  protected readonly authModalMode = signal<'login' | 'register'>('login');
   protected readonly isOnline = signal(true);
 
   ngOnInit(): void {
@@ -25,19 +35,20 @@ export class LayoutComponent implements OnInit {
   }
 
   protected openAuthModal(view: 'login' | 'register'): void {
-    this.authModalView.set(view);
+    this.authModalMode.set(view);
+    this.authModalOpen.set(true);
   }
 
   protected openLoginModal(): void {
-    this.authModalView.set('login');
+    this.openAuthModal('login');
   }
 
   protected openRegisterModal(): void {
-    this.authModalView.set('register');
+    this.openAuthModal('register');
   }
 
   protected closeAuthModal(): void {
-    this.authModalView.set(null);
+    this.authModalOpen.set(false);
   }
 
   @HostListener('window:online')
@@ -52,8 +63,8 @@ export class LayoutComponent implements OnInit {
 
   @HostListener('document:keydown.escape')
   protected handleEscape(): void {
-    if (this.authModalView()) {
-      this.authModalView.set(null);
+    if (this.authModalOpen()) {
+      this.closeAuthModal();
     }
   }
 }

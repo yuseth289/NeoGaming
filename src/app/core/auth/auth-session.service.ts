@@ -1,4 +1,5 @@
 import { Injectable, computed, inject } from '@angular/core';
+import { catchError, firstValueFrom, map, of, tap } from 'rxjs';
 import { AuthApi } from './data-access/auth.api';
 import { AuthStateService, SessionUser } from './auth-state.service';
 import { LoginResponse, UsuarioResponse } from '../models/api.models';
@@ -10,12 +11,6 @@ export class AuthSessionService {
 
   readonly currentUser = computed(() => this.authState.currentUser());
   readonly loggedIn = computed(() => this.authState.loggedIn());
-
-  constructor() {
-    if (this.authState.hasToken()) {
-      this.restoreSession();
-    }
-  }
 
   login(user: SessionUser): void {
     this.authState.setUser(user);
@@ -30,6 +25,7 @@ export class AuthSessionService {
       id: response.usuarioId,
       name: response.nombre,
       email: response.email,
+      rol: response.rol,
       role: response.rol
     };
 
@@ -38,19 +34,31 @@ export class AuthSessionService {
   }
 
   restoreSession(): void {
-    this.authApi.me().subscribe({
-      next: (response) => {
-        const user = this.extractUser(response);
-        if (!user) {
+    void this.restoreSessionBeforeGuards();
+  }
+
+  async restoreSessionBeforeGuards(): Promise<void> {
+    if (!this.authState.hasToken()) {
+      return;
+    }
+
+    await firstValueFrom(
+      this.authApi.me().pipe(
+        map((response) => this.extractUser(response)),
+        tap((user) => {
+          if (user) {
+            this.authState.setUser(user);
+          } else {
+            this.authState.clearSession();
+          }
+        }),
+        catchError(() => {
           this.authState.clearSession();
-          return;
-        }
-        this.authState.setUser(user);
-      },
-      error: () => {
-        this.authState.clearSession();
-      }
-    });
+          return of(null);
+        }),
+        map(() => undefined),
+      ),
+    );
   }
 
   private extractUser(response: UsuarioResponse): SessionUser | null {
@@ -58,6 +66,7 @@ export class AuthSessionService {
       id: response.id,
       name: response.nombre,
       email: response.email,
+      rol: response.rol,
       role: response.rol
     };
   }

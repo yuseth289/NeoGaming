@@ -1,0 +1,68 @@
+<section class="mx-auto w-full max-w-5xl px-4 text-neo-white sm:px-6 lg:px-8">
+  <app-checkout-progress [currentStep]="4"></app-checkout-progress>
+
+  @if (loading()) {
+    <div class="flex min-h-72 items-center justify-center">
+      <app-neo-spinner size="lg"></app-neo-spinner>
+    </div>
+  } @else {
+    <div class="flex flex-col items-center text-center">
+      <lucide-angular
+        class="mb-8 text-neo-green drop-shadow-2xl"
+        [img]="icons.success"
+        [size]="80"
+        [strokeWidth]="1.8"
+      ></lucide-angular>
+      <h1 class="text-h1">¡Pedido confirmado!</h1>
+      <div>
+        <app-neo-badge variant="info">#{{ orderNumber() }}</app-neo-badge>
+      </div>
+      @if (estimatedDelivery()) {
+        <p class="text-small text-neo-muted-text">Entrega estimada: {{ estimatedDelivery() }}</p>
+      }
+      @if (email()) {
+        <p class="text-small text-neo-muted-text">Recibiras un email de confirmacion a {{ email() }}</p>
+      }
+    </div>
+
+    <app-neo-card class="block" padding="md">
+      <h2 class="mb-4 text-h3">Resumen</h2>
+      @if (items().length > 0) {
+        <div class="space-y-4">
+          @for (item of items(); track item.idProducto) {
+            <article class="flex items-center gap-3 border-b border-neo-border">
+              <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-neo-md bg-neo-elevated text-xs text-neo-muted-text">
+                {{ item.sku || 'NG' }}
+              </div>
+              <div class="min-w-0 flex-1 text-left">
+                <h3 class="truncate text-h4">{{ item.nombreProducto }}</h3>
+                <p class="text-xs text-neo-muted-text">Cantidad: {{ item.cantidad }}</p>
+              </div>
+              <strong class="text-h4 text-neo-red-text">{{ item.subtotal | copPrice }}</strong>
+            </article>
+          }
+        </div>
+      } @else if (fallbackOrder(); as order) {
+        <div class="space-y-4">
+          @for (item of order.items; track item.name) {
+            <article class="flex items-center gap-3 border-b border-neo-border">
+              <div class="h-14 w-14 rounded-neo-md bg-neo-elevated"></div>
+              <div class="min-w-0 flex-1 text-left">
+                <h3 class="truncate text-h4">{{ item.name }}</h3>
+                <p class="text-xs text-neo-muted-text">Cantidad: {{ item.quantity }}</p>
+              </div>
+              <strong class="text-h4 text-neo-red-text">{{ item.price * item.quantity | copPrice }}</strong>
+            </article>
+          }
+        </div>
+      } @else {
+        <p class="text-small text-neo-muted-text">El resumen aun no esta disponible.</p>
+      }
+    </app-neo-card>
+
+    <div class="flex flex-col gap-4 sm:flex-row sm:justify-center">
+      <app-neo-button routerLink="/pedidos" variant="primary">Ver mis pedidos</app-neo-button>
+      <app-neo-button routerLink="/catalogo" variant="ghost">Seguir comprando</app-neo-button>
+    </div>
+  }
+</section>

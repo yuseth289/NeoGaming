@@ -1,0 +1,29 @@
+<nav aria-label="Breadcrumb">
+  <ol class="flex flex-wrap items-center gap-2 text-small">
+    @for (item of items; track item.label; let last = $last) {
+      <li class="flex items-center gap-2">
+        @if (last || !item.route) {
+          <span class="font-medium text-neo-white" [attr.aria-current]="last ? 'page' : null">{{
+            item.label
+          }}</span>
+        } @else {
+          <a
+            class="text-neo-muted-text transition-neo duration-neo ease-neo hover:text-neo-white"
+            [routerLink]="item.route"
+          >
+            {{ item.label }}
+          </a>
+        }
+
+        @if (!last) {
+          <lucide-angular
+            class="text-neo-muted-text"
+            [img]="icons.chevron"
+            [size]="16"
+            [strokeWidth]="2"
+          ></lucide-angular>
+        }
+      </li>
+    }
+  </ol>
+</nav>

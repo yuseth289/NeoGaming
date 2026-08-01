@@ -1,59 +1,83 @@
 import { Component, inject, input, output, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize, switchMap } from 'rxjs';
 import { AuthApi } from '../../../../core/auth/data-access/auth.api';
 import { AuthSessionService } from '../../../../core/auth/auth-session.service';
 import { parseApiError } from '../../../../core/http/api-error.utils';
+import { RegistroUsuarioRequest } from '../../../../core/models/api.models';
+import {
+  NeoCardComponent,
+  NeoInputComponent,
+  NeoSpinnerComponent,
+  NeoToastService,
+} from '../../../../shared/ui';
+
+const passwordMatchValidator: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
+  const password = control.get('password')?.value;
+  const confirmPassword = control.get('confirmPassword')?.value;
+  return password && confirmPassword && password !== confirmPassword
+    ? { passwordMismatch: true }
+    : null;
+};
 
 @Component({
   selector: 'app-register-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    NeoCardComponent,
+    NeoInputComponent,
+    NeoSpinnerComponent,
+  ],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.css'
 })
 export class RegisterComponent {
   private readonly fb = inject(FormBuilder);
   private readonly authApi = inject(AuthApi);
   private readonly router = inject(Router);
   private readonly authSession = inject(AuthSessionService);
-  readonly modalMode = input(false);
+  private readonly toast = inject(NeoToastService);
+
+  readonly embeddedMode = input<boolean>(false);
+  readonly authSuccess = output<void>();
   readonly switchToLogin = output<void>();
-  readonly closeModal = output<void>();
 
   protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
-  protected readonly success = signal<string | null>(null);
-  protected readonly showPassword = signal(false);
-  protected readonly showConfirmPassword = signal(false);
+  protected readonly submitLabel = 'Crear cuenta';
 
-  protected readonly form = this.fb.nonNullable.group({
-    name: ['', [Validators.required, Validators.minLength(2)]],
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
-    confirmPassword: ['', [Validators.required]],
-    acceptTerms: [false, [Validators.requiredTrue]]
-  });
+  protected readonly form = this.fb.nonNullable.group(
+    {
+      name: ['', [Validators.required, Validators.minLength(2)]],
+      email: ['', [Validators.required, Validators.email]],
+      phone: [''],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', [Validators.required]],
+      terms: [false, [Validators.requiredTrue]],
+    },
+    { validators: passwordMatchValidator },
+  );
 
   protected submit(): void {
-    this.error.set(null);
-    this.success.set(null);
-
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    if (this.form.controls.password.value !== this.form.controls.confirmPassword.value) {
-      this.error.set('Las contrasenas no coinciden.');
-      return;
-    }
-
     this.loading.set(true);
-    const payload = {
+    const phone = this.form.controls.phone.value.trim();
+    const payload: RegistroUsuarioRequest = {
       nombre: this.form.controls.name.value,
       email: this.form.controls.email.value,
-      password: this.form.controls.password.value
+      password: this.form.controls.password.value,
+      ...(phone ? { telefono: phone } : {}),
     };
 
     this.authApi
@@ -61,49 +85,68 @@ export class RegisterComponent {
       .pipe(
         switchMap(() =>
           this.authApi.login({
-            email: this.form.controls.email.value,
-            password: this.form.controls.password.value
-          })
+            email: payload.email,
+            password: payload.password,
+          }),
         ),
-        finalize(() => this.loading.set(false))
+        finalize(() => this.loading.set(false)),
       )
       .subscribe({
         next: (response) => {
           const user = this.authSession.handleLoginResponse(response);
           if (!user) {
-            this.error.set('La cuenta se creo, pero no fue posible iniciar sesion automaticamente.');
-            return;
+            this.toast.warning(
+              'La cuenta se creo, pero no fue posible iniciar sesion automaticamente.',
+            );
+          } else {
+            this.toast.success('Cuenta creada correctamente.');
           }
-          this.success.set('Cuenta creada correctamente.');
-          if (this.modalMode()) {
-            this.closeModal.emit();
+
+          if (this.embeddedMode()) {
+            this.authSuccess.emit();
             return;
           }
 
-          void this.router.navigate(['/']);
+          void this.router.navigate(['/home']);
         },
         error: (error) => {
-          this.error.set(parseApiError(error).message || 'No se pudo crear la cuenta. Intenta de nuevo.');
-        }
+          this.toast.error(parseApiError(error).message || 'No se pudo crear la cuenta.');
+        },
       });
   }
 
-  protected togglePasswordVisibility(): void {
-    this.showPassword.update((value) => !value);
-  }
-
-  protected toggleConfirmPasswordVisibility(): void {
-    this.showConfirmPassword.update((value) => !value);
-  }
-
-  protected showFieldError(control: 'name' | 'email' | 'password' | 'confirmPassword' | 'acceptTerms'): boolean {
+  protected fieldError(
+    control: 'name' | 'email' | 'phone' | 'password' | 'confirmPassword',
+  ): string {
     const field = this.form.controls[control];
-    return field.invalid && (field.dirty || field.touched);
+    const touched = field.dirty || field.touched;
+    if (
+      !(field.invalid && touched) &&
+      !(control === 'confirmPassword' && this.form.hasError('passwordMismatch') && touched)
+    ) {
+      return '';
+    }
+
+    if (control === 'confirmPassword' && this.form.hasError('passwordMismatch')) {
+      return 'Las contraseñas no coinciden.';
+    }
+    if (field.hasError('required')) {
+      return 'Este campo es obligatorio.';
+    }
+    if (field.hasError('email')) {
+      return 'Ingresa un email valido.';
+    }
+    if (field.hasError('minlength')) {
+      return control === 'password'
+        ? 'La contraseña debe tener mínimo 8 caracteres.'
+        : 'Ingresa al menos 2 caracteres.';
+    }
+
+    return '';
   }
 
-  protected passwordMismatch(): boolean {
-    const password = this.form.controls.password.value;
-    const confirmPassword = this.form.controls.confirmPassword.value;
-    return !!confirmPassword && password !== confirmPassword;
+  protected termsError(): boolean {
+    const field = this.form.controls.terms;
+    return field.invalid && (field.dirty || field.touched);
   }
 }

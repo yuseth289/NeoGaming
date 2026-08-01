@@ -1,0 +1,29 @@
+<label class="block" [attr.for]="selectId">
+  @if (label) {
+    <span class="mb-2 block text-small font-semibold text-neo-white">{{ label }}</span>
+  }
+
+  <select
+    [id]="selectId"
+    [value]="value"
+    [disabled]="isDisabled"
+    [class]="selectClasses()"
+    [attr.aria-invalid]="!!error"
+    [attr.aria-describedby]="error || hint ? selectId + '-support' : null"
+    (change)="handleChange($event)"
+    (blur)="handleBlur()"
+  >
+    @if (placeholder) {
+      <option value="" disabled>{{ placeholder }}</option>
+    }
+    @for (option of options; track option.value) {
+      <option [value]="option.value">{{ option.label }}</option>
+    }
+  </select>
+</label>
+
+@if (error) {
+  <p [id]="selectId + '-support'" class="mt-2 text-small text-red-400">{{ error }}</p>
+} @else if (hint) {
+  <p [id]="selectId + '-support'" class="mt-2 text-small text-neo-muted-text">{{ hint }}</p>
+}

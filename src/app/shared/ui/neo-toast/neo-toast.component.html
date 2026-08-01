@@ -1,0 +1,27 @@
+<section
+  class="fixed bottom-4 left-4 right-4 z-50 flex w-auto max-w-sm flex-col gap-3 sm:left-auto sm:w-full"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  @for (toast of toasts(); track toast.id) {
+    <article
+      class="neo-toast-enter flex items-start gap-3 rounded-neo-lg border border-neo-border bg-neo-elevated p-4 text-neo-white shadow-neo-card"
+    >
+      <lucide-angular
+        [class]="toastIconClasses(toast.type)"
+        [img]="toastIcon(toast.type)"
+        [size]="20"
+        [strokeWidth]="2"
+      ></lucide-angular>
+      <p class="min-w-0 flex-1 text-small">{{ toast.message }}</p>
+      <button
+        type="button"
+        class="rounded-neo-sm p-1 text-neo-muted-text transition-neo duration-neo ease-neo hover:bg-neo-surface hover:text-neo-white"
+        aria-label="Cerrar notificacion"
+        (click)="remove(toast.id)"
+      >
+        <lucide-angular [img]="closeIcon" [size]="16" [strokeWidth]="2"></lucide-angular>
+      </button>
+    </article>
+  }
+</section>

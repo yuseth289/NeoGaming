@@ -1,0 +1,368 @@
+<header
+  class="relative sticky top-0 z-40 border-b border-neo-border bg-neo-base/90 backdrop-blur-md"
+  [class.shadow-neo-card]="headerScrolled()"
+>
+  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center gap-3">
+      <button
+        type="button"
+        class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-neo-md text-neo-white transition-neo duration-neo ease-neo hover:bg-neo-elevated md:hidden"
+        [attr.aria-expanded]="mobileMenuOpen()"
+        aria-label="Abrir menu"
+        (click)="toggleMobileMenu()"
+      >
+        <lucide-angular
+          [img]="mobileMenuOpen() ? icons.close : icons.menu"
+          [size]="22"
+          [strokeWidth]="2"
+        ></lucide-angular>
+      </button>
+
+      <a
+        routerLink="/"
+        class="font-mono text-h3 font-bold tracking-normal"
+        aria-label="NeoGaming inicio"
+        (click)="closeMenus()"
+      >
+        <span class="text-neo-red-text">NEO</span><span class="text-neo-white">GAMING</span>
+      </a>
+    </div>
+
+    <nav class="hidden items-center gap-3 md:flex" aria-label="Navegacion principal">
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 rounded-neo-md p-3 text-small font-semibold text-neo-subtle transition-neo duration-neo ease-neo hover:bg-neo-elevated hover:text-neo-white"
+        [attr.aria-expanded]="categoriesMenuOpen()"
+        (click)="toggleCategoriesMenu()"
+      >
+        Categorias
+        <lucide-angular [img]="icons.chevron" [size]="15" [strokeWidth]="2"></lucide-angular>
+      </button>
+      @for (link of navLinks; track link.label) {
+        <a
+          class="text-small font-semibold text-neo-subtle transition-neo duration-neo ease-neo hover:text-neo-red-text"
+          [routerLink]="link.route"
+          [queryParams]="link.queryParams"
+          routerLinkActive="text-neo-white"
+          [routerLinkActiveOptions]="{ exact: link.route === '/' }"
+        >
+          {{ link.label }}
+        </a>
+      }
+      @if (authSession.loggedIn() && !isSeller()) {
+        <a
+          routerLink="/perfil/activar-vendedor"
+          class="flex items-center gap-1 text-sm text-neo-muted transition-neo duration-neo hover:text-neo-cyan"
+        >
+          <lucide-angular [img]="icons.store" [size]="14" [strokeWidth]="2"></lucide-angular>
+          Vender
+        </a>
+      }
+    </nav>
+
+    <div class="flex items-center gap-3">
+      <button
+        type="button"
+        class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-neo-md text-neo-subtle transition-neo duration-neo ease-neo hover:bg-neo-elevated hover:text-neo-white"
+        [attr.aria-expanded]="searchOpen()"
+        aria-label="Abrir busqueda"
+        (click)="toggleSearch()"
+      >
+        <lucide-angular [img]="icons.search" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </button>
+
+      <button
+        type="button"
+        class="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-neo-md text-neo-subtle transition-neo duration-neo ease-neo hover:bg-neo-elevated hover:text-neo-white"
+        [class.scale-110]="cartBounce()"
+        aria-label="Abrir carrito"
+        (click)="toggleCart()"
+      >
+        <lucide-angular [img]="icons.cart" [size]="21" [strokeWidth]="2"></lucide-angular>
+        @if (cartUi.totalItems() > 0) {
+          <span
+            class="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-neo-red text-center font-mono text-xs font-bold leading-none text-white shadow-neo-glow-red"
+          >
+            {{ cartUi.totalItems() }}
+          </span>
+        }
+      </button>
+
+      @if (cartOpen()) {
+        <div class="absolute right-4 top-14 w-80 rounded-neo-lg border border-neo-border bg-neo-elevated p-4 shadow-neo-card sm:right-6 lg:right-8">
+          <div class="mb-3 flex items-center justify-between">
+            <p class="text-small font-semibold text-neo-white">Carrito</p>
+            <span class="font-mono text-xs text-neo-muted-text">{{ cartUi.totalItems() }} items</span>
+          </div>
+
+          @if (cartUi.cartItems().length) {
+            <div class="grid gap-3">
+              @for (item of cartUi.cartItems().slice(0, 3); track item.name) {
+                <div class="flex items-center justify-between gap-3 rounded-neo-md bg-neo-surface p-3">
+                  <div>
+                    <p class="line-clamp-1 text-small font-semibold text-neo-white">{{ item.name }}</p>
+                    <p class="text-xs text-neo-muted-text">Cantidad: {{ item.quantity }}</p>
+                  </div>
+                  <p class="font-mono text-xs text-neo-subtle">
+                    {{ item.price * item.quantity | currency: 'COP' : 'symbol' : '1.0-0' }}
+                  </p>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="rounded-neo-md bg-neo-surface p-3 text-small text-neo-muted-text">Tu carrito esta vacio.</p>
+          }
+
+          <button
+            type="button"
+            class="mt-4 w-full rounded-neo-md bg-neo-red p-3 text-small font-bold text-white transition-neo duration-neo ease-neo hover:bg-neo-red-dim"
+            (click)="goToCart()"
+          >
+            Ver carrito
+          </button>
+        </div>
+      }
+
+      @if (!authSession.loggedIn()) {
+        <div class="hidden items-center gap-3 md:flex">
+          <app-neo-button variant="ghost" size="sm" (neoClick)="openAuthModal('login')"
+            >Login</app-neo-button
+          >
+          <app-neo-button variant="primary" size="sm" (neoClick)="openAuthModal('register')"
+            >Registro</app-neo-button
+          >
+        </div>
+      } @else {
+        <div class="relative hidden md:block">
+          <button
+            type="button"
+            class="flex items-center gap-3 rounded-neo-md border border-neo-border bg-neo-surface p-3 text-neo-white transition-neo duration-neo ease-neo hover:border-neo-border-bright hover:bg-neo-elevated"
+            [attr.aria-expanded]="profileMenuOpen()"
+            aria-haspopup="menu"
+            (click)="toggleProfileMenu()"
+          >
+            <span
+              class="flex h-7 w-7 items-center justify-center rounded-full bg-neo-red font-mono text-xs font-bold text-white"
+            >
+              {{ initials() }}
+            </span>
+            <lucide-angular
+              class="text-neo-muted-text"
+              [img]="icons.chevron"
+              [size]="16"
+              [strokeWidth]="2"
+            ></lucide-angular>
+          </button>
+
+          @if (profileMenuOpen()) {
+            <div
+              class="absolute right-0 w-56 rounded-neo-lg border border-neo-border bg-neo-elevated p-3 shadow-neo-card"
+              role="menu"
+            >
+              <a
+                class="flex items-center gap-3 rounded-neo-md p-3 text-small text-neo-subtle transition-neo duration-neo ease-neo hover:bg-neo-surface hover:text-neo-white"
+                routerLink="/perfil"
+                (click)="closeMenus()"
+              >
+                <lucide-angular [img]="icons.user" [size]="16" [strokeWidth]="2"></lucide-angular>
+                Mi perfil
+              </a>
+              <a
+                class="flex items-center gap-3 rounded-neo-md p-3 text-small text-neo-subtle transition-neo duration-neo ease-neo hover:bg-neo-surface hover:text-neo-white"
+                routerLink="/pedidos"
+                (click)="closeMenus()"
+              >
+                <lucide-angular [img]="icons.orders" [size]="16" [strokeWidth]="2"></lucide-angular>
+                Mis pedidos
+              </a>
+              <button
+                type="button"
+                class="flex w-full items-center gap-3 rounded-neo-md p-3 text-left text-small text-red-400 transition-neo duration-neo ease-neo hover:bg-red-950"
+                (click)="logout()"
+              >
+                <lucide-angular [img]="icons.logout" [size]="16" [strokeWidth]="2"></lucide-angular>
+                Cerrar sesion
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  @if (searchOpen()) {
+    <form
+      class="border-t border-neo-border bg-neo-surface/95 p-5 backdrop-blur-md"
+      (submit)="submitSearch($event)"
+    >
+      <div class="relative mx-auto max-w-3xl">
+        <label
+          class="flex items-center gap-3 rounded-neo-lg border border-neo-border bg-neo-elevated p-5 text-neo-white focus-within:border-neo-cyan focus-within:ring-1 focus-within:ring-neo-cyan"
+        >
+          <lucide-angular
+            class="text-neo-muted-text"
+            [img]="icons.search"
+            [size]="18"
+            [strokeWidth]="2"
+          ></lucide-angular>
+          <input
+            class="w-full bg-transparent text-body text-neo-white placeholder-neo-muted outline-none"
+            type="search"
+            aria-label="Buscar productos"
+            placeholder="Buscar teclados, VR, GPUs..."
+            [value]="searchTerm()"
+            (input)="updateSearch($any($event.target).value)"
+            (focus)="showSuggestions.set(true)"
+          />
+        </label>
+
+        @if (showSuggestions() && filteredSuggestions().length) {
+          <div class="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-neo-lg border border-neo-border bg-neo-elevated shadow-neo-card">
+            @for (item of filteredSuggestions(); track item.label) {
+              <button
+                type="button"
+                class="flex w-full items-center justify-between gap-3 p-3 text-left text-small text-neo-subtle transition-neo duration-neo ease-neo hover:bg-neo-surface hover:text-neo-white"
+                (click)="selectSuggestion(item)"
+              >
+                <span>{{ item.label }}</span>
+                <span class="font-mono text-xs text-neo-muted-text">{{ item.type }}</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </form>
+  }
+
+  @if (categoriesMenuOpen()) {
+    <section class="border-t border-neo-border bg-neo-surface/95 shadow-neo-card backdrop-blur-md">
+      <div class="mx-auto grid max-w-7xl gap-5 px-4 py-5 sm:px-6 md:grid-cols-4 lg:px-8">
+        <nav class="grid gap-2" aria-label="Categorias">
+          @for (category of megaCategories; track category.id) {
+            <button
+              type="button"
+              class="rounded-neo-md p-3 text-left text-small font-semibold transition-neo duration-neo ease-neo"
+              [class.bg-neo-elevated]="activeMegaCategoryId() === category.id"
+              [class.text-neo-white]="activeMegaCategoryId() === category.id"
+              [class.text-neo-subtle]="activeMegaCategoryId() !== category.id"
+              (mouseenter)="setActiveMegaCategory(category.id)"
+              (focus)="setActiveMegaCategory(category.id)"
+              (click)="openCatalogCategory(category.id)"
+            >
+              {{ category.label }}
+            </button>
+          }
+        </nav>
+
+        <div class="rounded-neo-lg border border-neo-border bg-neo-elevated p-5 md:col-span-3">
+          <p class="font-mono text-xs uppercase tracking-normal text-neo-cyan">
+            {{ activeMegaCategory().eyebrow }}
+          </p>
+          <h2 class="mt-2 text-h3 text-neo-white">{{ activeMegaCategory().label }}</h2>
+          <p class="mt-2 max-w-2xl text-small text-neo-muted-text">{{ activeMegaCategory().description }}</p>
+
+          <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            @for (link of activeMegaCategory().links; track link) {
+              <button
+                type="button"
+                class="rounded-neo-md border border-neo-border bg-neo-surface p-3 text-left text-small font-semibold text-neo-subtle transition-neo duration-neo ease-neo hover:border-neo-border-bright hover:text-neo-white"
+                (click)="openCatalogCategory(activeMegaCategory().id, link)"
+              >
+                {{ link }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (mobileMenuOpen()) {
+    <div class="fixed inset-0 top-16 z-40 bg-black/70 md:hidden" (click)="closeMenus()">
+      <!-- Mobile drawer must fill the viewport minus the fixed 64px header. -->
+      <nav
+        class="flex h-[calc(100vh-64px)] w-full max-w-sm flex-col gap-3 border-l border-neo-border bg-neo-elevated p-5 shadow-neo-card"
+        aria-label="Menu movil"
+        (click)="$event.stopPropagation()"
+      >
+        <button
+          type="button"
+          class="rounded-neo-md p-3 text-left text-small font-semibold text-neo-subtle transition-neo duration-neo ease-neo hover:bg-neo-surface hover:text-neo-white"
+          (click)="toggleCategoriesMenu()"
+        >
+          Categorias
+        </button>
+
+        @for (link of navLinks; track link.label) {
+          <a
+            class="rounded-neo-md p-3 text-small font-semibold text-neo-subtle transition-neo duration-neo ease-neo hover:bg-neo-surface hover:text-neo-white"
+            [routerLink]="link.route"
+            [queryParams]="link.queryParams"
+            (click)="closeMenus()"
+          >
+            {{ link.label }}
+          </a>
+        }
+        @if (authSession.loggedIn() && !isSeller()) {
+          <a
+            class="flex items-center gap-3 rounded-neo-md p-3 text-small font-semibold text-neo-cyan transition-neo duration-neo ease-neo hover:bg-neo-surface hover:text-neo-white"
+            routerLink="/perfil/activar-vendedor"
+            (click)="closeMenus()"
+          >
+            <lucide-angular [img]="icons.store" [size]="16" [strokeWidth]="2"></lucide-angular>
+            Vender
+          </a>
+        }
+
+        <div class="border-t border-neo-border p-3">
+          @if (!authSession.loggedIn()) {
+            <div class="grid grid-cols-2 gap-3">
+              <app-neo-button
+                variant="ghost"
+                size="sm"
+                fullWidth
+                (neoClick)="openAuthModal('login')"
+                >Login</app-neo-button
+              >
+              <app-neo-button
+                variant="primary"
+                size="sm"
+                fullWidth
+                (neoClick)="openAuthModal('register')"
+                >Registro</app-neo-button
+              >
+            </div>
+          } @else {
+            <a
+              class="flex items-center gap-3 rounded-neo-md p-3 text-small text-neo-subtle"
+              routerLink="/perfil"
+              (click)="closeMenus()"
+            >
+              <span
+                class="flex h-7 w-7 items-center justify-center rounded-full bg-neo-red font-mono text-xs font-bold text-white"
+                >{{ initials() }}</span
+              >
+              Mi perfil
+            </a>
+            <a
+              class="flex items-center gap-3 rounded-neo-md p-3 text-small text-neo-subtle"
+              routerLink="/pedidos"
+              (click)="closeMenus()"
+            >
+              <lucide-angular [img]="icons.orders" [size]="16" [strokeWidth]="2"></lucide-angular>
+              Mis pedidos
+            </a>
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 rounded-neo-md p-3 text-left text-small text-red-400"
+              (click)="logout()"
+            >
+              <lucide-angular [img]="icons.logout" [size]="16" [strokeWidth]="2"></lucide-angular>
+              Cerrar sesion
+            </button>
+          }
+        </div>
+      </nav>
+    </div>
+  }
+</header>

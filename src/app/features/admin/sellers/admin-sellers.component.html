@@ -1,0 +1,96 @@
+<section class="space-y-6">
+  <div>
+    <p class="font-mono text-xs font-semibold uppercase tracking-widest text-neo-red">Admin</p>
+    <h2 class="mt-1 text-2xl font-bold text-neo-white">Vendedores</h2>
+  </div>
+
+  <neo-card [padding]="'md'">
+    <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-wrap items-center gap-2">
+        @for (tab of tabs; track tab.value) {
+          <button type="button" [class]="tabClasses(tab.value)" (click)="selectTab(tab.value)">
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+
+      <label class="relative block w-full sm:w-72">
+        <span class="sr-only">Buscar vendedores</span>
+        <lucide-angular class="absolute left-3 top-1/2 -translate-y-1/2 text-neo-muted" [img]="icons.search" [size]="16" [strokeWidth]="2"></lucide-angular>
+        <input
+          type="search"
+          class="h-11 w-full rounded-neo-md border border-neo-border bg-neo-elevated pl-10 pr-3 text-sm text-neo-white placeholder-neo-muted"
+          placeholder="Buscar vendedor"
+          readonly
+        />
+      </label>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[58rem] text-left text-sm">
+        <thead class="border-b border-neo-border text-xs uppercase tracking-wider text-neo-muted">
+          <tr>
+            <th class="py-3 pr-4 font-semibold">Vendedor</th>
+            <th class="px-4 py-3 font-semibold">Correo</th>
+            <th class="px-4 py-3 font-semibold">Telefono</th>
+            <th class="px-4 py-3 font-semibold">Estado</th>
+            <th class="px-4 py-3 font-semibold">Productos</th>
+            <th class="px-4 py-3 font-semibold">Ventas</th>
+            <th class="py-3 pl-4 text-right font-semibold">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-neo-border">
+          @if (loading()) {
+          <tr>
+            <td colspan="7" class="py-16 text-center">
+              <lucide-angular [img]="icons.clock" [size]="32" [strokeWidth]="2" class="mx-auto mb-3 text-neo-muted"></lucide-angular>
+              <p class="text-sm text-neo-muted-text">Cargando vendedores</p>
+            </td>
+          </tr>
+          } @else if (error()) {
+            <tr>
+              <td colspan="7" class="py-16 text-center text-sm text-red-300">No fue posible cargar vendedores.</td>
+            </tr>
+          } @else if (sellers().length) {
+            @for (seller of sellers(); track seller.id) {
+              <tr class="text-neo-subtle">
+                <td class="py-3 pr-4">
+                  <p class="font-semibold text-neo-white">{{ seller.nombreComercial }}</p>
+                  <p class="text-xs text-neo-muted">#{{ seller.id }}</p>
+                </td>
+                <td class="px-4 py-3">{{ seller.correo }}</td>
+                <td class="px-4 py-3">{{ seller.telefono || 'Sin telefono' }}</td>
+                <td class="px-4 py-3">
+                  <span class="rounded-neo-sm px-2 py-1 text-xs font-semibold" [class.bg-emerald-950]="seller.activo" [class.text-emerald-300]="seller.activo" [class.bg-rose-950]="!seller.activo" [class.text-rose-300]="!seller.activo">
+                    {{ seller.activo ? 'Activo' : 'Suspendido' }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">{{ seller.totalProductos ?? 0 }}</td>
+                <td class="px-4 py-3">{{ formatMoney(seller.totalVentas) }}</td>
+                <td class="py-3 pl-4 text-right">
+                  @if (seller.activo) {
+                    <button type="button" class="rounded-neo-md border border-red-900 px-3 py-2 text-xs font-semibold text-red-300 hover:text-red-200" (click)="suspendSeller(seller)">
+                      Suspender
+                    </button>
+                  } @else {
+                    <button type="button" class="rounded-neo-md border border-emerald-900 px-3 py-2 text-xs font-semibold text-emerald-300 hover:text-emerald-200" (click)="approveSeller(seller)">
+                      Aprobar
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          } @else {
+            <tr>
+              <td colspan="7" class="py-16 text-center text-sm text-neo-muted">No hay vendedores para mostrar.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-5">
+      <app-neo-pagination [currentPage]="currentPage()" [totalPages]="totalPages()" [totalElements]="totalElements()" [pageSize]="pageSize" (pageChange)="loadSellers($event)"></app-neo-pagination>
+    </div>
+  </neo-card>
+</section>

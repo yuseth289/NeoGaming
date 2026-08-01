@@ -1,39 +1,40 @@
-<div class="layout-shell">
+<div class="flex min-h-dvh flex-col bg-neo-base text-neo-white">
   <app-header (authRequested)="openAuthModal($event)" />
 
   @if (!isOnline()) {
-    <aside class="offline-alert" role="alert" aria-live="assertive">
+    <aside
+      class="sticky top-16 z-50 mx-auto w-full max-w-5xl rounded-b-neo-lg border border-neo-red/30 bg-neo-red-dim p-4 text-center text-small text-neo-white shadow-neo-card backdrop-blur-md"
+      role="alert"
+      aria-live="assertive"
+    >
       <strong>Sin conexion.</strong> Por favor conectate a internet para poder seguir.
     </aside>
   }
 
-  <main class="layout-content">
+  <app-page-wrapper>
     <router-outlet />
-  </main>
+  </app-page-wrapper>
 
-  @if (authModalView()) {
-    <div class="auth-modal-overlay" role="dialog" aria-modal="true" (click)="closeAuthModal()">
-      <section class="auth-modal-panel" (click)="$event.stopPropagation()">
-        <button type="button" class="close-btn" aria-label="Cerrar ventana" (click)="closeAuthModal()">×</button>
-
-        <div class="auth-modal-body">
-          @if (authModalView() === 'login') {
-            <app-login-page
-              [modalMode]="true"
-              (switchToRegister)="openRegisterModal()"
-              (closeModal)="closeAuthModal()"
-            />
-          } @else {
-            <app-register-page
-              [modalMode]="true"
-              (switchToLogin)="openLoginModal()"
-              (closeModal)="closeAuthModal()"
-            />
-          }
-        </div>
-      </section>
-    </div>
-  }
+  <app-neo-modal
+    [open]="authModalOpen()"
+    [title]="authModalMode() === 'login' ? 'Iniciar sesión' : 'Crear cuenta'"
+    size="sm"
+    (close)="closeAuthModal()"
+  >
+    @if (authModalMode() === 'login') {
+      <app-login-page
+        [embeddedMode]="true"
+        (switchToRegister)="authModalMode.set('register')"
+        (authSuccess)="closeAuthModal()"
+      />
+    } @else {
+      <app-register-page
+        [embeddedMode]="true"
+        (switchToLogin)="authModalMode.set('login')"
+        (authSuccess)="closeAuthModal()"
+      />
+    }
+  </app-neo-modal>
 
   <app-footer />
   <app-chatbot-widget />

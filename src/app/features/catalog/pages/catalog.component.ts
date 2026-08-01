@@ -1,252 +1,195 @@
-import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
+import { debounceTime, distinctUntilChanged, finalize } from 'rxjs';
+import {
+  ChevronDown,
+  Grid2X2,
+  List,
+  LucideAngularModule,
+  SearchX,
+  SlidersHorizontal,
+} from 'lucide-angular';
+import { parseApiError } from '../../../core/http/api-error.utils';
+import {
+  ApiPage,
+  CategoriaArbolResponse,
+  ProductoBusquedaResponse,
+  ProductoListadoResponse,
+} from '../../../core/models/api.models';
 import { CartApi } from '../../cart/data-access/cart.api';
 import { CartUiService } from '../../cart/data-access/cart-ui.service';
-import { WishlistUiService } from '../../wishlist/data-access/wishlist-ui.service';
-import { CatalogApi } from '../data-access/catalog.api';
-import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
-import { parseApiError } from '../../../core/http/api-error.utils';
-import { ProductoListadoResponse } from '../../../core/models/api.models';
+import { CatalogApi, CatalogProductParams, CatalogSearchParams } from '../data-access/catalog.api';
+import {
+  NeoButtonComponent,
+  NeoCardComponent,
+  NeoInputComponent,
+  NeoModalComponent,
+  NeoPaginationComponent,
+  NeoSkeletonComponent,
+  NeoToastService,
+  ProductCardComponent,
+} from '../../../shared/ui';
 
-interface MegaMenuLink {
-  label: string;
-  search?: string;
-}
+type SortOption =
+  | 'default'
+  | 'precioLista,asc'
+  | 'precioLista,desc'
+  | 'createdAt,desc'
+  | 'nombre,asc';
+type ViewMode = 'grid' | 'list';
+type FilterSection = 'categories' | 'price' | 'stock';
 
-interface MegaMenuColumn {
-  title: string;
-  links: MegaMenuLink[];
-}
-
-interface MegaMenuCategory {
-  id: string;
-  label: string;
-  eyebrow: string;
-  description: string;
-  highlight: string;
-  featured: MegaMenuLink[];
-  columns: MegaMenuColumn[];
+interface FlatCategory {
+  id: number;
+  nombre: string;
+  slug: string;
+  depth: number;
 }
 
 @Component({
   selector: 'app-catalog-page',
-  imports: [CopPricePipe],
+  imports: [
+    NgTemplateOutlet,
+    ReactiveFormsModule,
+    LucideAngularModule,
+    NeoButtonComponent,
+    NeoCardComponent,
+    NeoInputComponent,
+    NeoModalComponent,
+    NeoPaginationComponent,
+    NeoSkeletonComponent,
+    ProductCardComponent,
+  ],
   templateUrl: './catalog.component.html',
-  styleUrls: ['./catalog.component.css']
 })
-export class CatalogComponent implements OnInit, OnDestroy {
+export class CatalogComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly catalogApi = inject(CatalogApi);
   private readonly cartApi = inject(CartApi);
   private readonly cartUi = inject(CartUiService);
-  private readonly catalogApi = inject(CatalogApi);
-  private readonly wishlistUi = inject(WishlistUiService);
+  private readonly toast = inject(NeoToastService);
 
+  protected readonly icons = {
+    chevron: ChevronDown,
+    filters: SlidersHorizontal,
+    searchX: SearchX,
+    grid: Grid2X2,
+    list: List,
+  };
+
+  protected readonly searchControl = new FormControl('', { nonNullable: true });
+  protected readonly skeletonCards = Array.from({ length: 12 });
+  protected readonly categories = signal<CategoriaArbolResponse[]>([]);
   protected readonly products = signal<ProductoListadoResponse[]>([]);
-  protected readonly selectedCategories = signal<Set<string>>(new Set());
-  protected readonly selectedVendors = signal<Set<string>>(new Set());
-  protected readonly maxPrice = signal(10000000);
-  protected readonly priceLimitMax = signal(10000000);
-  protected readonly currentPage = signal(1);
-  protected readonly cartMessage = signal<string | null>(null);
-  protected readonly addingProductId = signal<number | null>(null);
-  protected readonly filtering = signal(false);
+  protected readonly loading = signal(true);
+  protected readonly categoriesLoading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly mobileFiltersOpen = signal(false);
-  protected readonly megaMenuOpen = signal(false);
-  protected readonly activeMegaCategoryId = signal('peripherals');
-  protected readonly skeletonCards = Array.from({ length: 8 });
-
-  private filterFeedbackTimeout?: ReturnType<typeof setTimeout>;
-  private readonly pageSize = 8;
-  private readonly params = toSignal(this.route.queryParamMap, {
-    initialValue: this.route.snapshot.queryParamMap
+  protected readonly selectedCategories = signal<string[]>([]);
+  protected readonly priceMin = signal(0);
+  protected readonly priceMax = signal(10000000);
+  protected readonly observedMaxPrice = signal(10000000);
+  protected readonly inStockOnly = signal(false);
+  protected readonly sort = signal<SortOption>('default');
+  protected readonly viewMode = signal<ViewMode>('grid');
+  protected readonly currentPage = signal(0);
+  protected readonly totalPages = signal(0);
+  protected readonly totalElements = signal(0);
+  protected readonly pageSize = signal(12);
+  protected readonly collapsed = signal<Record<FilterSection, boolean>>({
+    categories: false,
+    price: false,
+    stock: false,
   });
 
-  protected readonly search = computed(() => this.params().get('search'));
-  protected readonly category = computed(() => this.params().get('category'));
-  protected readonly discount = computed(() => this.params().get('discount') === 'true');
-  protected readonly hasSearch = computed(() => !!this.search()?.trim());
-  protected readonly categoryOptions = computed(() => {
-    const values = new Set(this.products().map((item) => this.categorySlug(item.nombreCategoria)));
-    return Array.from(values).filter(Boolean).sort();
+  protected readonly flatCategories = computed(() => this.flattenCategories(this.categories()));
+  protected readonly hasActiveFilters = computed(() => {
+    return (
+      !!this.searchControl.value.trim() ||
+      this.selectedCategories().length > 0 ||
+      this.priceMin() > 0 ||
+      this.priceMax() < this.observedMaxPrice() ||
+      this.inStockOnly() ||
+      this.sort() !== 'default'
+    );
   });
-  protected readonly vendorOptions = computed(() => {
-    const values = new Set(this.products().map((item) => item.nombreVendedor).filter(Boolean));
-    return Array.from(values).sort();
-  });
-
-  protected readonly megaMenuCategories: MegaMenuCategory[] = [
-    {
-      id: 'peripherals',
-      label: 'Perifericos',
-      eyebrow: 'Setup competitivo',
-      description: 'Mouse, teclados y audio para estaciones de juego rapidas y precisas.',
-      highlight: 'Lo mas buscado en NeoGaming esta semana',
-      featured: [
-        { label: 'Teclados mecanicos', search: 'keyboard' },
-        { label: 'Mouse ultraligeros', search: 'mouse' },
-        { label: 'Headsets inmersivos', search: 'headset' }
-      ],
-      columns: [
-        { title: 'Escritorio gamer', links: [{ label: 'Teclados 60%' }, { label: 'Teclados TKL' }, { label: 'Teclas PBT' }, { label: 'Reposamunecas RGB' }] },
-        { title: 'Control y precision', links: [{ label: 'Mouse inalambricos' }, { label: 'Mousepads XL' }, { label: 'Sensores eSports' }, { label: 'Bungees y docks' }] },
-        { title: 'Audio y streaming', links: [{ label: 'Headsets 7.1' }, { label: 'Microfonos USB' }, { label: 'Interfaces compactas' }, { label: 'Webcams 2K' }] }
-      ]
-    },
-    {
-      id: 'hardware',
-      label: 'Hardware',
-      eyebrow: 'Potencia central',
-      description: 'Componentes para armar, actualizar o exprimir tu build sin perder estilo.',
-      highlight: 'Componentes que mas se mueven en la tienda',
-      featured: [
-        { label: 'GPUs de ultima generacion', search: 'gpu' },
-        { label: 'Procesadores para streaming', search: 'cpu' },
-        { label: 'Monitores high refresh', search: 'monitor' }
-      ],
-      columns: [
-        { title: 'Procesamiento', links: [{ label: 'Procesadores gaming' }, { label: 'Placas madre ATX' }, { label: 'Memoria DDR5' }, { label: 'Refrigeracion liquida' }] },
-        { title: 'Visual y rendimiento', links: [{ label: 'Tarjetas graficas RTX' }, { label: 'Monitores 240 Hz' }, { label: 'Capturadoras' }, { label: 'Docking para creator' }] },
-        { title: 'Almacenamiento', links: [{ label: 'SSD NVMe' }, { label: 'Discos externos' }, { label: 'Gabinetes airflow' }, { label: 'Fuentes certificadas' }] }
-      ]
-    },
-    {
-      id: 'consoles',
-      label: 'Consolas',
-      eyebrow: 'Listo para jugar',
-      description: 'Equipos, bundles y accesorios para sesiones casuales o maratones.',
-      highlight: 'Bundles con mayor conversion',
-      featured: [
-        { label: 'Consolas de nueva generacion', search: 'console' },
-        { label: 'Mandos pro', search: 'gamepad' },
-        { label: 'Kits para sala', search: 'dock' }
-      ],
-      columns: [
-        { title: 'Plataformas', links: [{ label: 'PlayStation' }, { label: 'Xbox' }, { label: 'Nintendo Switch' }, { label: 'Consolas retro' }] },
-        { title: 'Accesorios', links: [{ label: 'Mandos premium' }, { label: 'Bases de carga' }, { label: 'Audifonos para consola' }, { label: 'Maletas de viaje' }] },
-        { title: 'Experiencias', links: [{ label: 'Bundles familiares' }, { label: 'Ediciones coleccionista' }, { label: 'Suscripciones' }, { label: 'Gift cards digitales' }] }
-      ]
-    },
-    {
-      id: 'video-games',
-      label: 'Videojuegos',
-      eyebrow: 'Catalogo digital',
-      description: 'Lanzamientos, expansiones y joyas multijugador para todas las plataformas.',
-      highlight: 'Tendencias en preorden y descarga inmediata',
-      featured: [
-        { label: 'Lanzamientos destacados', search: 'new' },
-        { label: 'Pases de temporada', search: 'season pass' },
-        { label: 'Titulos cooperativos', search: 'co-op' }
-      ],
-      columns: [
-        { title: 'Por genero', links: [{ label: 'FPS tacticos' }, { label: 'RPG de mundo abierto' }, { label: 'Indies narrativos' }, { label: 'Sim racing' }] },
-        { title: 'Por formato', links: [{ label: 'Descarga digital' }, { label: 'Edicion fisica' }, { label: 'Deluxe y ultimate' }, { label: 'Coleccionables' }] },
-        { title: 'Comunidad', links: [{ label: 'Top multiplayer' }, { label: 'Cross-platform' }, { label: 'Mods y expansions' }, { label: 'Gift cards' }] }
-      ]
-    },
-    {
-      id: 'accessories',
-      label: 'Accesorios',
-      eyebrow: 'Detalles que elevan el setup',
-      description: 'Complementos funcionales para escritorio, movilidad y ambientacion RGB.',
-      highlight: 'Pequenos upgrades con alto impacto visual',
-      featured: [
-        { label: 'Sillas y soportes', search: 'chair' },
-        { label: 'Iluminacion RGB', search: 'rgb' },
-        { label: 'Wearables y VR', search: 'vr' }
-      ],
-      columns: [
-        { title: 'Orden del espacio', links: [{ label: 'Soportes para monitor' }, { label: 'Organizadores de cables' }, { label: 'Brazos articulados' }, { label: 'Tapetes premium' }] },
-        { title: 'Comodidad', links: [{ label: 'Sillas gamer' }, { label: 'Reposapies' }, { label: 'Lentes blue light' }, { label: 'Cooling pads' }] },
-        { title: 'Immersion', links: [{ label: 'Luces ambientales' }, { label: 'VR y trackers' }, { label: 'Camaras y soportes' }, { label: 'Figuras coleccionables' }] }
-      ]
-    }
-  ];
-
-  protected readonly activeMegaCategory = computed(() => {
-    return this.megaMenuCategories.find((item) => item.id === this.activeMegaCategoryId()) ?? this.megaMenuCategories[0];
-  });
-
-  constructor() {
-    effect(() => {
-      const productsLength = this.filteredProducts().length;
-      const totalPages = Math.max(1, Math.ceil(productsLength / this.pageSize));
-      if (this.currentPage() > totalPages) {
-        this.currentPage.set(totalPages);
-      }
-    });
-
-    effect(() => {
-      const activeCategory = this.category();
-      if (activeCategory) {
-        this.activeMegaCategoryId.set(activeCategory);
-      }
-    });
-  }
 
   ngOnInit(): void {
-    this.loadCatalogFromApi();
-  }
+    this.loadCategories();
 
-  protected readonly filteredProducts = computed(() => {
-    const searchTerm = this.search()?.trim().toLowerCase();
-    const categoryParam = this.category();
-    const discountOnly = this.discount();
-    const categories = this.selectedCategories();
-    const vendors = this.selectedVendors();
-    const priceLimit = this.maxPrice();
-
-    return this.products().filter((product) => {
-      const matchesSearch = !searchTerm || product.nombre.toLowerCase().includes(searchTerm);
-      const matchesCategoryParam = !categoryParam || this.categorySlug(product.nombreCategoria) === categoryParam;
-      const matchesDiscount = !discountOnly || product.precioLista > product.precioVigente;
-      const matchesCategory = categories.size === 0 || categories.has(this.categorySlug(product.nombreCategoria));
-      const matchesVendor = vendors.size === 0 || vendors.has(product.nombreVendedor);
-      const matchesPrice = product.precioVigente <= priceLimit;
-
-      return matchesSearch && matchesCategoryParam && matchesDiscount && matchesCategory && matchesVendor && matchesPrice;
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.applyQueryParams(params);
+      this.loadProducts();
     });
-  });
 
-  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredProducts().length / this.pageSize)));
-  protected readonly pagedProducts = computed(() => {
-    const page = this.currentPage();
-    const start = (page - 1) * this.pageSize;
-    return this.filteredProducts().slice(start, start + this.pageSize);
-  });
-  protected readonly pages = computed(() => Array.from({ length: this.totalPages() }, (_, index) => index + 1));
-  protected readonly activeFiltersCount = computed(() => {
-    let total = 0;
-    total += this.selectedCategories().size;
-    total += this.selectedVendors().size;
-    return total;
-  });
-  protected readonly showResultsLayout = computed(() => true);
-
-  protected toggleCategory(value: string, checked: boolean): void {
-    this.toggleSetValue(this.selectedCategories, value, checked);
-    this.triggerFilteringFeedback();
+    this.searchControl.valueChanges
+      .pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        this.updateQuery({ q: value.trim(), page: 0 });
+      });
   }
 
-  protected toggleVendor(value: string, checked: boolean): void {
-    this.toggleSetValue(this.selectedVendors, value, checked);
-    this.triggerFilteringFeedback();
+  protected toggleSection(section: FilterSection): void {
+    this.collapsed.update((current) => ({
+      ...current,
+      [section]: !current[section],
+    }));
   }
 
-  protected updatePrice(value: string): void {
-    this.maxPrice.set(Number(value));
-    this.currentPage.set(1);
-    this.triggerFilteringFeedback();
+  protected isCollapsed(section: FilterSection): boolean {
+    return this.collapsed()[section];
+  }
+
+  protected isCategorySelected(slug: string): boolean {
+    return this.selectedCategories().includes(slug);
+  }
+
+  protected toggleCategory(slug: string, checked: boolean): void {
+    this.updateQuery({
+      category: this.nextListValue(this.selectedCategories(), slug, checked),
+      page: 0,
+    });
+  }
+
+  protected updatePriceMin(value: string): void {
+    const next = Math.min(Number(value), this.priceMax());
+    this.updateQuery({ priceMin: next, page: 0 });
+  }
+
+  protected updatePriceMax(value: string): void {
+    const next = Math.max(Number(value), this.priceMin());
+    this.updateQuery({ priceMax: next, page: 0 });
+  }
+
+  protected updateInStock(checked: boolean): void {
+    this.updateQuery({ inStock: checked, page: 0 });
+  }
+
+  protected updateSort(value: string): void {
+    this.updateQuery({ sort: this.normalizeSort(value), page: 0 });
+  }
+
+  protected setViewMode(mode: ViewMode): void {
+    this.viewMode.set(mode);
+    this.updateQuery({ view: mode });
   }
 
   protected clearFilters(): void {
-    this.selectedCategories.set(new Set());
-    this.selectedVendors.set(new Set());
-    this.currentPage.set(1);
-    this.triggerFilteringFeedback();
+    this.searchControl.setValue('', { emitEvent: false });
+    this.updateQuery({
+      q: '',
+      category: [],
+      priceMin: 0,
+      priceMax: this.observedMaxPrice(),
+      inStock: false,
+      sort: 'default',
+      page: 0,
+    });
   }
 
   protected openMobileFilters(): void {
@@ -257,86 +200,24 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.mobileFiltersOpen.set(false);
   }
 
-  protected toggleFavorite(product: ProductoListadoResponse): void {
-    this.wishlistUi.toggle(product);
-  }
-
-  protected isFavorite(product: ProductoListadoResponse): boolean {
-    return this.wishlistUi.has(product.idProducto);
-  }
-
-  protected goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages()) {
-      return;
-    }
-    this.currentPage.set(page);
-  }
-
-  protected setActiveMegaCategory(categoryId: string): void {
-    this.activeMegaCategoryId.set(categoryId);
-  }
-
-  protected openCategoryResults(categoryId: string, search?: string): void {
-    this.activeMegaCategoryId.set(categoryId);
-    this.currentPage.set(1);
-    this.megaMenuOpen.set(false);
-
-    void this.router.navigate(['/catalog'], {
-      queryParams: {
-        category: categoryId,
-        ...(search ? { search } : {})
-      }
-    });
-  }
-
-  protected clearCatalogState(): void {
-    this.clearFilters();
-    this.megaMenuOpen.set(false);
-    void this.router.navigate(['/catalog']);
-  }
-
-  protected openProductDetail(product: ProductoListadoResponse): void {
-    this.mobileFiltersOpen.set(false);
-    void this.router.navigate(['/product', product.slug || product.idProducto]);
+  protected pageChanged(page: number): void {
+    this.updateQuery({ page });
   }
 
   protected addToCart(product: ProductoListadoResponse): void {
-    this.cartMessage.set(null);
-    this.addingProductId.set(product.idProducto);
-
-    this.cartApi
-      .addItem({ productoId: product.idProducto, cantidad: 1 })
-      .pipe(finalize(() => this.addingProductId.set(null)))
-      .subscribe({
-        next: (response) => {
-          this.cartUi.hydrateFromApi(response);
-          this.cartUi.decorateItem(product.nombre, {
-            image: product.urlImagenPrincipal || undefined,
-            stockLabel: this.stockLabel(product),
-            oldPrice: product.precioLista > product.precioVigente ? product.precioLista : undefined
-          });
-          this.cartMessage.set(`${product.nombre} agregado al carrito.`);
-        },
-        error: (error) => {
-          this.cartMessage.set(parseApiError(error).message);
-        }
-      });
-  }
-
-  protected labelFromSlug(value: string): string {
-    const dictionary: Record<string, string> = {
-      accessories: 'Accesorios',
-      consoles: 'Consolas',
-      hardware: 'Hardware',
-      peripherals: 'Perifericos',
-      'video-games': 'Videojuegos'
-    };
-
-    return dictionary[value] ?? value;
-  }
-
-  protected stockLabel(product: ProductoListadoResponse): string {
-    return product.stockDisponible > 0 ? `Existencias: ${product.stockDisponible}` : 'Sin stock';
+    this.cartApi.addItem({ productoId: product.idProducto, cantidad: 1 }).subscribe({
+      next: (response) => {
+        this.cartUi.hydrateFromApi(response);
+        this.cartUi.decorateItem(product.nombre, {
+          image: product.urlImagenPrincipal || undefined,
+          stockLabel:
+            product.stockDisponible > 0 ? `Existencias: ${product.stockDisponible}` : 'Sin stock',
+          oldPrice: product.precioLista > product.precioVigente ? product.precioLista : undefined,
+        });
+        this.toast.success(`${product.nombre} agregado al carrito.`);
+      },
+      error: (error) => this.toast.error(parseApiError(error).message),
+    });
   }
 
   protected eventChecked(event: Event): boolean {
@@ -344,81 +225,240 @@ export class CatalogComponent implements OnInit, OnDestroy {
   }
 
   protected eventValue(event: Event): string {
-    return event.target instanceof HTMLInputElement ? event.target.value : '';
-  }
-
-  protected oldPrice(product: ProductoListadoResponse): number | undefined {
-    return product.precioLista > product.precioVigente ? product.precioLista : undefined;
-  }
-
-  ngOnDestroy(): void {
-    if (this.filterFeedbackTimeout) {
-      clearTimeout(this.filterFeedbackTimeout);
+    const target = event.target;
+    if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement) {
+      return target.value;
     }
+
+    return '';
   }
 
-  private toggleSetValue(source: ReturnType<typeof signal<Set<string>>>, value: string, checked: boolean): void {
-    source.update((current) => {
-      const next = new Set(current);
-      if (checked) {
-        next.add(value);
-      } else {
-        next.delete(value);
-      }
-      return next;
-    });
-    this.currentPage.set(1);
+  protected productGridClasses(): string {
+    return this.viewMode() === 'list'
+      ? 'grid grid-cols-1 gap-6'
+      : 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
   }
 
-  private triggerFilteringFeedback(): void {
-    this.filtering.set(true);
-    if (this.filterFeedbackTimeout) {
-      clearTimeout(this.filterFeedbackTimeout);
-    }
-    this.filterFeedbackTimeout = setTimeout(() => this.filtering.set(false), 260);
-  }
-
-  private loadCatalogFromApi(): void {
-    this.filtering.set(true);
-    this.error.set(null);
-    const params: Record<string, string | number | boolean> = { size: 100 };
-    const search = this.search()?.trim();
-    if (search) {
-      params['texto'] = search;
-    }
+  private loadCategories(): void {
+    this.categoriesLoading.set(true);
 
     this.catalogApi
-      .getCatalog(params)
-      .pipe(finalize(() => this.filtering.set(false)))
+      .getCategories()
+      .pipe(finalize(() => this.categoriesLoading.set(false)))
       .subscribe({
-        next: (response) => {
-          this.products.set(response.content ?? []);
-          const maxPrice = Math.max(...response.content.map((item) => item.precioVigente), 0);
-          const nextMax = maxPrice || 10000000;
-          this.priceLimitMax.set(nextMax);
-          this.maxPrice.set(nextMax);
+        next: (categories) => {
+          this.categories.set(categories);
+          if (this.selectedCategories().length > 0) {
+            this.loadProducts();
+          }
         },
-        error: (error) => {
-          this.products.set([]);
-          this.error.set(parseApiError(error).message);
-        }
+        error: () => this.categories.set([]),
       });
   }
 
-  private categorySlug(value: string): string {
-    const category = value.toLowerCase();
-    if (category.includes('videoj')) {
-      return 'video-games';
+  private loadProducts(): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    const query = this.searchControl.value.trim();
+    if (query) {
+      this.catalogApi
+        .search(query, this.searchParams())
+        .pipe(finalize(() => this.loading.set(false)))
+        .subscribe({
+          next: (response) => this.hydrateProducts(response),
+          error: (error) => this.handleProductsError(error),
+        });
+      return;
     }
-    if (category.includes('consol')) {
-      return 'consoles';
+
+    this.catalogApi
+      .getProducts(this.apiParams())
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (response) => this.hydrateProducts(response),
+        error: (error) => this.handleProductsError(error),
+      });
+  }
+
+  private hydrateProducts(
+    response: ApiPage<ProductoListadoResponse> | ApiPage<ProductoBusquedaResponse>,
+  ): void {
+    const mapped = response.content.map((product) => this.toListadoProduct(product));
+    this.products.set(mapped);
+    this.totalElements.set(response.totalElements);
+    this.totalPages.set(response.totalPages);
+    this.currentPage.set(response.number);
+    this.pageSize.set(response.size);
+
+    const maxPrice = Math.max(
+      ...mapped.map((product) => product.precioVigente),
+      this.observedMaxPrice(),
+    );
+    this.observedMaxPrice.set(maxPrice || 10000000);
+  }
+
+  private handleProductsError(error: unknown): void {
+    this.products.set([]);
+    this.totalElements.set(0);
+    this.totalPages.set(0);
+    this.error.set(parseApiError(error).message);
+  }
+
+  private apiParams(): CatalogProductParams {
+    const params: CatalogProductParams = {
+      page: this.currentPage(),
+      size: this.pageSize(),
+    };
+
+    if (this.sort() !== 'default') {
+      params['sort'] = this.sort();
     }
-    if (category.includes('perif')) {
-      return 'peripherals';
+
+    if (this.selectedCategories().length > 0) {
+      const idCategoria = this.categoryIdFromSlug(this.selectedCategories()[0]);
+      if (idCategoria !== null) {
+        params.idCategoria = idCategoria;
+      }
     }
-    if (category.includes('hardware')) {
-      return 'hardware';
+    if (this.priceMin() > 0) {
+      params['precioMin'] = this.priceMin();
     }
-    return 'accessories';
+    if (this.priceMax() < this.observedMaxPrice()) {
+      params['precioMax'] = this.priceMax();
+    }
+    if (this.inStockOnly()) {
+      params.soloDisponibles = true;
+    }
+
+    return params;
+  }
+
+  private searchParams(): CatalogSearchParams {
+    return {
+      page: this.currentPage(),
+      size: this.pageSize(),
+      ...(this.inStockOnly() ? { soloDisponibles: true } : {}),
+    };
+  }
+
+  private applyQueryParams(params: ParamMap): void {
+    const q = params.get('q') ?? params.get('search') ?? '';
+    this.searchControl.setValue(q, { emitEvent: false });
+    this.selectedCategories.set(this.readListParam(params, 'category'));
+    this.priceMin.set(this.readNumberParam(params, 'priceMin', 0));
+    this.priceMax.set(this.readNumberParam(params, 'priceMax', this.observedMaxPrice()));
+    this.inStockOnly.set(params.get('inStock') === 'true');
+    this.sort.set(this.normalizeSort(params.get('sort') ?? 'default'));
+    this.viewMode.set(params.get('view') === 'list' ? 'list' : 'grid');
+    this.currentPage.set(this.readNumberParam(params, 'page', 0));
+  }
+
+  private updateQuery(updates: {
+    q?: string;
+    category?: string[];
+    priceMin?: number;
+    priceMax?: number;
+    inStock?: boolean;
+    sort?: SortOption;
+    page?: number;
+    view?: ViewMode;
+  }): void {
+    const q = updates.q ?? this.searchControl.value.trim();
+    const category = updates.category ?? this.selectedCategories();
+    const priceMin = updates.priceMin ?? this.priceMin();
+    const priceMax = updates.priceMax ?? this.priceMax();
+    const inStock = updates.inStock ?? this.inStockOnly();
+    const sort = updates.sort ?? this.sort();
+    const page = updates.page ?? this.currentPage();
+    const view = updates.view ?? this.viewMode();
+
+    const queryParams: Record<string, string | number | boolean | string[] | null> = {
+      q: q || null,
+      category: category.length ? category : null,
+      priceMin: priceMin > 0 ? priceMin : null,
+      priceMax: priceMax < this.observedMaxPrice() ? priceMax : null,
+      inStock: inStock || null,
+      sort: sort !== 'default' ? sort : null,
+      page: page > 0 ? page : null,
+      view: view !== 'grid' ? view : null,
+    };
+
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+    });
+  }
+
+  private readListParam(params: ParamMap, key: string): string[] {
+    return params
+      .getAll(key)
+      .flatMap((value) => value.split(','))
+      .map((value) => value.trim())
+      .filter(Boolean);
+  }
+
+  private readNumberParam(params: ParamMap, key: string, fallback: number): number {
+    const raw = params.get(key);
+    if (!raw) {
+      return fallback;
+    }
+
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+
+  private normalizeSort(value: string): SortOption {
+    const allowed: SortOption[] = [
+      'default',
+      'precioLista,asc',
+      'precioLista,desc',
+      'createdAt,desc',
+      'nombre,asc',
+    ];
+
+    return allowed.includes(value as SortOption) ? (value as SortOption) : 'default';
+  }
+
+  private nextListValue(current: string[], value: string, checked: boolean): string[] {
+    const set = new Set(current);
+    if (checked) {
+      set.add(value);
+    } else {
+      set.delete(value);
+    }
+
+    return Array.from(set);
+  }
+
+  private flattenCategories(categories: CategoriaArbolResponse[], depth = 0): FlatCategory[] {
+    return categories.flatMap((category) => [
+      { id: category.idCategoria, nombre: category.nombre, slug: category.slug, depth },
+      ...this.flattenCategories(category.subcategorias ?? [], depth + 1),
+    ]);
+  }
+
+  private categoryIdFromSlug(slug: string): number | null {
+    return this.flatCategories().find((category) => category.slug === slug)?.id ?? null;
+  }
+
+  private toListadoProduct(
+    product: ProductoListadoResponse | ProductoBusquedaResponse,
+  ): ProductoListadoResponse {
+    return {
+      idProducto: product.idProducto,
+      nombre: product.nombre,
+      sku: 'sku' in product && product.sku ? product.sku : '',
+      slug: product.slug,
+      precioLista: product.precioLista,
+      precioVigente: product.precioVigente,
+      moneda: product.moneda,
+      stockDisponible: product.stockDisponible,
+      estado: 'estado' in product && product.estado ? product.estado : 'activo',
+      nombreCategoria: product.nombreCategoria,
+      nombreVendedor:
+        'nombreVendedor' in product && product.nombreVendedor ? product.nombreVendedor : '',
+      urlImagenPrincipal: product.urlImagenPrincipal,
+    };
   }
 }

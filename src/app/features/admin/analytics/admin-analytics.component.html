@@ -1,0 +1,318 @@
+<section class="space-y-6">
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+      <p class="font-mono text-xs font-semibold uppercase tracking-widest text-neo-red">Admin</p>
+      <h2 class="mt-1 text-2xl font-bold text-neo-white">Analitica</h2>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      @for (period of periods; track period.value) {
+        <button type="button" [class]="periodClasses(period.value)" (click)="setPeriod(period.value)">
+          {{ period.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (error()) {
+    <neo-card [padding]="'md'">
+      <div class="flex items-start gap-3">
+        <lucide-angular class="mt-0.5 text-neo-amber" [img]="icons.chart" [size]="20" [strokeWidth]="2"></lucide-angular>
+        <div>
+          <h3 class="text-sm font-semibold text-neo-white">No se pudo cargar la analitica</h3>
+          <p class="mt-1 text-sm text-neo-muted">Los endpoints reales respondieron con error o no estan disponibles.</p>
+        </div>
+      </div>
+    </neo-card>
+  }
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    @if (loading()) {
+      @for (item of [1, 2, 3, 4]; track item) {
+        <app-neo-skeleton variant="card" height="8rem"></app-neo-skeleton>
+      }
+    } @else {
+      <neo-card [padding]="'md'">
+        <p class="text-sm text-neo-muted">Clientes activos</p>
+        <p class="mt-2 text-2xl font-bold text-neo-white">{{ analytics()?.resumen?.cantidadClientesActivos ?? 0 }}</p>
+      </neo-card>
+
+      <neo-card [padding]="'md'">
+        <p class="text-sm text-neo-muted">Pedidos totales</p>
+        <p class="mt-2 text-2xl font-bold text-neo-white">{{ analytics()?.resumen?.pedidosTotales ?? 0 }}</p>
+      </neo-card>
+
+      <neo-card [padding]="'md'">
+        <p class="text-sm text-neo-muted">Ingresos totales</p>
+        <p class="mt-2 text-2xl font-bold text-neo-white">
+          {{ analytics()?.resumen?.ingresosTotales ?? 0 | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+        </p>
+      </neo-card>
+
+      <neo-card [padding]="'md'">
+        <p class="text-sm text-neo-muted">Ticket promedio</p>
+        <p class="mt-2 text-2xl font-bold text-neo-white">
+          {{ analytics()?.resumen?.ticketPromedioGlobal ?? 0 | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+        </p>
+      </neo-card>
+    }
+  </div>
+
+  <neo-card [padding]="'md'">
+    <div class="mb-5 flex items-center justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-semibold text-neo-white">Ventas por periodo</h3>
+        <p class="text-sm text-neo-muted">Endpoint /ventas-por-periodo</p>
+      </div>
+      <lucide-angular class="text-neo-muted" [img]="icons.growth" [size]="20" [strokeWidth]="2"></lucide-angular>
+    </div>
+
+    @if (loading()) {
+      <app-neo-skeleton variant="block" height="14rem"></app-neo-skeleton>
+    } @else if (revenueBars().length) {
+      <div class="flex h-48 items-end gap-2">
+        @for (item of revenueBars(); track item.periodo) {
+          <div class="flex min-w-0 flex-1 flex-col items-center gap-2">
+            <div class="flex h-40 w-full items-end rounded-neo-sm bg-neo-elevated">
+              <div
+                class="w-full rounded-neo-sm bg-neo-red"
+                [style.height.%]="(item.ingresos / maxRevenue()) * 100"
+              ></div>
+            </div>
+            <span class="w-full truncate text-center text-xs text-neo-muted">{{ item.periodo }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="flex h-48 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+        <p class="text-sm text-neo-muted">Sin ventas para el periodo seleccionado.</p>
+      </div>
+    }
+  </neo-card>
+
+  <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+    <neo-card [padding]="'md'">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-neo-white">Pedidos por estado</h3>
+          <p class="text-sm text-neo-muted">Endpoint /pedidos-por-estado</p>
+        </div>
+        <lucide-angular class="text-neo-muted" [img]="icons.bag" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </div>
+
+      @if (loading()) {
+        <app-neo-skeleton variant="block" height="14rem"></app-neo-skeleton>
+      } @else if (analytics()?.pedidosPorEstado?.length) {
+        <div class="space-y-4">
+          @for (item of analytics()!.pedidosPorEstado; track item.estado) {
+            <div>
+              <div class="mb-2 flex items-center justify-between gap-3 text-sm">
+                <span class="font-medium text-neo-white">{{ item.estado }}</span>
+                <span class="text-neo-muted">{{ item.cantidadPedidos }}</span>
+              </div>
+              <div class="h-2 overflow-hidden rounded-full bg-neo-elevated">
+                <div
+                  [class]="'h-full rounded-full ' + getEstadoColor(item.estado)"
+                  [style.width.%]="(item.cantidadPedidos / maxStatus()) * 100"
+                ></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex h-40 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+          <p class="text-sm text-neo-muted">Sin pedidos para mostrar.</p>
+        </div>
+      }
+    </neo-card>
+
+    <neo-card [padding]="'md'">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-neo-white">Metodos de pago</h3>
+          <p class="text-sm text-neo-muted">Endpoint /metodos-pago</p>
+        </div>
+        <lucide-angular class="text-neo-muted" [img]="icons.card" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </div>
+
+      @if (loading()) {
+        <app-neo-skeleton variant="block" height="14rem"></app-neo-skeleton>
+      } @else if (analytics()?.metodosPago?.length) {
+        <div class="space-y-4">
+          @for (item of analytics()!.metodosPago; track item.metodoPago) {
+            <div>
+              <div class="mb-2 flex items-center justify-between gap-3 text-sm">
+                <span class="font-medium text-neo-white">{{ item.metodoPago }}</span>
+                <span class="text-neo-muted">{{ item.cantidadUsos }}</span>
+              </div>
+              <div class="h-2 overflow-hidden rounded-full bg-neo-elevated">
+                <div
+                  class="h-full rounded-full bg-neo-cyan"
+                  [style.width.%]="(item.cantidadUsos / maxPayment()) * 100"
+                ></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex h-40 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+          <p class="text-sm text-neo-muted">Sin pagos para mostrar.</p>
+        </div>
+      }
+    </neo-card>
+
+    <neo-card [padding]="'md'">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-neo-white">Resumen operativo</h3>
+          <p class="text-sm text-neo-muted">Campos reales del resumen</p>
+        </div>
+        <lucide-angular class="text-neo-muted" [img]="icons.users" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </div>
+
+      @if (loading()) {
+        <app-neo-skeleton variant="block" height="14rem"></app-neo-skeleton>
+      } @else {
+        <dl class="space-y-4 text-sm">
+          <div class="flex items-center justify-between gap-3">
+            <dt class="text-neo-muted">Total vendedores</dt>
+            <dd class="font-semibold text-neo-white">{{ unavailableValue(analytics()?.kpis?.totalVendedores) }}</dd>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <dt class="text-neo-muted">Total productos</dt>
+            <dd class="font-semibold text-neo-white">{{ unavailableValue(analytics()?.kpis?.totalProductos) }}</dd>
+          </div>
+          <div class="flex items-center justify-between gap-3">
+            <dt class="text-neo-muted">Pedidos pendientes</dt>
+            <dd class="font-semibold text-neo-white">{{ analytics()?.kpis?.pedidosPendientes ?? 0 }}</dd>
+          </div>
+        </dl>
+      }
+    </neo-card>
+  </div>
+
+  <neo-card [padding]="'md'">
+    <div class="mb-5 flex items-center justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-semibold text-neo-white">Ventas por categoria</h3>
+        <p class="text-sm text-neo-muted">Endpoint /ventas-por-categoria</p>
+      </div>
+      <lucide-angular class="text-neo-muted" [img]="icons.tags" [size]="20" [strokeWidth]="2"></lucide-angular>
+    </div>
+
+    @if (loading()) {
+      <app-neo-skeleton variant="block" height="14rem"></app-neo-skeleton>
+    } @else if (categoryBars().length) {
+      <div class="space-y-4">
+        @for (item of categoryBars(); track item.idCategoria) {
+          <div>
+            <div class="mb-2 flex items-center justify-between gap-3 text-sm">
+              <span class="font-medium text-neo-white">{{ item.nombreCategoria }}</span>
+              <span class="text-neo-muted">
+                {{ item.unidadesVendidas }} unidades - {{ item.ingresosGenerados | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+              </span>
+            </div>
+            <div class="h-3 overflow-hidden rounded-full bg-neo-elevated">
+              <div
+                class="h-full rounded-full bg-neo-red"
+                [style.width.%]="(item.ingresosGenerados / maxCategory()) * 100"
+              ></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="flex h-48 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+        <p class="text-sm text-neo-muted">Sin categorias para mostrar.</p>
+      </div>
+    }
+  </neo-card>
+
+  <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+    <neo-card [padding]="'md'">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-neo-white">Top vendedores</h3>
+          <p class="text-sm text-neo-muted">Endpoint /top-vendedores</p>
+        </div>
+        <lucide-angular class="text-neo-muted" [img]="icons.store" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </div>
+
+      @if (loading()) {
+        <app-neo-skeleton variant="block" height="18rem"></app-neo-skeleton>
+      } @else if (analytics()?.topVendedores?.length) {
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[38rem] text-left text-sm">
+            <thead class="border-b border-neo-border text-xs uppercase tracking-wider text-neo-muted">
+              <tr>
+                <th class="py-3 pr-4 font-semibold">Rank</th>
+                <th class="px-4 py-3 font-semibold">Vendedor</th>
+                <th class="px-4 py-3 font-semibold">Ventas</th>
+                <th class="py-3 pl-4 text-right font-semibold">Ingresos</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-neo-border">
+              @for (seller of analytics()!.topVendedores.slice(0, 10); track seller.idVendedor; let rank = $index) {
+                <tr class="text-neo-subtle">
+                  <td class="py-3 pr-4 font-mono text-neo-red">#{{ rank + 1 }}</td>
+                  <td class="px-4 py-3 text-neo-white">{{ seller.nombreVendedor }}</td>
+                  <td class="px-4 py-3">{{ seller.pedidosVendidos }}</td>
+                  <td class="py-3 pl-4 text-right font-semibold text-neo-white">
+                    {{ seller.ingresosGenerados | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="flex h-48 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+          <p class="text-sm text-neo-muted">Sin vendedores para mostrar.</p>
+        </div>
+      }
+    </neo-card>
+
+    <neo-card [padding]="'md'">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-neo-white">Top productos</h3>
+          <p class="text-sm text-neo-muted">Endpoint /top-productos</p>
+        </div>
+        <lucide-angular class="text-neo-muted" [img]="icons.package" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </div>
+
+      @if (loading()) {
+        <app-neo-skeleton variant="block" height="18rem"></app-neo-skeleton>
+      } @else if (analytics()?.topProductos?.length) {
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[38rem] text-left text-sm">
+            <thead class="border-b border-neo-border text-xs uppercase tracking-wider text-neo-muted">
+              <tr>
+                <th class="py-3 pr-4 font-semibold">Rank</th>
+                <th class="px-4 py-3 font-semibold">Producto</th>
+                <th class="px-4 py-3 font-semibold">Unidades</th>
+                <th class="py-3 pl-4 text-right font-semibold">Ingresos</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-neo-border">
+              @for (product of analytics()!.topProductos.slice(0, 10); track product.idProducto; let rank = $index) {
+                <tr class="text-neo-subtle">
+                  <td class="py-3 pr-4 font-mono text-neo-red">#{{ rank + 1 }}</td>
+                  <td class="px-4 py-3 text-neo-white">{{ product.nombre }}</td>
+                  <td class="px-4 py-3">{{ product.unidadesVendidas }}</td>
+                  <td class="py-3 pl-4 text-right font-semibold text-neo-white">
+                    {{ product.ingresosGenerados | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="flex h-48 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+          <p class="text-sm text-neo-muted">Sin productos para mostrar.</p>
+        </div>
+      }
+    </neo-card>
+  </div>
+</section>

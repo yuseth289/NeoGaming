@@ -1,8 +1,22 @@
+@config "../tailwind.config.js";
 @import 'tailwindcss';
 
 :root {
   color-scheme: dark;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --color-neo-base: theme('colors.neo.base');
+  --color-neo-surface: theme('colors.neo.surface');
+  --color-neo-elevated: theme('colors.neo.elevated');
+  --color-neo-border: theme('colors.neo.border');
+  --color-neo-border-bright: theme('colors.neo.border-bright');
+  --color-neo-red: theme('colors.neo.red');
+  --color-neo-red-dim: theme('colors.neo.red-dim');
+  --color-neo-cyan: theme('colors.neo.cyan');
+  --color-neo-cyan-dim: theme('colors.neo.cyan-dim');
+  --color-neo-green: theme('colors.neo.green');
+  --color-neo-amber: theme('colors.neo.amber');
+  --color-neo-muted: theme('colors.neo.muted');
+  --color-neo-subtle: theme('colors.neo.subtle');
+  --color-neo-white: theme('colors.neo.white');
 }
 
 * {
@@ -13,17 +27,34 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  background: #040404;
-  color: #f4f4f4;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  line-height: 1.4;
+  background-color: theme('colors.neo.base');
+  color: theme('colors.neo.white');
+  font-family: theme('fontFamily.sans');
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
 a {
   transition: all 0.24s ease;
+}
+
+::selection {
+  background-color: theme('colors.neo.red');
+  color: theme('colors.neo.white');
+}
+
+:focus-visible {
+  outline: 2px solid theme('colors.neo.cyan');
+  outline-offset: 2px;
 }
 
 /* ═════════════════════════════════════════════════════════════
@@ -80,4 +111,23 @@ a {
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: theme('colors.neo.border') transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: theme('colors.neo.border');
+  border-radius: 3px;
 }

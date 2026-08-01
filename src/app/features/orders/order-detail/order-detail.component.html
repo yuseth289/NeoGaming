@@ -1,0 +1,123 @@
+<section class="mx-auto w-full max-w-7xl px-4 text-neo-white sm:px-6 lg:px-8">
+  <app-neo-breadcrumb [items]="breadcrumb()"></app-neo-breadcrumb>
+
+  @if (loading()) {
+    <div class="flex min-h-72 items-center justify-center">
+      <app-neo-spinner size="lg"></app-neo-spinner>
+    </div>
+  } @else if (order(); as currentOrder) {
+    <header class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-h1">Pedido #{{ currentOrder.id }}</h1>
+        <p class="text-small text-neo-muted-text">Detalle del pedido y estado de preparacion.</p>
+      </div>
+      <app-neo-badge [variant]="statusVariant(currentOrder.estado)">
+        {{ statusLabel(currentOrder.estado) }}
+      </app-neo-badge>
+    </header>
+
+    <div class="grid gap-4 sm:gap-6 lg:grid-cols-2">
+      <main class="space-y-6">
+        <app-neo-card class="block" padding="md">
+          <h2 class="mb-4 text-h3">Productos del pedido</h2>
+          <div class="space-y-4">
+            @for (item of currentOrder.items; track item.productoId + '-' + item.sku) {
+              <article class="grid gap-4 border-b border-neo-border sm:gap-6 sm:grid-cols-2 sm:items-center">
+                <div class="flex min-w-0 items-center gap-4">
+                  <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-neo-md bg-neo-elevated text-xs text-neo-muted-text">
+                    {{ item.sku || 'NG' }}
+                  </div>
+                  <div class="min-w-0">
+                    <h3 class="truncate text-h4">{{ item.nombre }}</h3>
+                    <p class="text-xs text-neo-muted-text">
+                      {{ item.cantidad }} x {{ item.precioFinalUnitario | copPrice }}
+                    </p>
+                  </div>
+                </div>
+                <strong class="text-h4 text-neo-red-text">{{ item.totalLinea | copPrice }}</strong>
+              </article>
+            }
+          </div>
+
+          <div class="space-y-4 border-t border-neo-border p-5 text-small">
+            <div class="flex justify-between gap-4">
+              <span class="text-neo-muted-text">Subtotal</span>
+              <strong>{{ currentOrder.subtotal | copPrice }}</strong>
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-neo-muted-text">Envio</span>
+              <strong>{{ currentOrder.costoEnvio | copPrice }}</strong>
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-neo-muted-text">Descuento</span>
+              <strong class="text-neo-green">$ 0</strong>
+            </div>
+            <div class="flex justify-between gap-4 border-t border-neo-border p-5 text-h4">
+              <span>Total</span>
+              <strong class="text-neo-red-text">{{ currentOrder.total | copPrice }}</strong>
+            </div>
+          </div>
+        </app-neo-card>
+
+        <app-neo-card class="block" padding="md">
+          <h2 class="mb-4 text-h3">Direccion de envio</h2>
+          <p class="text-small text-neo-muted-text">El endpoint de detalle no devuelve direccion de envio todavia.</p>
+        </app-neo-card>
+
+        <app-neo-card class="block" padding="md">
+          <h2 class="mb-4 text-h3">Metodo de pago</h2>
+          <div class="flex items-center gap-3 text-small text-neo-subtle">
+            <lucide-angular [img]="icons.payment" [size]="18" [strokeWidth]="2"></lucide-angular>
+            <span>No disponible en el endpoint de pedido</span>
+          </div>
+        </app-neo-card>
+
+        <div class="flex flex-wrap gap-4">
+          @if (isPending()) {
+            <app-neo-button variant="danger" (neoClick)="cancelModalOpen.set(true)">Cancelar pedido</app-neo-button>
+          }
+          @if (isDelivered()) {
+            <app-neo-button variant="secondary" [loading]="rebuying()" (neoClick)="rebuy()">Volver a comprar</app-neo-button>
+          }
+        </div>
+      </main>
+
+      <aside class="lg:sticky lg:top-24 lg:self-start">
+        <app-neo-card class="block" padding="md">
+          <h2 class="mb-4 text-h3">Seguimiento</h2>
+          <div class="space-y-4">
+            @for (step of timeline; track step.label; let index = $index) {
+              <article class="flex gap-4">
+                <span
+                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border"
+                  [class.border-neo-green]="isTimelineComplete(index)"
+                  [class.bg-neo-green]="isTimelineComplete(index)"
+                  [class.text-neo-base]="isTimelineComplete(index)"
+                  [class.border-neo-red]="isTimelineCurrent(index)"
+                  [class.text-neo-red-text]="isTimelineCurrent(index)"
+                  [class.shadow-neo-glow-red]="isTimelineCurrent(index)"
+                  [class.border-neo-border]="!isTimelineComplete(index) && !isTimelineCurrent(index)"
+                  [class.text-neo-muted-text]="!isTimelineComplete(index) && !isTimelineCurrent(index)"
+                >
+                  <lucide-angular [img]="step.icon" [size]="17" [strokeWidth]="2"></lucide-angular>
+                </span>
+                <div>
+                  <h3 class="text-small font-semibold text-neo-white">{{ step.label }}</h3>
+                  <p class="text-xs text-neo-muted-text">Timestamp no disponible</p>
+                </div>
+              </article>
+            }
+          </div>
+        </app-neo-card>
+      </aside>
+    </div>
+  }
+</section>
+
+<app-neo-modal [open]="cancelModalOpen()" title="Cancelar pedido" size="sm" (close)="cancelModalOpen.set(false)">
+  <p class="text-small text-neo-subtle">¿Seguro que deseas cancelar este pedido?</p>
+  <div neo-modal-footer class="flex justify-end gap-3 border-t border-neo-border p-5">
+    <app-neo-button variant="ghost" [disabled]="cancelling()" (neoClick)="cancelModalOpen.set(false)">Volver</app-neo-button>
+    <app-neo-button variant="danger" [loading]="cancelling()" (neoClick)="cancelOrder()">Cancelar pedido</app-neo-button>
+  </div>
+</app-neo-modal>

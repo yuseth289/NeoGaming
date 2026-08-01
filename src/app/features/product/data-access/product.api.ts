@@ -1,7 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client/api-client.service';
-import { ProductoDetalleResponse, ResenaProductoResponse } from '../../../core/models/api.models';
+import {
+  CrearOActualizarResenaRequest,
+  ProductoDetalleResponse,
+  ResenaProductoResponse
+} from '../../../core/models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class ProductApi {
@@ -19,9 +23,9 @@ export class ProductApi {
     return this.api.get<ResenaProductoResponse[]>(`/resenas/productos/${productId}`);
   }
 
-  // TODO: integrar con POST /api/resenas (pendiente de implementación)
-  createOrUpdateReview(payload: unknown): Observable<object> {
-    return this.api.post<object>('/resenas', payload);
+  // TYPED: was Observable<object>, now ResenaProductoResponse per Phase 0 audit
+  createOrUpdateReview(payload: CrearOActualizarResenaRequest): Observable<ResenaProductoResponse> {
+    return this.api.post<ResenaProductoResponse>('/resenas', payload);
   }
 
   // TODO: integrar con DELETE /api/resenas/{resenaId} (pendiente de implementación)

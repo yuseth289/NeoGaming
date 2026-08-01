@@ -1,0 +1,299 @@
+<section class="space-y-6">
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+      <p class="font-mono text-xs font-semibold uppercase tracking-widest text-neo-red">Admin</p>
+      <h2 class="mt-1 text-2xl font-bold text-neo-white">Dashboard</h2>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      @for (period of periods; track period.value) {
+        <button
+          type="button"
+          [class]="periodClasses(period.value)"
+          (click)="setPeriod(period.value)"
+        >
+          {{ period.label }}
+        </button>
+      }
+
+      <app-neo-button variant="secondary" size="sm" routerLink="/admin/analitica">
+        <lucide-angular [img]="icons.chart" [size]="16" [strokeWidth]="2"></lucide-angular>
+        Analitica
+      </app-neo-button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <neo-card [padding]="'md'">
+      <div class="flex items-start gap-3">
+        <lucide-angular class="mt-0.5 text-neo-amber" [img]="icons.clock" [size]="20" [strokeWidth]="2"></lucide-angular>
+        <div>
+          <h3 class="text-sm font-semibold text-neo-white">Analitica no disponible</h3>
+          <p class="mt-1 text-sm text-neo-muted">
+            No fue posible cargar los endpoints reales de analitica administrativa.
+          </p>
+        </div>
+      </div>
+    </neo-card>
+  }
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    @if (loading()) {
+      @for (item of [1, 2, 3, 4, 5, 6]; track item) {
+        <app-neo-skeleton variant="card" height="8rem"></app-neo-skeleton>
+      }
+    } @else {
+      <neo-card [padding]="'md'">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm text-neo-muted">Total usuarios</p>
+            <p class="mt-2 text-2xl font-bold text-neo-white">{{ stats()?.totalUsuarios ?? 0 }}</p>
+          </div>
+          <span class="flex h-11 w-11 items-center justify-center rounded-neo-md bg-neo-elevated text-neo-cyan">
+            <lucide-angular [img]="icons.users" [size]="20" [strokeWidth]="2"></lucide-angular>
+          </span>
+        </div>
+      </neo-card>
+
+      <neo-card [padding]="'md'">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm text-neo-muted">Total vendedores</p>
+            <p class="mt-2 text-2xl font-bold text-neo-white">{{ unavailableValue(stats()?.totalVendedores) }}</p>
+          </div>
+          <span class="flex h-11 w-11 items-center justify-center rounded-neo-md bg-neo-elevated text-neo-amber">
+            <lucide-angular [img]="icons.store" [size]="20" [strokeWidth]="2"></lucide-angular>
+          </span>
+        </div>
+        <p class="mt-3 text-xs text-neo-muted">No expuesto por el resumen backend actual.</p>
+      </neo-card>
+
+      <neo-card [padding]="'md'">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm text-neo-muted">Total productos</p>
+            <p class="mt-2 text-2xl font-bold text-neo-white">{{ unavailableValue(stats()?.totalProductos) }}</p>
+          </div>
+          <span class="flex h-11 w-11 items-center justify-center rounded-neo-md bg-neo-elevated text-neo-red">
+            <lucide-angular [img]="icons.package" [size]="20" [strokeWidth]="2"></lucide-angular>
+          </span>
+        </div>
+        <p class="mt-3 text-xs text-neo-muted">No expuesto por el resumen backend actual.</p>
+      </neo-card>
+
+      <neo-card [padding]="'md'">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm text-neo-muted">Total pedidos</p>
+            <p class="mt-2 text-2xl font-bold text-neo-white">{{ stats()?.totalPedidos ?? 0 }}</p>
+          </div>
+          <span class="flex h-11 w-11 items-center justify-center rounded-neo-md bg-neo-elevated text-neo-red">
+            <lucide-angular [img]="icons.bag" [size]="20" [strokeWidth]="2"></lucide-angular>
+          </span>
+        </div>
+      </neo-card>
+
+      <neo-card [padding]="'md'">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm text-neo-muted">Ingresos totales</p>
+            <p class="mt-2 text-2xl font-bold text-neo-white">
+              {{ stats()?.ingresosTotales ?? 0 | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+            </p>
+          </div>
+          <span class="flex h-11 w-11 items-center justify-center rounded-neo-md bg-neo-elevated text-neo-green">
+            <lucide-angular [img]="icons.money" [size]="20" [strokeWidth]="2"></lucide-angular>
+          </span>
+        </div>
+      </neo-card>
+
+      <neo-card [padding]="'md'">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm text-neo-muted">Pedidos pendientes</p>
+            <p class="mt-2 text-2xl font-bold text-neo-white">{{ totalPedidosPendientes() }}</p>
+          </div>
+          <app-neo-badge [variant]="totalPedidosPendientes() > 0 ? 'warning' : 'default'" size="sm">
+            Pendiente
+          </app-neo-badge>
+        </div>
+      </neo-card>
+    }
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(22rem,1fr)]">
+    <neo-card [padding]="'md'">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-neo-white">Ingresos por periodo</h3>
+          <p class="text-sm text-neo-muted">Ultimos 14 registros</p>
+        </div>
+        <lucide-angular class="text-neo-muted" [img]="icons.growth" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </div>
+
+      @if (loading()) {
+        <app-neo-skeleton variant="block" height="16rem"></app-neo-skeleton>
+      } @else if (revenueBars().length) {
+        <div class="flex h-64 items-end gap-2">
+          @for (item of revenueBars(); track item.periodo) {
+            <div class="flex min-w-0 flex-1 flex-col items-center gap-2">
+              <div class="flex h-52 w-full items-end rounded-neo-sm bg-neo-elevated">
+                <div
+                  class="w-full rounded-neo-sm bg-neo-red"
+                  [style.height.%]="(item.ingresos / maxRevenue()) * 100"
+                ></div>
+              </div>
+              <span class="w-full truncate text-center text-xs text-neo-muted">{{ item.periodo }}</span>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex h-64 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+          <p class="text-sm text-neo-muted">Sin datos de ingresos disponibles.</p>
+        </div>
+      }
+    </neo-card>
+
+    <neo-card [padding]="'md'">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-neo-white">Pedidos por estado</h3>
+          <p class="text-sm text-neo-muted">Distribucion actual</p>
+        </div>
+        <lucide-angular class="text-neo-muted" [img]="icons.package" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </div>
+
+      @if (loading()) {
+        <app-neo-skeleton variant="block" height="16rem"></app-neo-skeleton>
+      } @else if (analytics()?.pedidosPorEstado?.length) {
+        <div class="space-y-4">
+          @for (item of analytics()!.pedidosPorEstado; track statusTrackBy(item)) {
+            <div>
+              <div class="mb-2 flex items-center justify-between gap-3 text-sm">
+                <span class="font-medium text-neo-white">{{ item.estado }}</span>
+                <span class="text-neo-muted">{{ item.cantidadPedidos }}</span>
+              </div>
+              <div class="h-2 overflow-hidden rounded-full bg-neo-elevated">
+                <div
+                  [class]="'h-full rounded-full ' + getEstadoColor(item.estado)"
+                  [style.width.%]="(item.cantidadPedidos / maxEstado()) * 100"
+                ></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex h-64 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+          <p class="text-sm text-neo-muted">Sin pedidos para mostrar.</p>
+        </div>
+      }
+    </neo-card>
+  </div>
+
+  <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+    <neo-card [padding]="'md'">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-neo-white">Metodos de pago</h3>
+          <p class="text-sm text-neo-muted">Uso por metodo</p>
+        </div>
+        <lucide-angular class="text-neo-muted" [img]="icons.card" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </div>
+
+      @if (loading()) {
+        <app-neo-skeleton variant="block" height="14rem"></app-neo-skeleton>
+      } @else if (analytics()?.metodosPago?.length) {
+        <div class="space-y-4">
+          @for (item of analytics()!.metodosPago; track item.metodoPago) {
+            <div>
+              <div class="mb-2 flex items-center justify-between gap-3 text-sm">
+                <span class="font-medium text-neo-white">{{ item.metodoPago }}</span>
+                <span class="text-neo-muted">{{ item.cantidadUsos }}</span>
+              </div>
+              <div class="h-2 overflow-hidden rounded-full bg-neo-elevated">
+                <div
+                  class="h-full rounded-full bg-neo-cyan"
+                  [style.width.%]="(item.cantidadUsos / maxPayment()) * 100"
+                ></div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex h-40 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+          <p class="text-sm text-neo-muted">Sin pagos registrados.</p>
+        </div>
+      }
+    </neo-card>
+
+    <neo-card [padding]="'md'">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-neo-white">Top vendedores</h3>
+          <p class="text-sm text-neo-muted">Ranking global</p>
+        </div>
+        <lucide-angular class="text-neo-muted" [img]="icons.store" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </div>
+
+      @if (loading()) {
+        <app-neo-skeleton variant="block" height="14rem"></app-neo-skeleton>
+      } @else if (analytics()?.topVendedores?.length) {
+        <div class="space-y-3">
+          @for (seller of analytics()!.topVendedores.slice(0, 5); track seller.idVendedor; let rank = $index) {
+            <div class="flex items-center justify-between gap-3 rounded-neo-md border border-neo-border bg-neo-elevated px-3 py-3">
+              <div class="flex min-w-0 items-center gap-3">
+                <span class="font-mono text-sm font-bold text-neo-red">#{{ rank + 1 }}</span>
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-neo-white">{{ seller.nombreVendedor }}</p>
+                  <p class="text-xs text-neo-muted">{{ seller.pedidosVendidos }} ventas</p>
+                </div>
+              </div>
+              <p class="shrink-0 text-sm font-semibold text-neo-white">
+                {{ seller.ingresosGenerados | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+              </p>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex h-40 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+          <p class="text-sm text-neo-muted">Sin vendedores para mostrar.</p>
+        </div>
+      }
+    </neo-card>
+
+    <neo-card [padding]="'md'">
+      <div class="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-semibold text-neo-white">Top productos</h3>
+          <p class="text-sm text-neo-muted">Mas vendidos</p>
+        </div>
+        <lucide-angular class="text-neo-muted" [img]="icons.package" [size]="20" [strokeWidth]="2"></lucide-angular>
+      </div>
+
+      @if (loading()) {
+        <app-neo-skeleton variant="block" height="14rem"></app-neo-skeleton>
+      } @else if (analytics()?.topProductos?.length) {
+        <div class="space-y-3">
+          @for (product of analytics()!.topProductos.slice(0, 5); track product.idProducto; let rank = $index) {
+            <div class="flex items-center justify-between gap-3 rounded-neo-md border border-neo-border bg-neo-elevated px-3 py-3">
+              <div class="flex min-w-0 items-center gap-3">
+                <span class="font-mono text-sm font-bold text-neo-red">#{{ rank + 1 }}</span>
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-neo-white">{{ product.nombre }}</p>
+                  <p class="text-xs text-neo-muted">{{ product.unidadesVendidas }} unidades</p>
+                </div>
+              </div>
+              <p class="shrink-0 text-sm font-semibold text-neo-white">
+                {{ product.ingresosGenerados | currency: 'COP' : 'symbol-narrow' : '1.0-0' }}
+              </p>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="flex h-40 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+          <p class="text-sm text-neo-muted">Sin productos para mostrar.</p>
+        </div>
+      }
+    </neo-card>
+  </div>
+</section>

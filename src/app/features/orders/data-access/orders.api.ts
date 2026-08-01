@@ -1,7 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client/api-client.service';
-import { ApiPage, PedidoListadoResponse, PedidoResponse } from '../../../core/models/api.models';
+import {
+  ApiPage,
+  CrearPedidoRequest,
+  FacturaResponse,
+  PedidoListadoResponse,
+  PedidoResponse
+} from '../../../core/models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class OrdersApi {
@@ -15,12 +21,20 @@ export class OrdersApi {
     return this.api.get<PedidoResponse>(`/pedidos/${orderId}`);
   }
 
-  // TODO: integrar con GET /api/facturas/pedido/{pedidoId} (pendiente de implementación)
-  getInvoiceByOrderId(pedidoId: string): Observable<object> {
-    return this.api.get<object>(`/facturas/pedido/${pedidoId}`);
+  getOrder(orderId: string): Observable<PedidoResponse> {
+    return this.getById(orderId);
   }
 
-  create(payload: unknown): Observable<PedidoResponse> {
+  cancelOrder(orderId: string | number): Observable<PedidoResponse> {
+    return this.api.post<PedidoResponse>(`/pedidos/${orderId}/cancelar`, {});
+  }
+
+  // TYPED: was Observable<object>, now FacturaResponse per Phase 0 audit
+  getInvoiceByOrderId(pedidoId: string): Observable<FacturaResponse> {
+    return this.api.get<FacturaResponse>(`/facturas/pedido/${pedidoId}`);
+  }
+
+  create(payload?: CrearPedidoRequest): Observable<PedidoResponse> {
     return this.api.post<PedidoResponse>('/pedidos', payload);
   }
 }

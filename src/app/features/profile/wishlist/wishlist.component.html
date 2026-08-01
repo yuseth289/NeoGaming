@@ -1,0 +1,38 @@
+<div class="space-y-6">
+  <h2 class="text-h3 font-semibold text-neo-white">Mis favoritos</h2>
+
+  @if (loading()) {
+    <div class="flex min-h-56 items-center justify-center">
+      <app-neo-spinner size="lg"></app-neo-spinner>
+    </div>
+  } @else if (products().length === 0) {
+    <app-neo-card class="block" padding="lg">
+      <div class="flex min-h-64 flex-col items-center justify-center gap-4 text-center">
+        <lucide-angular class="text-neo-muted-text" [img]="icons.heart" [size]="48" [strokeWidth]="1.8"></lucide-angular>
+        <div>
+          <h2 class="text-h2">Tu lista de favoritos esta vacia</h2>
+          <p class="text-small text-neo-muted-text">Explora el catalogo y guarda productos.</p>
+        </div>
+        <app-neo-button routerLink="/catalogo" variant="primary">Ir al catalogo</app-neo-button>
+      </div>
+    </app-neo-card>
+  } @else {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      @for (product of products(); track product.idProducto) {
+        <div class="relative">
+          <div class="absolute left-4 top-4 z-10">
+            <app-neo-button
+              variant="ghost"
+              size="sm"
+              [loading]="isRemoving(product.idProducto)"
+              (neoClick)="remove(product, $event)"
+            >
+              <lucide-angular class="fill-neo-red text-neo-red-text" [img]="icons.heart" [size]="17" [strokeWidth]="2"></lucide-angular>
+            </app-neo-button>
+          </div>
+          <app-product-card [product]="product" (addToCart)="addToCart($event)"></app-product-card>
+        </div>
+      }
+    </div>
+  }
+</div>

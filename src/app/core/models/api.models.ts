@@ -10,8 +10,15 @@ export interface ApiPage<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
-  size: number;
   number: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
 export interface LoginResponse {
@@ -20,6 +27,13 @@ export interface LoginResponse {
   nombre: string;
   email: string;
   rol: string;
+}
+
+export interface RegistroUsuarioRequest {
+  nombre: string;
+  email: string;
+  password: string;
+  telefono?: string;
 }
 
 export interface UsuarioResponse {
@@ -48,10 +62,85 @@ export interface PerfilUsuarioResponse {
 
 export interface ActualizarPerfilUsuarioRequest {
   nombre: string;
-  telefono: string | null;
-  sobreMi: string | null;
-  prefiereNoticias: boolean;
-  prefiereOfertas: boolean;
+  email: string;
+  telefono?: string | null;
+  sobreMi?: string | null;
+  fotoPerfilUrl?: string;
+  prefiereNoticias?: boolean | null;
+  prefiereOfertas?: boolean | null;
+}
+
+export interface DatosPagoVendedorRequest {
+  tipoCuenta: string;
+  numeroCuenta: string;
+  banco: string;
+  titularCuenta: string;
+}
+
+export interface ConvertirVendedorRequest {
+  nombreCompletoORazonSocial: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  pais: string;
+  telefono: string;
+  correo: string;
+  nombreComercial: string;
+  aceptaTerminos: boolean;
+  datosPago?: DatosPagoVendedorRequest | null;
+}
+
+export interface VendedorResponse {
+  id: number;
+  usuarioId: number;
+  rolUsuario: string;
+  nombreCompletoORazonSocial: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  pais: string;
+  telefono: string;
+  correo: string;
+  nombreComercial: string;
+  aceptaTerminos: boolean;
+  datosPago: DatosPagoVendedorRequest | null;
+}
+
+export interface DireccionUsuarioResponse {
+  id: number;
+  tipo: 'ENVIO' | 'FACTURACION' | string;
+  esPrincipal: boolean;
+  pais: string;
+  departamento: string | null;
+  ciudad: string;
+  comuna: string | null;
+  codigoPostal: string | null;
+  calle: string;
+  numero: string;
+  referencia: string | null;
+  estado: string;
+}
+
+export interface CrearDireccionRequest {
+  tipo: 'ENVIO' | 'FACTURACION';
+  esPrincipal?: boolean;
+  pais: string;
+  departamento?: string | null;
+  ciudad: string;
+  comuna?: string | null;
+  codigoPostal?: string | null;
+  calle: string;
+  numero: string;
+  referencia?: string | null;
+}
+
+export interface ActualizarDireccionRequest extends CrearDireccionRequest {}
+
+export interface AgregarProductoCarritoRequest {
+  productoId: number;
+  cantidad: number;
+}
+
+export interface ActualizarCantidadCarritoRequest {
+  cantidad: number;
 }
 
 export interface ProductoListadoResponse {
@@ -83,6 +172,14 @@ export interface ProductoBusquedaResponse {
   puntajeRelevancia: number;
 }
 
+export interface CategoriaArbolResponse {
+  idCategoria: number;
+  nombre: string;
+  slug: string;
+  descripcion: string | null;
+  subcategorias: CategoriaArbolResponse[];
+}
+
 export interface ProductoImagenResponse {
   id: number;
   productoId: number;
@@ -96,6 +193,22 @@ export interface CategoriaProductoResponse {
   id: number;
   nombre: string;
   slug: string;
+}
+
+export interface CategoriaResponse {
+  id: number;
+  categoriaPadreId: number | null;
+  nombre: string;
+  slug: string;
+  descripcion: string | null;
+  estado: string;
+}
+
+export interface CrearCategoriaRequest {
+  categoriaPadreId: number | null;
+  nombre: string;
+  slug: string;
+  descripcion?: string | null;
 }
 
 export interface VendedorProductoResponse {
@@ -149,6 +262,12 @@ export interface ResenaProductoResponse {
   fecha: string;
 }
 
+export interface CrearOActualizarResenaRequest {
+  productoId: number;
+  calificacion: number;
+  comentario?: string | null;
+}
+
 export interface PedidoListadoProductoResponse {
   idProducto: number;
   sku: string;
@@ -185,6 +304,24 @@ export interface PedidoResponse {
   total: number;
   needsRecalc: boolean;
   items: PedidoItemResponse[];
+}
+
+export interface CrearPedidoRequest {
+  moneda?: string;
+  direccionEnvioId?: number | null;
+  direccionFacturaId?: number | null;
+}
+
+export interface FacturaResponse {
+  id: number;
+  pedidoId: number;
+  numeroFactura: string;
+  estadoFactura: string;
+  subtotal: number;
+  impuesto: number;
+  costoEnvio: number;
+  totalNeto: number;
+  moneda: string;
 }
 
 export interface CarritoItemResponse {
@@ -246,6 +383,49 @@ export interface DireccionCheckoutResponse {
   referenciaEntrega: string | null;
 }
 
+export interface GuardarEnvioPayload {
+  pedidoId: number;
+  direccionEnvioId?: number | null;
+  direccionFacturaId?: number | null;
+  direccionEnvio?: {
+    nombreCompleto: string;
+    correoElectronico: string;
+    telefono: string;
+    direccion: string;
+    apartamentoInterior: string | null;
+    ciudad: string;
+    estadoRegion: string;
+    codigoPostal: string;
+    pais: string;
+    referenciaEntrega: string | null;
+  };
+  direccionFactura?: {
+    nombreCompleto: string;
+    correoElectronico: string;
+    telefono: string;
+    direccion: string;
+    apartamentoInterior: string | null;
+    ciudad: string;
+    estadoRegion: string;
+    codigoPostal: string;
+    pais: string;
+    referenciaEntrega: string | null;
+  } | null;
+  mismaDireccionFacturacion: boolean;
+}
+
+export interface ProcesarPagoPayload {
+  pedidoId: number;
+  metodoPago: {
+    tipoPago: string;
+    nombreTitular?: string;
+    numeroTarjeta?: string;
+    fechaVencimiento?: string;
+    cvv?: string;
+  };
+  simularFallo: boolean;
+}
+
 export interface IniciarCheckoutResponse {
   pedidoId: number;
   numeroPedido: string;
@@ -285,6 +465,126 @@ export interface ConfirmacionPedidoResponse {
   direccionFactura: DireccionCheckoutResponse | null;
   resumen: ResumenCheckoutResponse;
   items: ItemResumenCheckoutResponse[];
+}
+
+export interface PagoResponse {
+  id: number;
+  pedidoId: number;
+  estado: string;
+  proveedorPago: string;
+  referenciaInterna: string;
+  monto: number;
+  moneda: string;
+  tipoPago: string;
+}
+
+export type AdminPeriodoAnalitica = 'DIARIO' | 'SEMANAL' | 'MENSUAL';
+
+export interface AdminResumenResponse {
+  ingresosTotales: number;
+  pedidosTotales: number;
+  ticketPromedioGlobal: number;
+  cantidadClientesActivos: number;
+}
+
+export interface ResumenAdminResponse extends AdminResumenResponse {}
+
+export interface VentaPeriodoResponse {
+  periodo: string;
+  ingresos: number;
+  cantidadPedidos: number;
+}
+
+export interface TopVendedorAdminResponse {
+  idVendedor: number;
+  nombreVendedor: string;
+  emailVendedor: string;
+  pedidosVendidos: number;
+  ingresosGenerados: number;
+}
+
+export interface TopProductoAdminResponse {
+  idProducto: number;
+  nombre: string;
+  sku: string;
+  slug: string;
+  unidadesVendidas: number;
+  ingresosGenerados: number;
+}
+
+export interface VentaCategoriaAdminResponse {
+  idCategoria: number;
+  nombreCategoria: string;
+  unidadesVendidas: number;
+  ingresosGenerados: number;
+}
+
+export interface MetodoPagoAdminResponse {
+  metodoPago: string;
+  cantidadUsos: number;
+  montoTotal: number;
+}
+
+export interface PedidoEstadoAdminResponse {
+  estado: string;
+  cantidadPedidos: number;
+}
+
+export interface AdminDashboardStats {
+  totalUsuarios: number;
+  totalVendedores: number | null;
+  totalProductos: number | null;
+  totalPedidos: number;
+  ingresosTotales: number;
+  pedidosPendientes: number;
+  ticketPromedioGlobal: number;
+}
+
+export interface UsuarioAdminResponse extends UsuarioResponse {
+  activo: boolean;
+  fechaRegistro: string;
+  totalPedidos?: number;
+  totalGastado?: number;
+}
+
+export interface VendedorAdminResponse {
+  id: number;
+  nombreComercial: string;
+  correo: string;
+  telefono?: string;
+  activo: boolean;
+  fechaRegistro: string;
+  totalProductos?: number;
+  totalVentas?: number;
+  calificacionPromedio?: number;
+}
+
+export interface AdminAnalytics {
+  periodo: AdminPeriodoAnalitica;
+  resumen: AdminResumenResponse;
+  kpis: AdminDashboardStats;
+  ventasPorPeriodo: VentaPeriodoResponse[];
+  pedidosPorEstado: PedidoEstadoAdminResponse[];
+  metodosPago: MetodoPagoAdminResponse[];
+  topVendedores: TopVendedorAdminResponse[];
+  topProductos: TopProductoAdminResponse[];
+  ventasPorCategoria: VentaCategoriaAdminResponse[];
+}
+
+export interface PlatformConfig {
+  comisionVendedor: number;
+  pedidoMinimo: number;
+  envioGratisDesde: number;
+  mantenimientoActivo: boolean;
+  registroAbierto: boolean;
+  vendedoresRequierenAprobacion: boolean;
+}
+
+export interface ResumenVendedorResponse {
+  ingresosTotales: number;
+  ingresosMesActual: number;
+  cantidadPedidosVendidos: number;
+  ticketPromedio: number;
 }
 
 export interface WishlistProductoResponse {

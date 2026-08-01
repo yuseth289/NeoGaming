@@ -1,0 +1,105 @@
+<footer class="border-t border-neo-border bg-neo-surface">
+  <div
+    class="mx-auto grid max-w-7xl gap-4 px-4 pt-20 sm:grid-cols-2 sm:gap-6 sm:px-6 lg:grid-cols-4 lg:px-8"
+  >
+    <section class="space-y-4">
+      <a
+        routerLink="/"
+        class="inline-block font-mono text-h3 font-bold tracking-normal"
+        aria-label="NeoGaming inicio"
+      >
+        <span class="text-neo-red-text">NEO</span><span class="text-neo-white">GAMING</span>
+      </a>
+      <p class="max-w-xs text-small text-neo-muted-text">
+        Hardware, perifericos y juegos para setups premium con energia competitiva.
+      </p>
+      <div class="flex items-center gap-3">
+        @for (
+          social of [
+            { label: 'X', icon: icons.twitter },
+            { label: 'Instagram', icon: icons.instagram },
+            { label: 'YouTube', icon: icons.youtube },
+            { label: 'Discord', icon: icons.discord },
+          ];
+          track social.label
+        ) {
+          <span
+            class="flex min-h-11 min-w-11 items-center justify-center rounded-neo-md border border-neo-border text-neo-subtle"
+            [attr.aria-label]="social.label"
+          >
+            <lucide-angular [img]="social.icon" [size]="17" [strokeWidth]="2"></lucide-angular>
+          </span>
+        }
+      </div>
+    </section>
+
+    <section>
+      <h2 class="mb-4 text-h4 text-neo-white">Tienda</h2>
+      <nav class="grid gap-3 text-small">
+        <a
+          class="text-neo-muted-text transition-neo duration-neo ease-neo hover:text-neo-white"
+          routerLink="/catalog"
+          >Catalogo</a
+        >
+        <a
+          class="text-neo-muted-text transition-neo duration-neo ease-neo hover:text-neo-white"
+          routerLink="/catalog"
+          [queryParams]="{ discount: true }"
+          >Ofertas</a
+        >
+        <a
+          class="text-neo-muted-text transition-neo duration-neo ease-neo hover:text-neo-white"
+          routerLink="/catalog"
+          [queryParams]="{ view: 'brands' }"
+          >Marcas</a
+        >
+        <a
+          class="text-neo-muted-text transition-neo duration-neo ease-neo hover:text-neo-white"
+          routerLink="/catalog"
+          [queryParams]="{ sort: 'new' }"
+          >Nuevos productos</a
+        >
+      </nav>
+    </section>
+
+    <section>
+      <h2 class="mb-4 text-h4 text-neo-white">Soporte</h2>
+      <nav class="grid gap-3 text-small">
+        <span class="text-neo-muted-text">FAQ</span>
+        <span class="text-neo-muted-text">Contacto</span>
+        <span class="text-neo-muted-text">Devoluciones</span>
+        <span class="text-neo-muted-text">Seguimiento de pedido</span>
+      </nav>
+    </section>
+
+    <section>
+      <h2 class="mb-4 text-h4 text-neo-white">Newsletter</h2>
+      <form class="space-y-4" (submit)="submitNewsletter($event)">
+        <app-neo-input
+          label="Tu correo electrónico"
+          [labelSrOnly]="true"
+          type="email"
+          placeholder="tu@email.com"
+          icon="mail"
+          hint="Lanzamientos, drops y ofertas sin ruido."
+        />
+        <app-neo-button type="submit" variant="primary" fullWidth>
+          <lucide-angular [img]="icons.send" [size]="16" [strokeWidth]="2"></lucide-angular>
+          Suscribirme
+        </app-neo-button>
+      </form>
+    </section>
+  </div>
+
+  <div class="border-t border-neo-border">
+    <div
+      class="mx-auto flex max-w-7xl flex-col gap-3 p-5 text-small text-neo-muted-text sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8"
+    >
+      <p>&copy; 2026 NeoGaming. Todos los derechos reservados.</p>
+      <nav class="flex flex-wrap gap-4">
+        <span>Politica de privacidad</span>
+        <span>Terminos del servicio</span>
+      </nav>
+    </div>
+  </div>
+</footer>

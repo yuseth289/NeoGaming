@@ -1,0 +1,234 @@
+<section class="space-y-6">
+  <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div>
+      <p class="font-mono text-xs font-semibold uppercase tracking-widest text-neo-red">Admin</p>
+      <h2 class="mt-1 text-2xl font-bold text-neo-white">Productos</h2>
+    </div>
+
+    <app-neo-button variant="primary" size="sm" (neoClick)="openCategoryModal()">
+      <lucide-angular [img]="icons.plus" [size]="16" [strokeWidth]="2"></lucide-angular>
+      Nueva categoria
+    </app-neo-button>
+  </div>
+
+  <neo-card [padding]="'md'">
+    <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label class="relative block w-full sm:w-72">
+          <span class="sr-only">Buscar productos</span>
+          <lucide-angular class="absolute left-3 top-1/2 -translate-y-1/2 text-neo-muted" [img]="icons.search" [size]="16" [strokeWidth]="2"></lucide-angular>
+          <input
+            type="search"
+            class="h-11 w-full rounded-neo-md border border-neo-border bg-neo-elevated pl-10 pr-3 text-sm text-neo-white placeholder-neo-muted"
+            placeholder="Buscar por nombre o SKU"
+            readonly
+          />
+        </label>
+
+        <select class="h-11 rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white" disabled>
+          <option>Todos los estados</option>
+          <option>ACTIVO</option>
+          <option>INACTIVO</option>
+        </select>
+      </div>
+
+      <div class="inline-flex items-center gap-2 rounded-neo-md border border-neo-border bg-neo-elevated px-3 py-2 text-sm text-neo-muted">
+        <lucide-angular [img]="icons.tags" [size]="16" [strokeWidth]="2"></lucide-angular>
+        {{ productTotalElements() }} productos
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[62rem] text-left text-sm">
+        <thead class="border-b border-neo-border text-xs uppercase tracking-wider text-neo-muted">
+          <tr>
+            <th class="py-3 pr-4 font-semibold">Producto</th>
+            <th class="px-4 py-3 font-semibold">Categoria</th>
+            <th class="px-4 py-3 font-semibold">Vendedor</th>
+            <th class="px-4 py-3 font-semibold">Estado</th>
+            <th class="px-4 py-3 font-semibold">Precio</th>
+            <th class="px-4 py-3 font-semibold">Stock</th>
+            <th class="py-3 pl-4 text-right font-semibold">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-neo-border">
+          @if (loadingProducts()) {
+          <tr>
+            <td colspan="7" class="py-16 text-center">
+              <lucide-angular [img]="icons.clock" [size]="32" [strokeWidth]="2" class="mx-auto mb-3 text-neo-muted"></lucide-angular>
+              <p class="text-sm text-neo-muted-text">Cargando productos</p>
+            </td>
+          </tr>
+          } @else if (productsError()) {
+            <tr>
+              <td colspan="7" class="py-16 text-center text-sm text-red-300">No fue posible cargar productos.</td>
+            </tr>
+          } @else if (products().length) {
+            @for (product of products(); track product.idProducto) {
+              <tr class="text-neo-subtle">
+                <td class="py-3 pr-4">
+                  <p class="font-semibold text-neo-white">{{ product.nombre }}</p>
+                  <p class="font-mono text-xs text-neo-muted">{{ product.sku }}</p>
+                </td>
+                <td class="px-4 py-3">{{ product.nombreCategoria }}</td>
+                <td class="px-4 py-3">{{ product.nombreVendedor }}</td>
+                <td class="px-4 py-3">
+                  <span class="rounded-neo-sm px-2 py-1 text-xs font-semibold" [class.bg-emerald-950]="product.estado === 'ACTIVO'" [class.text-emerald-300]="product.estado === 'ACTIVO'" [class.bg-rose-950]="product.estado !== 'ACTIVO'" [class.text-rose-300]="product.estado !== 'ACTIVO'">
+                    {{ product.estado }}
+                  </span>
+                </td>
+                <td class="px-4 py-3">{{ formatMoney(product.precioVigente) }}</td>
+                <td class="px-4 py-3">{{ product.stockDisponible }}</td>
+                <td class="py-3 pl-4 text-right">
+                  <div class="flex justify-end gap-2">
+                    <button type="button" class="rounded-neo-md border border-emerald-900 px-3 py-2 text-xs font-semibold text-emerald-300 hover:text-emerald-200" (click)="approveProduct(product)">
+                      Aprobar
+                    </button>
+                    <button type="button" class="rounded-neo-md border border-red-900 px-3 py-2 text-xs font-semibold text-red-300 hover:text-red-200" (click)="rejectProduct(product)">
+                      Rechazar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          } @else {
+            <tr>
+              <td colspan="7" class="py-16 text-center text-sm text-neo-muted">No hay productos para moderar.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-5">
+      <app-neo-pagination [currentPage]="productPage()" [totalPages]="productTotalPages()" [totalElements]="productTotalElements()" [pageSize]="productPageSize" (pageChange)="loadProducts($event)"></app-neo-pagination>
+    </div>
+  </neo-card>
+
+  <neo-card [padding]="'md'">
+    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 class="text-lg font-semibold text-neo-white">Gestionar categorias</h3>
+        <p class="text-sm text-neo-muted">Datos reales de /api/catalogo/categorias/arbol</p>
+      </div>
+      <app-neo-button variant="secondary" size="sm" (neoClick)="openCategoryModal()">
+        <lucide-angular [img]="icons.plus" [size]="16" [strokeWidth]="2"></lucide-angular>
+        Nueva categoria
+      </app-neo-button>
+    </div>
+
+    @if (loadingCategories()) {
+      <div class="space-y-3">
+        @for (item of [1, 2, 3]; track item) {
+          <app-neo-skeleton variant="line" height="3rem"></app-neo-skeleton>
+        }
+      </div>
+    } @else if (categoryRows().length) {
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[44rem] text-left text-sm">
+          <thead class="border-b border-neo-border text-xs uppercase tracking-wider text-neo-muted">
+            <tr>
+              <th class="py-3 pr-4 font-semibold">Categoria</th>
+              <th class="px-4 py-3 font-semibold">Slug</th>
+              <th class="px-4 py-3 font-semibold">Nivel</th>
+              <th class="py-3 pl-4 font-semibold">Descripcion</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-neo-border">
+            @for (category of categoryRows(); track category.id) {
+              <tr class="text-neo-subtle">
+                <td class="py-3 pr-4 font-semibold text-neo-white">{{ category.nombre }}</td>
+                <td class="px-4 py-3 font-mono text-xs">{{ category.slug }}</td>
+                <td class="px-4 py-3">Nivel {{ category.level }}</td>
+                <td class="py-3 pl-4">{{ category.descripcion || 'Sin descripcion' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="flex min-h-40 items-center justify-center rounded-neo-md border border-dashed border-neo-border">
+        <div class="text-center">
+          <lucide-angular [img]="icons.tree" [size]="32" [strokeWidth]="2" class="mx-auto mb-3 text-neo-muted"></lucide-angular>
+          <p class="text-sm text-neo-muted">No hay categorias registradas.</p>
+        </div>
+      </div>
+    }
+  </neo-card>
+</section>
+
+<app-neo-modal
+  [open]="categoryModalOpen()"
+  title="Nueva categoria"
+  size="md"
+  (close)="closeCategoryModal()"
+>
+  <div [formGroup]="categoryForm" class="space-y-4">
+    <label class="block">
+      <span class="mb-2 block text-sm font-semibold text-neo-white">Categoria padre</span>
+      <select
+        formControlName="categoriaPadreId"
+        class="h-11 w-full rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white"
+      >
+        <option value="">Sin categoria padre</option>
+        @for (category of categoryRows(); track category.id) {
+          <option [value]="category.id">{{ category.nombre }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="block">
+      <span class="mb-2 block text-sm font-semibold text-neo-white">Nombre</span>
+      <input
+        type="text"
+        formControlName="nombre"
+        class="h-11 w-full rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white placeholder-neo-muted"
+        placeholder="Ej. Consolas retro"
+      />
+      @if (categoryForm.controls.nombre.touched && categoryForm.controls.nombre.invalid) {
+        <p class="mt-1 text-xs text-red-400">El nombre es obligatorio.</p>
+      }
+    </label>
+
+    <div>
+      <label class="block">
+        <span class="mb-2 block text-sm font-semibold text-neo-white">Slug</span>
+        <input
+          type="text"
+          formControlName="slug"
+          class="h-11 w-full rounded-neo-md border border-neo-border bg-neo-elevated px-3 text-sm text-neo-white placeholder-neo-muted"
+          placeholder="consolas-retro"
+        />
+      </label>
+      <button type="button" class="mt-2 text-xs font-semibold text-neo-cyan hover:text-neo-white" (click)="generateSlug()">
+        Generar desde nombre
+      </button>
+      @if (categoryForm.controls.slug.touched && categoryForm.controls.slug.invalid) {
+        <p class="mt-1 text-xs text-red-400">El slug es obligatorio.</p>
+      }
+    </div>
+
+    <label class="block">
+      <span class="mb-2 block text-sm font-semibold text-neo-white">Descripcion</span>
+      <textarea
+        formControlName="descripcion"
+        rows="3"
+        class="w-full rounded-neo-md border border-neo-border bg-neo-elevated px-3 py-3 text-sm text-neo-white placeholder-neo-muted"
+        placeholder="Descripcion breve de la categoria"
+      ></textarea>
+    </label>
+  </div>
+
+  <footer neo-modal-footer class="flex items-center justify-end gap-3 border-t border-neo-border px-5 py-4">
+    <app-neo-button variant="ghost" size="sm" (neoClick)="closeCategoryModal()">Cancelar</app-neo-button>
+    <app-neo-button
+      variant="primary"
+      size="sm"
+      [loading]="savingCategory()"
+      [disabled]="categoryForm.invalid"
+      (neoClick)="submitCategory()"
+    >
+      Crear categoria
+    </app-neo-button>
+  </footer>
+</app-neo-modal>

@@ -1,16 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-
-function readTokenFromStorage(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
-  return (
-    window.localStorage.getItem('neogaming.auth.token') ||
-    window.sessionStorage.getItem('neogaming.auth.token')
-  );
-}
+import { AuthStateService } from './auth-state.service';
 
 function isExpiredJwt(token: string): boolean {
   const parts = token.split('.');
@@ -32,7 +22,8 @@ function isExpiredJwt(token: string): boolean {
 
 export const authGuard: CanActivateFn = () => {
   const router = inject(Router);
-  const token = readTokenFromStorage();
+  const authState = inject(AuthStateService);
+  const token = authState.getToken();
 
   if (token && !isExpiredJwt(token)) {
     return true;

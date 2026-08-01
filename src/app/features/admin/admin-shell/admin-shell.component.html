@@ -1,0 +1,132 @@
+<div class="flex h-screen overflow-hidden bg-neo-base">
+  <aside class="hidden h-screen w-64 flex-col border-r border-neo-border bg-neo-surface md:flex md:sticky md:top-0">
+    <ng-container [ngTemplateOutlet]="sidebarContent"></ng-container>
+  </aside>
+
+  @if (mobileDrawerOpen()) {
+    <div class="fixed inset-0 z-50 bg-black/70 md:hidden" (click)="closeMobileDrawer()">
+      <aside
+        class="h-full w-72 max-w-[86vw] border-r border-neo-border bg-neo-surface"
+        (click)="$event.stopPropagation()"
+      >
+        <ng-container [ngTemplateOutlet]="sidebarContent"></ng-container>
+      </aside>
+    </div>
+  }
+
+  <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
+    <header class="flex h-14 shrink-0 items-center justify-between border-b border-neo-border bg-neo-surface px-4">
+      <div class="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-neo-md text-neo-white transition-neo hover:bg-neo-elevated md:hidden"
+          aria-label="Abrir menu admin"
+          [attr.aria-expanded]="mobileDrawerOpen()"
+          (click)="toggleMobileDrawer()"
+        >
+          <lucide-angular [img]="icons.menu" [size]="20" [strokeWidth]="2"></lucide-angular>
+        </button>
+        <h1 class="truncate text-lg font-bold text-neo-white">{{ pageTitle() }}</h1>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="relative inline-flex h-10 w-10 items-center justify-center rounded-neo-md text-neo-muted transition-neo hover:bg-neo-elevated hover:text-neo-white"
+          aria-label="Notificaciones"
+        >
+          <lucide-angular [img]="icons.bell" [size]="18" [strokeWidth]="2"></lucide-angular>
+          <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-neo-red"></span>
+        </button>
+
+        <div class="relative">
+          <button
+            type="button"
+            class="flex items-center gap-2 rounded-neo-md border border-neo-border bg-neo-elevated px-2 py-1.5 text-neo-white transition-neo hover:border-neo-border-bright"
+            [attr.aria-expanded]="profileMenuOpen()"
+            aria-haspopup="menu"
+            (click)="toggleProfileMenu()"
+          >
+            <span class="flex h-7 w-7 items-center justify-center rounded-full bg-neo-red font-mono text-xs font-bold text-white">
+              {{ initials() }}
+            </span>
+            <lucide-angular class="hidden text-neo-muted sm:block" [img]="icons.chevron" [size]="14" [strokeWidth]="2"></lucide-angular>
+          </button>
+
+          @if (profileMenuOpen()) {
+            <div class="absolute right-0 top-11 z-20 w-56 rounded-neo-lg border border-neo-border bg-neo-elevated p-3 shadow-neo-card" role="menu">
+              <p class="truncate px-3 py-2 text-sm font-semibold text-neo-white">{{ auth.currentUser()?.name }}</p>
+              <button
+                type="button"
+                class="flex w-full items-center gap-3 rounded-neo-md p-3 text-left text-sm text-red-400 transition-neo hover:bg-red-950"
+                (click)="logout()"
+              >
+                <lucide-angular [img]="icons.logout" [size]="16" [strokeWidth]="2"></lucide-angular>
+                Cerrar sesion
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto bg-neo-base p-4 sm:p-6">
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+<ng-template #sidebarContent>
+  <div class="flex h-full flex-col">
+    <div class="border-b border-neo-border p-5">
+      <div class="flex items-center justify-between gap-3">
+        <a routerLink="/admin/dashboard" class="font-mono text-lg font-bold" (click)="closeMobileDrawer()">
+          <span class="text-neo-red">NEO</span><span class="text-neo-white">GAMING</span>
+        </a>
+        <button
+          type="button"
+          class="inline-flex h-9 w-9 items-center justify-center rounded-neo-md text-neo-muted transition-neo hover:bg-neo-elevated hover:text-neo-white md:hidden"
+          aria-label="Cerrar menu admin"
+          (click)="closeMobileDrawer()"
+        >
+          <lucide-angular [img]="icons.close" [size]="18" [strokeWidth]="2"></lucide-angular>
+        </button>
+      </div>
+      <span class="mt-3 inline-flex rounded-full bg-red-950 px-2 py-0.5 text-xs uppercase tracking-widest text-neo-red">
+        Panel Admin
+      </span>
+    </div>
+
+    <nav class="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Navegacion admin">
+      @for (link of navLinks; track link.route) {
+        <a
+          [routerLink]="link.route"
+          routerLinkActive
+          #activeLink="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [class]="navLinkClasses(activeLink.isActive)"
+          (click)="closeMobileDrawer()"
+        >
+          <lucide-angular [img]="link.icon" [size]="18" [strokeWidth]="2"></lucide-angular>
+          {{ link.label }}
+        </a>
+      }
+    </nav>
+
+    <div class="border-t border-neo-border p-4">
+      <div class="flex items-center gap-3">
+        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-neo-elevated font-mono text-xs font-bold text-neo-white">
+          {{ initials() }}
+        </span>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-semibold text-neo-white">{{ auth.currentUser()?.name || 'Admin' }}</p>
+          <app-neo-badge variant="danger" size="sm">ADMIN</app-neo-badge>
+        </div>
+      </div>
+      <app-neo-button class="mt-4 block" variant="ghost" size="sm" fullWidth (neoClick)="logout()">
+        <lucide-angular [img]="icons.logout" [size]="16" [strokeWidth]="2"></lucide-angular>
+        Salir
+      </app-neo-button>
+    </div>
+  </div>
+</ng-template>

@@ -14,13 +14,13 @@
 
 .assistant-page {
   /* Color Palette */
-  --color-bg: #070707;
+  --color-bg: var(--color-neo-base);
   --color-panel: rgba(20, 12, 12, 0.86);
   --color-panel-strong: rgba(48, 12, 12, 0.92);
-  --color-text: #f8eeee;
-  --color-text-muted: #c7b3b3;
-  --color-accent: #ff8d8d;
-  --color-warm: #ffc57a;
+  --color-text: var(--color-neo-red);
+  --color-text-muted: var(--color-neo-red);
+  --color-accent: var(--color-neo-red);
+  --color-warm: var(--color-neo-amber);
 
   /* Borders & Lines */
   --color-border: rgba(255, 112, 112, 0.14);
@@ -57,7 +57,7 @@
   background:
     radial-gradient(circle at top left, rgba(255, 110, 110, 0.12), transparent 26%),
     radial-gradient(circle at top right, rgba(255, 197, 122, 0.1), transparent 22%),
-    linear-gradient(180deg, #050404 0%, var(--color-bg) 52%, #030303 100%);
+    linear-gradient(180deg, var(--color-neo-base) 0%, var(--color-bg) 52%, var(--color-neo-base) 100%);
   
   padding: var(--space-xl) var(--space-xl) 48px;
 }
@@ -484,8 +484,8 @@
   border: 0;
   border-radius: var(--radius-md);
   padding: 0 var(--space-md);
-  color: #290909;
-  background: linear-gradient(180deg, var(--color-warm), #ff8f66);
+  color: var(--color-neo-surface);
+  background: linear-gradient(180deg, var(--color-warm), var(--color-neo-amber));
   font-weight: 700;
   cursor: pointer;
   transition: var(--transition-duration);

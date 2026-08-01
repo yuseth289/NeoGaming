@@ -1,269 +1,295 @@
-import { Component, HostListener, computed, effect, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { Observable, finalize } from 'rxjs';
-import { CartApi } from '../data-access/cart.api';
-import { CartItem, CartUiService } from '../data-access/cart-ui.service';
-import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { finalize } from 'rxjs';
+import {
+  Lock,
+  LucideAngularModule,
+  Minus,
+  Plus,
+  Shield,
+  ShoppingCart,
+  Trash2,
+} from 'lucide-angular';
 import { parseApiError } from '../../../core/http/api-error.utils';
 import { CarritoResponse } from '../../../core/models/api.models';
-
-type CouponMessageType = 'success' | 'error' | null;
+import { AuthSessionService } from '../../../core/auth/auth-session.service';
+import { CopPricePipe } from '../../../shared/pipes/cop-price.pipe';
+import {
+  AuthPromptComponent,
+  NeoBadgeComponent,
+  NeoButtonComponent,
+  NeoCardComponent,
+  NeoInputComponent,
+  NeoModalComponent,
+  NeoSkeletonComponent,
+  NeoSpinnerComponent,
+  NeoToastService,
+} from '../../../shared/ui';
+import { CartApi } from '../data-access/cart.api';
+import { CartItem, CartUiService } from '../data-access/cart-ui.service';
 
 @Component({
   selector: 'app-cart-page',
-  imports: [RouterLink, CopPricePipe],
+  imports: [
+    FormsModule,
+    RouterLink,
+    LucideAngularModule,
+    CopPricePipe,
+    NeoBadgeComponent,
+    NeoButtonComponent,
+    NeoCardComponent,
+    NeoInputComponent,
+    NeoModalComponent,
+    NeoSkeletonComponent,
+    NeoSpinnerComponent,
+    AuthPromptComponent,
+  ],
   templateUrl: './cart.component.html',
-  styleUrl: './cart.component.css'
 })
-export class CartComponent {
+export class CartComponent implements OnInit, OnDestroy {
   protected readonly cartUi = inject(CartUiService);
-  private readonly router = inject(Router);
+  private readonly authSession = inject(AuthSessionService);
   private readonly cartApi = inject(CartApi);
-  protected readonly couponCode = signal('');
-  protected readonly applyingCoupon = signal(false);
-  protected readonly discountValue = signal(0);
-  protected readonly couponMessage = signal<string | null>(null);
-  protected readonly couponMessageType = signal<CouponMessageType>(null);
-  protected readonly couponPulse = signal(false);
-  protected readonly quantityPulseName = signal<string | null>(null);
-  protected readonly summaryPulse = signal(false);
-  protected readonly removingItems = signal<Set<string>>(new Set());
-  protected readonly lastRemoved = signal<CartItem | null>(null);
-  protected readonly summaryCollapsed = signal(false);
-  protected readonly isMobile = signal(false);
-  protected readonly mutatingNames = signal<Set<string>>(new Set());
+  private readonly toast = inject(NeoToastService);
+
+  protected readonly icons = {
+    cart: ShoppingCart,
+    minus: Minus,
+    plus: Plus,
+    trash: Trash2,
+    shield: Shield,
+    lock: Lock,
+  };
+
+  protected readonly loading = signal(true);
   protected readonly requestError = signal<string | null>(null);
+  protected readonly pendingQuantities = signal<Record<number, number>>({});
+  protected readonly updatingItems = signal<Set<number>>(new Set());
+  protected readonly removingItem = signal<CartItem | null>(null);
+  protected readonly removing = signal(false);
+  protected readonly couponCode = signal('');
+  protected readonly appliedCoupon = signal<string | null>(null);
+  protected readonly loggedIn = this.authSession.loggedIn;
 
-  private quantityPulseTimeout?: ReturnType<typeof setTimeout>;
-  private summaryPulseTimeout?: ReturnType<typeof setTimeout>;
-  private removeTimeout?: ReturnType<typeof setTimeout>;
-
-  private readonly recommendations = [
-    {
-      name: 'Nebula Stream Capture Card',
-      price: 249,
-      image: 'https://images.unsplash.com/photo-1587202372616-b43abea06c2a?auto=format&fit=crop&w=680&q=80'
-    },
-    {
-      name: 'SpectraCool Laptop Stand',
-      price: 39.99,
-      image: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=680&q=80'
-    },
-    {
-      name: 'NeoDesk RGB Pad XL',
-      price: 24.5,
-      image: 'https://images.unsplash.com/photo-1542751110-97427bbecf20?auto=format&fit=crop&w=680&q=80'
-    }
-  ];
-
+  protected readonly items = computed(() => this.cartUi.cartItems());
+  protected readonly itemCount = computed(() => this.cartUi.totalItems());
   protected readonly subtotal = computed(() => this.cartUi.totalPrice());
-  protected readonly shipping = computed(() => (this.subtotal() > 0 ? 15 : 0));
-  protected readonly tax = computed(() => this.subtotal() * 0.08);
-  protected readonly savingsFromDiscountedItems = computed(() =>
-    this.cartUi
-      .cartItems()
-      .reduce((sum, item) => sum + Math.max(0, (item.oldPrice ?? item.price) - item.price) * item.quantity, 0)
-  );
-  protected readonly totalSavings = computed(() => this.savingsFromDiscountedItems() + this.discountValue());
-  protected readonly total = computed(() => Math.max(0, this.subtotal() + this.shipping() + this.tax() - this.discountValue()));
-  protected readonly shippingEta = computed(() => (this.cartUi.totalItems() > 0 ? 'Llega en 2-4 dias habiles.' : 'Se calculara al agregar productos.'));
-  protected readonly itemsLabel = computed(() => `${this.cartUi.totalItems()} productos`);
-  protected readonly freeShippingGoal = signal(600);
-  protected readonly remainingForFreeShipping = computed(() => Math.max(0, this.freeShippingGoal() - this.subtotal()));
-  protected readonly freeShippingProgress = computed(() => Math.min(100, (this.subtotal() / this.freeShippingGoal()) * 100));
-  protected readonly visibleRecommendations = computed(() => {
-    const inCart = new Set(this.cartUi.cartItems().map((item) => item.name));
-    return this.recommendations.filter((item) => !inCart.has(item.name)).slice(0, 3);
+  protected readonly qualifiesFreeShipping = computed(() => this.subtotal() >= 250000);
+  protected readonly shipping = computed(() => {
+    if (this.itemCount() === 0 || this.qualifiesFreeShipping()) {
+      return 0;
+    }
+    return 15000;
   });
+  protected readonly discount = computed(() =>
+    this.appliedCoupon() ? Math.round(this.subtotal() * 0.1) : 0,
+  );
+  protected readonly total = computed(() =>
+    Math.max(0, this.subtotal() + this.shipping() - this.discount()),
+  );
 
-  constructor() {
-    this.syncViewportState();
-    effect(() => {
-      const pulseKey = `${this.subtotal()}-${this.total()}-${this.cartUi.totalItems()}`;
-      if (!pulseKey) {
-        return;
-      }
-      this.summaryPulse.set(true);
-      if (this.summaryPulseTimeout) {
-        clearTimeout(this.summaryPulseTimeout);
-      }
-      this.summaryPulseTimeout = setTimeout(() => this.summaryPulse.set(false), 260);
-    });
+  private readonly quantityTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+  ngOnInit(): void {
+    this.loadCart();
   }
 
-  protected increase(name: string): void {
-    const item = this.cartUi.cartItems().find((entry) => entry.name === name);
-    if (!item?.id) {
-      this.cartUi.increase(name);
-      this.pulseQuantity(name);
+  ngOnDestroy(): void {
+    for (const timer of this.quantityTimers.values()) {
+      clearTimeout(timer);
+    }
+  }
+
+  protected loadCart(): void {
+    if (!this.loggedIn()) {
+      this.loading.set(false);
+      this.requestError.set(null);
+      this.cartUi.clear();
       return;
     }
 
-    this.runItemMutation(name, this.cartApi.updateItem(item.id, { cantidad: item.quantity + 1 }), () =>
-      this.pulseQuantity(name)
+    this.loading.set(true);
+    this.requestError.set(null);
+
+    this.cartApi
+      .getCart()
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (response) => this.reconcileCart(response),
+        error: (error) => {
+          this.requestError.set(parseApiError(error).message);
+          this.cartUi.clear();
+        },
+      });
+  }
+
+  protected productBrand(item: CartItem): string {
+    return item.slug || item.stockLabel || 'NeoGaming';
+  }
+
+  protected thumbnailFor(item: CartItem): string {
+    return (
+      item.image ||
+      'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=160&q=80'
     );
   }
 
-  protected decrease(name: string): void {
-    const item = this.cartUi.cartItems().find((entry) => entry.name === name);
-    if (!item?.id) {
-      this.cartUi.decrease(name);
-      this.pulseQuantity(name);
+  protected displayQuantity(item: CartItem): number {
+    if (!item.id) {
+      return item.quantity;
+    }
+    return this.pendingQuantities()[item.id] ?? item.quantity;
+  }
+
+  protected quantityMax(item: CartItem): number {
+    // TODO: el endpoint de carrito no devuelve stockDisponible; se usa un maximo defensivo.
+    const parsedStock = Number(item.stockLabel?.replace(/\D/g, ''));
+    return Number.isFinite(parsedStock) && parsedStock > 0 ? parsedStock : 99;
+  }
+
+  protected decrement(item: CartItem): void {
+    this.setQuantity(item, this.displayQuantity(item) - 1);
+  }
+
+  protected increment(item: CartItem): void {
+    this.setQuantity(item, this.displayQuantity(item) + 1);
+  }
+
+  protected quantityChanged(item: CartItem, value: string | number): void {
+    this.setQuantity(item, Number(value));
+  }
+
+  protected setQuantity(item: CartItem, rawQuantity: number): void {
+    if (!item.id) {
       return;
     }
 
-    if (item.quantity <= 1) {
-      this.remove(item);
-      return;
+    const quantity = Math.max(1, Math.min(this.quantityMax(item), Math.floor(rawQuantity || 1)));
+    const previousQuantity = item.quantity;
+    this.pendingQuantities.update((current) => ({ ...current, [item.id as number]: quantity }));
+    this.cartUi.setQuantity(item.name, quantity);
+
+    const existingTimer = this.quantityTimers.get(item.id);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
     }
 
-    this.runItemMutation(name, this.cartApi.updateItem(item.id, { cantidad: item.quantity - 1 }), () =>
-      this.pulseQuantity(name)
+    this.quantityTimers.set(
+      item.id,
+      setTimeout(
+        () => this.persistQuantity(item.id as number, item.name, quantity, previousQuantity),
+        500,
+      ),
     );
   }
 
-  protected remove(item: CartItem): void {
-    this.lastRemoved.set(item);
-    this.requestError.set(null);
-    this.removingItems.update((current) => new Set(current).add(item.name));
-
-    if (this.removeTimeout) {
-      clearTimeout(this.removeTimeout);
-    }
-    this.removeTimeout = setTimeout(() => {
-      if (!item.id) {
-        this.cartUi.remove(item.name);
-        this.clearRemovingState(item.name);
-        return;
-      }
-
-      this.runItemMutation(item.name, this.cartApi.removeItem(item.id), () => this.clearRemovingState(item.name));
-    }, 220);
+  protected isUpdating(item: CartItem): boolean {
+    return !!item.id && this.updatingItems().has(item.id);
   }
 
-  protected undoRemove(): void {
-    const last = this.lastRemoved();
-    if (!last) {
+  protected requestRemove(item: CartItem): void {
+    this.removingItem.set(item);
+  }
+
+  protected closeRemoveModal(): void {
+    if (!this.removing()) {
+      this.removingItem.set(null);
+    }
+  }
+
+  protected confirmRemove(): void {
+    const item = this.removingItem();
+    if (!item?.id) {
+      this.removingItem.set(null);
       return;
     }
+
+    this.removing.set(true);
     this.requestError.set(null);
-
-    if (typeof last.productId !== 'number') {
-      this.cartUi.addItem(last.name, last.price, {
-        image: last.image,
-        stockLabel: last.stockLabel,
-        oldPrice: last.oldPrice
+    this.cartApi
+      .removeItem(item.id)
+      .pipe(finalize(() => this.removing.set(false)))
+      .subscribe({
+        next: (response) => {
+          this.reconcileCart(response);
+          this.removingItem.set(null);
+        },
+        error: (error) => {
+          this.toast.error(parseApiError(error).message);
+        },
       });
-      this.lastRemoved.set(null);
-      return;
-    }
-
-    this.runItemMutation(last.name, this.cartApi.addItem({ productoId: last.productId, cantidad: last.quantity }), () => {
-      this.cartUi.decorateItem(last.name, {
-        image: last.image,
-        stockLabel: last.stockLabel,
-        oldPrice: last.oldPrice
-      });
-      this.lastRemoved.set(null);
-    });
   }
 
   protected applyCoupon(): void {
     const code = this.couponCode().trim().toUpperCase();
-    this.couponMessage.set(null);
-    this.couponMessageType.set(null);
-    this.applyingCoupon.set(true);
-
-    setTimeout(() => {
-      if (!code) {
-        this.discountValue.set(0);
-        this.couponMessage.set('Ingresa un codigo de descuento.');
-        this.couponMessageType.set('error');
-      } else if (code === 'NEO10') {
-        this.discountValue.set(this.subtotal() * 0.1);
-        this.couponMessage.set('Codigo aplicado correctamente: 10% de descuento.');
-        this.couponMessageType.set('success');
-        this.couponPulse.set(true);
-        setTimeout(() => this.couponPulse.set(false), 320);
-      } else {
-        this.discountValue.set(0);
-        this.couponMessage.set('Codigo no valido.');
-        this.couponMessageType.set('error');
-      }
-      this.applyingCoupon.set(false);
-    }, 240);
-  }
-
-  protected checkout(): void {
-    if (this.cartUi.cartItems().length === 0) {
+    if (!code) {
+      this.toast.warning('Ingresa un codigo de descuento.');
       return;
     }
-    void this.router.navigate(['/checkout/shipping']);
+
+    // TODO: reemplazar demo cuando exista endpoint real para cupones en CartApi.
+    this.appliedCoupon.set(code);
+    this.toast.info('Cupon aplicado (demo)');
   }
 
-  protected toggleSummaryMobile(): void {
-    this.summaryCollapsed.update((value) => !value);
+  protected clearCoupon(): void {
+    this.appliedCoupon.set(null);
+    this.couponCode.set('');
   }
 
-  protected addRecommendation(product: { name: string; price: number; image: string }): void {
-    this.couponMessage.set('Las recomendaciones de esta seccion aun no estan integradas al catalogo real.');
-    this.couponMessageType.set('error');
-  }
-
-  protected isRemoving(name: string): boolean {
-    return this.removingItems().has(name);
-  }
-
-  protected isLowStock(label?: string): boolean {
-    return (label ?? '').toLowerCase().includes('ultimas');
-  }
-
-  @HostListener('window:resize')
-  protected onWindowResize(): void {
-    this.syncViewportState();
-  }
-
-  private syncViewportState(): void {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const mobile = window.innerWidth <= 980;
-    this.isMobile.set(mobile);
-    this.summaryCollapsed.set(mobile);
-  }
-
-  private pulseQuantity(name: string): void {
-    this.quantityPulseName.set(name);
-    if (this.quantityPulseTimeout) {
-      clearTimeout(this.quantityPulseTimeout);
-    }
-    this.quantityPulseTimeout = setTimeout(() => this.quantityPulseName.set(null), 220);
-  }
-
-  private runItemMutation(name: string, request: Observable<CarritoResponse>, onSuccess?: () => void): void {
-    this.mutatingNames.update((current) => new Set(current).add(name));
+  private persistQuantity(
+    itemId: number,
+    itemName: string,
+    quantity: number,
+    previousQuantity: number,
+  ): void {
+    this.quantityTimers.delete(itemId);
+    this.updatingItems.update((current) => new Set(current).add(itemId));
     this.requestError.set(null);
 
-    request
-      .pipe(finalize(() => this.mutatingNames.update((current) => this.withoutName(current, name))))
+    this.cartApi
+      .updateItem(itemId, { cantidad: quantity })
+      .pipe(finalize(() => this.updatingItems.update((current) => this.removeSetItem(current, itemId))))
       .subscribe({
         next: (response) => {
-          this.cartUi.hydrateFromApi(response);
-          onSuccess?.();
+          this.pendingQuantities.update((current) => {
+            const next = { ...current };
+            delete next[itemId];
+            return next;
+          });
+          this.reconcileCart(response);
         },
         error: (error) => {
-          this.requestError.set(parseApiError(error).message);
-        }
+          this.toast.error(parseApiError(error).message);
+          this.pendingQuantities.update((current) => {
+            const next = { ...current };
+            delete next[itemId];
+            return next;
+          });
+          this.cartUi.setQuantity(itemName, previousQuantity);
+          this.loadCart();
+        },
       });
   }
 
-  private clearRemovingState(name: string): void {
-    this.removingItems.update((current) => this.withoutName(current, name));
+  private reconcileCart(response: CarritoResponse): void {
+    this.cartUi.hydrateFromApi(response);
+    const liveIds = new Set(response.items.map((item) => item.idItem));
+    this.pendingQuantities.update((current) => {
+      const next: Record<number, number> = {};
+      for (const [id, quantity] of Object.entries(current)) {
+        if (liveIds.has(Number(id))) {
+          next[Number(id)] = quantity;
+        }
+      }
+      return next;
+    });
   }
 
-  private withoutName(current: Set<string>, name: string): Set<string> {
+  private removeSetItem(current: Set<number>, itemId: number): Set<number> {
     const next = new Set(current);
-    next.delete(name);
+    next.delete(itemId);
     return next;
   }
 }

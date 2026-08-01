@@ -1,0 +1,45 @@
+@if (totalPages > 0) {
+  <nav
+    class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+    aria-label="Paginacion"
+  >
+    <p class="text-small text-neo-muted-text">
+      Mostrando {{ visibleStart() }}-{{ visibleEnd() }} de {{ totalElements }}
+    </p>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        class="min-h-11 rounded-neo-md border border-neo-border bg-neo-surface px-3 text-small font-semibold text-neo-subtle transition-neo duration-neo ease-neo hover:border-neo-border-bright hover:text-neo-white disabled:pointer-events-none disabled:opacity-50"
+        [disabled]="!canGoPrevious()"
+        (click)="previous()"
+      >
+        Prev
+      </button>
+
+      @for (item of pageItems(); track item) {
+        @if (isNumber(item)) {
+          <button
+            type="button"
+            [class]="pageButtonClasses(item)"
+            [attr.aria-current]="item === currentPage ? 'page' : null"
+            (click)="goToPage(item)"
+          >
+            {{ item + 1 }}
+          </button>
+        } @else {
+          <span class="px-1 text-neo-muted-text" aria-hidden="true">...</span>
+        }
+      }
+
+      <button
+        type="button"
+        class="min-h-11 rounded-neo-md border border-neo-border bg-neo-surface px-3 text-small font-semibold text-neo-subtle transition-neo duration-neo ease-neo hover:border-neo-border-bright hover:text-neo-white disabled:pointer-events-none disabled:opacity-50"
+        [disabled]="!canGoNext()"
+        (click)="next()"
+      >
+        Next
+      </button>
+    </div>
+  </nav>
+}

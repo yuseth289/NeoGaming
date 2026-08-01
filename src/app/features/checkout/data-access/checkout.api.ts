@@ -3,38 +3,11 @@ import { Observable } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client/api-client.service';
 import {
   ConfirmacionPedidoResponse,
+  GuardarEnvioPayload,
   IniciarCheckoutResponse,
+  ProcesarPagoPayload,
   ProcesarPagoResponse
 } from '../../../core/models/api.models';
-
-export interface GuardarEnvioPayload {
-  pedidoId: number;
-  direccionEnvio: {
-    nombreCompleto: string;
-    correoElectronico: string;
-    telefono: string;
-    direccion: string;
-    apartamentoInterior: string | null;
-    ciudad: string;
-    estadoRegion: string;
-    codigoPostal: string;
-    pais: string;
-    referenciaEntrega: string | null;
-  };
-  mismaDireccionFacturacion: boolean;
-}
-
-export interface ProcesarPagoPayload {
-  pedidoId: number;
-  metodoPago: {
-    tipoPago: string;
-    nombreTitular?: string;
-    numeroTarjeta?: string;
-    fechaVencimiento?: string;
-    cvv?: string;
-  };
-  simularFallo: boolean;
-}
 
 @Injectable({ providedIn: 'root' })
 export class CheckoutApi {
@@ -44,12 +17,20 @@ export class CheckoutApi {
     return this.api.post<IniciarCheckoutResponse>('/checkout', {});
   }
 
+  getCheckoutSummary(): Observable<IniciarCheckoutResponse> {
+    return this.start();
+  }
+
   saveShipping(payload: GuardarEnvioPayload): Observable<IniciarCheckoutResponse> {
     return this.api.post<IniciarCheckoutResponse>('/checkout/envio', payload);
   }
 
   pay(payload: ProcesarPagoPayload): Observable<ProcesarPagoResponse> {
     return this.api.post<ProcesarPagoResponse>('/checkout/pago', payload);
+  }
+
+  processPayment(payload: ProcesarPagoPayload): Observable<ProcesarPagoResponse> {
+    return this.pay(payload);
   }
 
   getConfirmation(orderNumber: string): Observable<ConfirmacionPedidoResponse> {

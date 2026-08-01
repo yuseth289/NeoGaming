@@ -1,0 +1,47 @@
+<div class="space-y-6">
+  <app-neo-card padding="md">
+    <form class="space-y-4" [formGroup]="form">
+      <div>
+        <h2 class="text-h3 font-semibold text-neo-white">Cambiar contraseña</h2>
+        <p class="text-small text-neo-muted-text">TODO: falta endpoint real de cambio de contraseña.</p>
+      </div>
+      <app-neo-input
+        label="Contraseña actual"
+        type="password"
+        formControlName="currentPassword"
+        [disabled]="!passwordEndpointAvailable"
+        [error]="fieldError('currentPassword')"
+      ></app-neo-input>
+      <app-neo-input
+        label="Nueva contraseña"
+        type="password"
+        hint="Minimo 8 caracteres"
+        formControlName="newPassword"
+        [disabled]="!passwordEndpointAvailable"
+        [error]="fieldError('newPassword')"
+      ></app-neo-input>
+      <app-neo-input
+        label="Confirmar nueva contraseña"
+        type="password"
+        formControlName="confirmPassword"
+        [disabled]="!passwordEndpointAvailable"
+        [error]="fieldError('confirmPassword')"
+      ></app-neo-input>
+      <div>
+        <app-neo-button variant="primary" [disabled]="!passwordEndpointAvailable" [loading]="loading()">
+          Actualizar contraseña
+        </app-neo-button>
+      </div>
+    </form>
+  </app-neo-card>
+
+  <app-neo-card padding="md">
+    <div class="space-y-4">
+      <div>
+        <h2 class="text-h3 font-semibold text-neo-white">Zona de peligro</h2>
+        <p class="text-small text-neo-muted-text">TODO: falta endpoint de solicitud o eliminacion de cuenta.</p>
+      </div>
+      <app-neo-button variant="danger" (neoClick)="requestDeletion()">Solicitar eliminacion de cuenta</app-neo-button>
+    </div>
+  </app-neo-card>
+</div>

@@ -1,16 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiClient } from '../../../core/http/api-client/api-client.service';
-import { CarritoResponse } from '../../../core/models/api.models';
-
-export interface AgregarProductoCarritoRequest {
-  productoId: number;
-  cantidad: number;
-}
-
-export interface ActualizarCantidadCarritoRequest {
-  cantidad: number;
-}
+import {
+  ActualizarCantidadCarritoRequest,
+  AgregarProductoCarritoRequest,
+  CarritoResponse
+} from '../../../core/models/api.models';
 
 @Injectable({ providedIn: 'root' })
 export class CartApi {

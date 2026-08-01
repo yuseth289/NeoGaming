@@ -1,0 +1,26 @@
+@if (variant === 'line') {
+  <div class="space-y-2">
+    @for (line of lineItems(); track line) {
+      <span
+        [class]="skeletonClasses()"
+        [style.width]="lineWidth(line)"
+        [style.height]="height"
+        aria-hidden="true"
+      ></span>
+    }
+  </div>
+} @else if (variant === 'circle') {
+  <span
+    [class]="skeletonClasses()"
+    [style.width]="width"
+    [style.height]="width"
+    aria-hidden="true"
+  ></span>
+} @else {
+  <span
+    [class]="skeletonClasses()"
+    [style.width]="width"
+    [style.height]="variant === 'card' && height === '1rem' ? '12rem' : height"
+    aria-hidden="true"
+  ></span>
+}

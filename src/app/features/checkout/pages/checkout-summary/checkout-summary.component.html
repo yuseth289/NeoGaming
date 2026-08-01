@@ -1,0 +1,67 @@
+<section class="mx-auto w-full max-w-7xl px-4 text-neo-white sm:px-6 lg:px-8">
+  <app-checkout-progress [currentStep]="1"></app-checkout-progress>
+
+  <div class="mb-8">
+    <h1 class="text-h1">Resumen del pedido</h1>
+    <p class="text-small text-neo-muted-text">Confirma tus productos antes de seleccionar envio.</p>
+  </div>
+
+  @if (loading()) {
+    <div class="flex min-h-72 items-center justify-center">
+      <app-neo-spinner size="lg"></app-neo-spinner>
+    </div>
+  } @else {
+    <div class="grid gap-4 sm:gap-6 lg:grid-cols-2">
+      <app-neo-card class="block" padding="md">
+        <div class="space-y-4">
+          @for (item of items(); track item.idProducto) {
+            <article class="flex items-center gap-3 border-b border-neo-border">
+              <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-neo-md bg-neo-elevated text-xs text-neo-muted-text">
+                {{ item.sku || 'NG' }}
+              </div>
+              <div class="min-w-0 flex-1">
+                <h2 class="truncate text-h4">{{ item.nombreProducto }}</h2>
+                <p class="text-xs text-neo-muted-text">Cantidad: {{ item.cantidad }}</p>
+              </div>
+              <strong class="text-h4 text-neo-red-text">{{ item.subtotal | copPrice }}</strong>
+            </article>
+          }
+        </div>
+      </app-neo-card>
+
+      <app-neo-card class="block lg:sticky lg:top-24" padding="md">
+        @if (totals(); as total) {
+          <div class="space-y-4">
+            <h2 class="text-h3">Total</h2>
+            <div class="space-y-4 border-y border-neo-border p-5 text-small">
+              <div class="flex justify-between gap-4">
+                <span class="text-neo-muted-text">Subtotal</span>
+                <strong>{{ total.subtotal | copPrice }}</strong>
+              </div>
+              <div class="flex justify-between gap-4">
+                <span class="text-neo-muted-text">Envio</span>
+                <strong [class.text-neo-green]="total.costoEnvio === 0">
+                  {{ total.costoEnvio === 0 ? 'Gratis' : (total.costoEnvio | copPrice) }}
+                </strong>
+              </div>
+              <div class="flex justify-between gap-4">
+                <span class="text-neo-muted-text">Impuestos</span>
+                <strong>{{ total.impuesto | copPrice }}</strong>
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+              <span class="text-h4">Total</span>
+              <strong class="text-h2 text-neo-red-text">{{ total.total | copPrice }}</strong>
+            </div>
+            <app-neo-button routerLink="/checkout/envio" variant="primary" fullWidth>
+              Continuar al envio
+            </app-neo-button>
+            <app-neo-button routerLink="/carrito" variant="ghost" fullWidth>
+              Volver al carrito
+            </app-neo-button>
+          </div>
+        }
+      </app-neo-card>
+    </div>
+  }
+</section>

@@ -1,0 +1,96 @@
+<section class="mx-auto w-full max-w-7xl px-4 text-neo-white sm:px-6 lg:px-8">
+  <header class="mb-8 space-y-4">
+    <h1 class="text-h1">Mis pedidos</h1>
+    <p class="text-small text-neo-muted-text">Historial y estado de tus compras.</p>
+  </header>
+
+  <div class="mb-8 flex flex-wrap gap-3">
+    @for (filter of filters; track filter.value) {
+      <app-neo-button
+        [variant]="activeFilter() === filter.value ? 'primary' : 'secondary'"
+        size="sm"
+        (neoClick)="setFilter(filter.value)"
+      >
+        {{ filter.label }}
+      </app-neo-button>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="space-y-4">
+      @for (card of [1, 2, 3, 4]; track card) {
+        <app-neo-skeleton variant="card" height="9rem"></app-neo-skeleton>
+      }
+    </div>
+  } @else if (!page()?.content?.length) {
+    <app-neo-card class="block" padding="lg">
+      <div class="flex min-h-72 flex-col items-center justify-center gap-4 text-center">
+        <lucide-angular class="text-neo-muted-text" [img]="icons.empty" [size]="48" [strokeWidth]="1.8"></lucide-angular>
+        <div>
+          <h2 class="text-h2">Aun no tienes pedidos</h2>
+          <p class="text-small text-neo-muted-text">Cuando compres en NeoGaming, apareceran aqui.</p>
+        </div>
+        <app-neo-button routerLink="/catalogo" variant="primary">Ir al catalogo</app-neo-button>
+      </div>
+    </app-neo-card>
+  } @else {
+    <div class="space-y-4">
+      @for (order of page()!.content; track order.idPedido) {
+        <app-neo-card
+          class="block"
+          padding="md"
+          hoverable
+          [routerLink]="['/pedidos', order.idPedido]"
+        >
+          <article class="space-y-6">
+            <header class="grid gap-4 sm:grid-cols-2 sm:items-start">
+              <div class="flex min-w-0 flex-wrap items-center gap-4">
+                <h2 class="font-mono text-h4">#{{ order.idPedido }}</h2>
+                <app-neo-badge [variant]="statusVariant(order.estado)">
+                  {{ statusLabel(order.estado) }}
+                </app-neo-badge>
+              </div>
+              <time class="text-small text-neo-muted-text sm:text-right">{{ order.fechaCreacion | date: 'd MMM y' }}</time>
+            </header>
+
+            <div class="flex flex-wrap items-center gap-4">
+              <div class="flex gap-3">
+                @for (product of previewProducts(order.productos); track product.idProducto) {
+                  <span
+                    class="flex h-10 w-10 items-center justify-center rounded-full border border-neo-border bg-neo-elevated text-xs font-semibold text-neo-subtle"
+                    [title]="product.nombre"
+                  >
+                    {{ product.nombre.slice(0, 2).toUpperCase() }}
+                  </span>
+                }
+              </div>
+              @if (extraProducts(order.productos) > 0) {
+                <span class="text-small text-neo-muted-text">y {{ extraProducts(order.productos) }} mas</span>
+              }
+            </div>
+
+            <footer class="flex flex-col gap-4 border-t border-neo-border p-5 sm:flex-row sm:items-center sm:justify-between">
+              <p class="text-small text-neo-subtle">
+                {{ order.cantidadItems }} articulos · Total:
+                <strong class="text-neo-white">{{ order.total | copPrice }}</strong>
+              </p>
+              <app-neo-button variant="ghost" size="sm" (neoClick)="openDetail(order.idPedido, $event)">
+                Ver detalle
+              </app-neo-button>
+            </footer>
+          </article>
+        </app-neo-card>
+      }
+    </div>
+
+    <div>
+      <app-neo-pagination
+        [currentPage]="page()!.number"
+        [totalPages]="page()!.totalPages"
+        [totalElements]="page()!.totalElements"
+        [pageSize]="pageSize"
+        (pageChange)="goToPage($event)"
+      ></app-neo-pagination>
+    </div>
+  }
+</section>

@@ -1,174 +1,206 @@
-﻿<section class="cart-page">
-  <div class="cart-head">
-    <div>
-      <h1>Tu carrito</h1>
-      <p class="top-items-count">{{ itemsLabel() }}</p>
+<section class="mx-auto w-full max-w-7xl px-4 text-neo-white sm:px-6 lg:px-8">
+  <div class="mb-8 space-y-4">
+    <h1 class="text-h1">Mi carrito ({{ itemCount() }} productos)</h1>
+    <p class="text-small text-neo-muted-text">Revisa cantidades, descuentos y total antes de pagar.</p>
+  </div>
+
+  @if (requestError()) {
+    <app-neo-card class="mb-8 block" padding="sm">
+      <p class="text-small text-red-400">{{ requestError() }}</p>
+    </app-neo-card>
+  }
+
+  @if (!loggedIn()) {
+    <neo-auth-prompt context="cart" />
+  } @else if (loading()) {
+    <div class="grid gap-4 sm:gap-6 lg:grid-cols-2">
+      <div class="space-y-4">
+        @for (row of [1, 2, 3]; track row) {
+          <app-neo-skeleton variant="block" height="5rem"></app-neo-skeleton>
+        }
+      </div>
+      <app-neo-skeleton variant="card" height="22rem"></app-neo-skeleton>
     </div>
-  </div>
+  } @else if (items().length === 0) {
+    <app-neo-card class="block" padding="lg">
+      <div class="flex min-h-80 flex-col items-center justify-center gap-4 text-center">
+        <lucide-angular
+          class="text-neo-muted-text"
+          [img]="icons.cart"
+          [size]="48"
+          [strokeWidth]="1.8"
+        ></lucide-angular>
+        <div>
+          <h2 class="text-h2 text-neo-white">Tu carrito esta vacio</h2>
+          <p class="text-small text-neo-muted-text">Explora el catalogo y agrega tus productos favoritos.</p>
+        </div>
+        <app-neo-button routerLink="/catalogo" variant="primary">Explorar catalogo</app-neo-button>
+      </div>
+    </app-neo-card>
+  } @else {
+    <div class="grid gap-4 sm:gap-6 lg:grid-cols-2">
+      <section class="space-y-4">
+        @for (item of items(); track item.id ?? item.name) {
+          <app-neo-card class="block" padding="md">
+            <article class="grid gap-4 md:flex md:items-center md:items-center">
+              <img
+                class="h-16 w-16 rounded-neo-md bg-neo-elevated object-cover"
+                [src]="thumbnailFor(item)"
+                [alt]="item.name"
+                loading="lazy"
+              />
 
-  <div class="cart-layout">
-    <section class="cart-items">
-      @if (cartUi.cartItems().length === 0) {
-        <article class="empty-cart">
-          <div class="empty-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-  <path d="M6 6h14l-1.4 7.6a2 2 0 0 1-2 1.6H9a2 2 0 0 1-2-1.6L5 4H2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-  <circle cx="9" cy="20" r="1.4" fill="currentColor" />
-  <circle cx="17" cy="20" r="1.4" fill="currentColor" />
-</svg></div>
-          <h2>Tu carrito esta vacio</h2>
-          <p>Explora el catalogo y agrega tus productos favoritos.</p>
-          <a routerLink="/catalog" class="go-shop">Ir al catalogo</a>
-        </article>
-      } @else {
-        @for (item of cartUi.cartItems(); track item.name) {
-          <article class="cart-item" [class.removing]="isRemoving(item.name)">
-            <img
-              [src]="item.image || 'https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=320&q=80'"
-              [alt]="item.name"
-              width="120"
-              height="120"
-            />
+              <div class="min-w-0 space-y-4">
+                <div>
+                  <h2 class="truncate text-h4 text-neo-white">{{ item.name }}</h2>
+                  <p class="text-xs text-neo-muted-text">{{ productBrand(item) }}</p>
+                </div>
 
-            <div class="item-info">
-              <h3>{{ item.name }}</h3>
-              <p class="stock" [class.low]="isLowStock(item.stockLabel)">
-                <span class="stock-dot" aria-hidden="true"></span>
-                {{ item.stockLabel || 'En stock' }}
-              </p>
-              <strong>{{ item.price | copPrice }}</strong>
-              @if (item.oldPrice && item.oldPrice > item.price) {
-                <small>{{ item.oldPrice | copPrice }}</small>
-              }
-              <small class="shipping-eta">Llega en 2-4 dias</small>
-            </div>
+                <div class="grid gap-4 sm:grid-cols-3 sm:items-center">
+                  <div>
+                    <span class="block text-xs text-neo-muted-text">Precio unitario</span>
+                    <strong class="text-small text-neo-white">{{ item.price | copPrice }}</strong>
+                  </div>
 
-            <div class="item-actions">
-              <div class="qty" [class.pulse]="quantityPulseName() === item.name">
-                <button type="button" (click)="decrease(item.name)">-</button>
-                <span>{{ item.quantity }}</span>
-                <button type="button" (click)="increase(item.name)">+</button>
+                  <div class="flex items-center gap-3">
+                    <app-neo-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="displayQuantity(item) <= 1 || isUpdating(item)"
+                      (neoClick)="decrement(item)"
+                    >
+                      <lucide-angular [img]="icons.minus" [size]="16" [strokeWidth]="2"></lucide-angular>
+                    </app-neo-button>
+                    <div class="w-20">
+                      <app-neo-input
+                        label="Cantidad"
+                        [labelSrOnly]="true"
+                        type="number"
+                        [ngModel]="displayQuantity(item)"
+                        (ngModelChange)="quantityChanged(item, $event)"
+                      ></app-neo-input>
+                    </div>
+                    <app-neo-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="displayQuantity(item) >= quantityMax(item) || isUpdating(item)"
+                      (neoClick)="increment(item)"
+                    >
+                      <lucide-angular [img]="icons.plus" [size]="16" [strokeWidth]="2"></lucide-angular>
+                    </app-neo-button>
+                    @if (isUpdating(item)) {
+                      <app-neo-spinner size="sm"></app-neo-spinner>
+                    }
+                  </div>
+
+                  <div class="sm:text-right">
+                    <span class="block text-xs text-neo-muted-text">Subtotal</span>
+                    <strong class="text-h4 text-neo-red-text">{{ item.price * displayQuantity(item) | copPrice }}</strong>
+                  </div>
+                </div>
               </div>
-              <button type="button" class="remove-btn" aria-label="Eliminar producto" (click)="remove(item)"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-  <path d="M4 7h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-  <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-  <path d="M7 7l1 12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-</svg></button>
+
+              <div class="flex justify-end">
+                <app-neo-button variant="ghost" size="sm" (neoClick)="requestRemove(item)">
+                  <lucide-angular
+                    class="text-neo-muted-text hover:text-red-400"
+                    [img]="icons.trash"
+                    [size]="17"
+                    [strokeWidth]="2"
+                  ></lucide-angular>
+                </app-neo-button>
+              </div>
+            </article>
+          </app-neo-card>
+        }
+      </section>
+
+      <aside class="lg:sticky lg:top-24">
+        <app-neo-card class="block" padding="md">
+          <div class="space-y-6">
+            <div>
+              <h2 class="text-h3 text-neo-white">Resumen del pedido</h2>
+              <p class="text-small text-neo-muted-text">{{ itemCount() }} articulos en el carrito</p>
             </div>
-          </article>
-        }
 
-        <div class="cart-secondary-actions">
-          <a routerLink="/catalog" class="continue-shopping">Seguir comprando</a>
-        </div>
-      }
-    </section>
-
-    <aside class="order-summary" [class.pulse]="summaryPulse()">
-      <button type="button" class="summary-toggle" (click)="toggleSummaryMobile()">
-        <span>Resumen de compra</span>
-        <strong>{{ total() | copPrice }}</strong>
-      </button>
-
-      <div class="summary-content" [class.collapsed]="isMobile() && summaryCollapsed()">
-        <h2>Resumen de compra</h2>
-        <p class="items-count">{{ itemsLabel() }}</p>
-
-        <div class="summary-row subtotal-row">
-          <span>Subtotal</span>
-          <strong [class.pulse-value]="summaryPulse()">{{ subtotal() | copPrice }}</strong>
-        </div>
-        <div class="summary-row">
-          <span>Envio estimado</span>
-          <strong>{{ shipping() | copPrice }}</strong>
-        </div>
-        <div class="free-shipping">
-          @if (remainingForFreeShipping() > 0) {
-            <p>Te faltan <strong>{{ remainingForFreeShipping() | copPrice }}</strong> para envio gratis.</p>
-          } @else {
-            <p>Ya calificas para envio gratis.</p>
-          }
-          <div class="free-bar"><i [style.width.%]="freeShippingProgress()" [class.complete]="freeShippingProgress() >= 100"></i></div>
-        </div>
-        <p class="shipping-message">{{ shippingEta() }}</p>
-        <div class="summary-row">
-          <span>Impuestos</span>
-          <strong>{{ tax() | copPrice }}</strong>
-        </div>
-        @if (discountValue() > 0) {
-          <div class="summary-row discount">
-            <span>Descuento</span>
-            <strong>-{{ discountValue() | copPrice }}</strong>
-          </div>
-        }
-        @if (totalSavings() > 0) {
-          <div class="summary-row savings">
-            <span class="savings-label"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2" />
-  <path d="M9.5 9.5c0-1 1-1.8 2.5-1.8s2.5.8 2.5 1.8-1 1.8-2.5 1.8-2.5.8-2.5 1.8 1 1.8 2.5 1.8 2.5-.8 2.5-1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-</svg>Ahorro total</span>
-            <strong [class.pulse-value]="summaryPulse()">{{ totalSavings() | copPrice }}</strong>
-          </div>
-        }
-        <div class="summary-total">
-          <span>Total</span>
-          <strong [class.pulse-value]="summaryPulse()">{{ total() | copPrice }}</strong>
-        </div>
-
-        <label class="coupon">
-          <span>Codigo de descuento</span>
-          <div>
-            <input
-              type="text"
-              [value]="couponCode()"
-              (input)="couponCode.set($any($event.target).value)"
-              placeholder="Ingresa codigo"
-            />
-            <button type="button" [disabled]="applyingCoupon()" (click)="applyCoupon()">
-              @if (applyingCoupon()) {
-                Aplicando...
-              } @else {
-                Aplicar
+            <div class="space-y-4 border-y border-neo-border p-5">
+              <div class="flex items-center justify-between gap-4 text-small">
+                <span class="text-neo-muted-text">Subtotal</span>
+                <strong>{{ subtotal() | copPrice }}</strong>
+              </div>
+              <div class="flex items-center justify-between gap-4 text-small">
+                <span class="text-neo-muted-text">Envio</span>
+                @if (shipping() === 0) {
+                  <strong class="text-neo-green">Gratis</strong>
+                } @else {
+                  <strong>{{ shipping() | copPrice }}</strong>
+                }
+              </div>
+              @if (discount() > 0) {
+                <div class="flex items-center justify-between gap-4 text-small">
+                  <span class="text-neo-muted-text">Descuento</span>
+                  <strong class="text-neo-green">-{{ discount() | copPrice }}</strong>
+                </div>
               }
-            </button>
+            </div>
+
+            <div class="flex items-center justify-between gap-4">
+              <span class="text-h4">Total</span>
+              <strong class="text-h2 text-neo-red-text">{{ total() | copPrice }}</strong>
+            </div>
+
+            <div class="space-y-4">
+              <div class="grid gap-4 sm:grid-cols-2">
+                <app-neo-input
+                  label="Código de descuento"
+                  [labelSrOnly]="true"
+                  placeholder="Codigo de descuento"
+                  [ngModel]="couponCode()"
+                  (ngModelChange)="couponCode.set($event)"
+                ></app-neo-input>
+                <app-neo-button variant="secondary" (neoClick)="applyCoupon()">Aplicar</app-neo-button>
+              </div>
+              @if (appliedCoupon()) {
+                <app-neo-button variant="ghost" size="sm" (neoClick)="clearCoupon()">
+                  <app-neo-badge variant="success">Cupon {{ appliedCoupon() }} aplicado</app-neo-badge>
+                </app-neo-button>
+              }
+            </div>
+
+            <app-neo-button routerLink="/checkout" variant="primary" size="lg" fullWidth>
+              Proceder al pago
+            </app-neo-button>
+
+            <div class="flex items-center justify-center gap-4 text-xs text-neo-muted-text">
+              <span class="inline-flex items-center gap-3">
+                <lucide-angular [img]="icons.shield" [size]="14" [strokeWidth]="2"></lucide-angular>
+                Pago 100% seguro
+              </span>
+              <span class="inline-flex items-center gap-3">
+                <lucide-angular [img]="icons.lock" [size]="14" [strokeWidth]="2"></lucide-angular>
+                SSL
+              </span>
+            </div>
           </div>
-        </label>
-
-        @if (couponMessage()) {
-          <p class="coupon-message" [class.success]="couponMessageType() === 'success'" [class.error]="couponMessageType() === 'error'" [class.pop]="couponPulse()">
-            {{ couponMessage() }}
-          </p>
-        }
-
-        <button type="button" class="checkout-btn" [disabled]="cartUi.cartItems().length === 0" (click)="checkout()">
-          Proceder al pago
-        </button>
-        <small class="secure-note">Pago 100% seguro</small>
-      </div>
-    </aside>
-  </div>
-
-  @if (cartUi.cartItems().length > 0 && visibleRecommendations().length > 0) {
-    <section class="cross-sell">
-      <h2>Tambien te puede interesar</h2>
-      <div class="cross-grid">
-        @for (item of visibleRecommendations(); track item.name) {
-          <article class="cross-card">
-            <img [src]="item.image" [alt]="item.name" width="320" height="180" />
-            <h3>{{ item.name }}</h3>
-            <strong>{{ item.price | copPrice }}</strong>
-            <button type="button" (click)="addRecommendation(item)">Agregar</button>
-          </article>
-        }
-      </div>
-    </section>
+        </app-neo-card>
+      </aside>
+    </div>
   }
 </section>
 
-@if (lastRemoved()) {
-  <div class="undo-toast">
-    <span>{{ lastRemoved()?.name }} eliminado.</span>
-    <button type="button" (click)="undoRemove()">Deshacer</button>
+<app-neo-modal
+  [open]="!!removingItem()"
+  title="Eliminar producto"
+  size="sm"
+  (close)="closeRemoveModal()"
+>
+  <p class="text-small text-neo-subtle">¿Eliminar este producto del carrito?</p>
+  @if (removingItem()) {
+    <p class="text-h4 text-neo-white">{{ removingItem()?.name }}</p>
+  }
+
+  <div neo-modal-footer class="flex justify-end gap-3 border-t border-neo-border p-5">
+    <app-neo-button variant="ghost" [disabled]="removing()" (neoClick)="closeRemoveModal()">Cancelar</app-neo-button>
+    <app-neo-button variant="danger" [loading]="removing()" (neoClick)="confirmRemove()">Eliminar</app-neo-button>
   </div>
-}
-
-
+</app-neo-modal>
